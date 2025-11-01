@@ -29,41 +29,32 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
-    // Lombok
+    // Lombok dependencies
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
 
-    // Swagger
+    // Swagger dependencies
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
 
-    // MongoDB
+    // MongoDB dependencies
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
+    // 논블로킹 MongoDB 사용 시 아래 의존성 추가 위의 의존성 제거
+    // implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
+    // testImplementation("io.projectreactor:reactor-test")
 
-    // MySQL
+    // MySQL dependency
     runtimeOnly("com.mysql:mysql-connector-j")
 
-    // Redis
+    // Redis dependency
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
 
-    // Minio
-    implementation("io.minio:minio:8.5.3")
-
-    // Test
+    // Testing dependencies
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     // AWS SDK for S3
     implementation(platform("software.amazon.awssdk:bom:2.24.0"))
     implementation("software.amazon.awssdk:s3")
-
-    // Spring security
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    testImplementation("org.springframework.security:spring-security-test")
-
-    // JWT
-    implementation("io.jsonwebtoken:jjwt-api:0.13.0")
-    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
-    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
 
     // dotenv-java dependency
     implementation("io.github.cdimascio:dotenv-java:3.0.0")
