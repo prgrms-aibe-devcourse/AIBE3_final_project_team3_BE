@@ -23,9 +23,6 @@ public class ApiResponseAdvice implements ResponseBodyAdvice<Object> {
                                   Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                   ServerHttpRequest request, ServerHttpResponse response) {
         if (body instanceof ApiResponse apiResponse) {
-            HttpStatusCode httpStatusCode = HttpStatusCode.valueOf(apiResponse.statusCode());
-            response.setStatusCode(httpStatusCode);
-
             return ResponseEntity
                     .status(apiResponse.statusCode())
                     .body(apiResponse);
