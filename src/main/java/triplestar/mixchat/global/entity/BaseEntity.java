@@ -1,4 +1,4 @@
-package triplestar.mixchat.global.jpa.entity;
+package triplestar.mixchat.global.entity;
 
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;

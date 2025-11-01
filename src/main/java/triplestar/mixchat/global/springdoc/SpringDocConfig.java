@@ -1,4 +1,4 @@
-package triplestar.mixchat.global.jpa.springdoc;
+package triplestar.mixchat.global.springdoc;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;

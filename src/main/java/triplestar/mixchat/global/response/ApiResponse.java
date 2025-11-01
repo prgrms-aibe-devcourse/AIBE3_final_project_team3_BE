@@ -1,4 +1,4 @@
-package triplestar.mixchat.global.jpa.response;
+package triplestar.mixchat.global.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
