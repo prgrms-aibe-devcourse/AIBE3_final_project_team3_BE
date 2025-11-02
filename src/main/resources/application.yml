@@ -1,3 +1,5 @@
 spring:
-  application:
-    name: mixchat
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev} # 배포시 dev만 prod로 변경
+  config:
+    import: optional:file:.env.${spring.profiles.active}.properties

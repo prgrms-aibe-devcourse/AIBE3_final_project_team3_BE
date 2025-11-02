@@ -45,6 +45,9 @@ dependencies {
     // MySQL dependency
     runtimeOnly("com.mysql:mysql-connector-j")
 
+    // Redis dependency
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
     // Testing dependencies
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -52,6 +55,9 @@ dependencies {
     // AWS SDK for S3
     implementation(platform("software.amazon.awssdk:bom:2.24.0"))
     implementation("software.amazon.awssdk:s3")
+
+    // dotenv-java dependency
+    implementation("io.github.cdimascio:dotenv-java:3.0.0")
 }
 
 tasks.withType<Test> {
