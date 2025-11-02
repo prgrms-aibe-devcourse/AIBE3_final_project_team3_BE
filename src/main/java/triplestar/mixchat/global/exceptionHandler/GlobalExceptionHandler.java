@@ -92,12 +92,13 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // TODO : 429 관련 예외 처리 추가
+    // TODO : 429 AI API 호출 관련 핸들러 추후 추가 요망
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handle(Exception e) throws Exception {
         log.error("[ExceptionHandler] {} : {}", e.getClass().getSimpleName(), e.getMessage(), e);
 
+        // 개발 환경에서는 예외를 숨기지 않고 그대로 던짐
         if ("dev".equals(activeProfile)) {
             throw e;
         }

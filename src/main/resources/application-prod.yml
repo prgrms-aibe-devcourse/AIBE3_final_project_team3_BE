@@ -9,6 +9,7 @@ spring:
     redis:
       host: redis
       port: 6379
+      password: ${REDIS_PASSWORD}
 cloud:
   aws:
     credentials:
