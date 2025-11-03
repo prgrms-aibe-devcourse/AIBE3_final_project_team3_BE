@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class LoggingAspect {
 
+    // 서비스 레이어 public 메서드 실행 전후 로그 기록
     @Around("execution(public * triplestar.mixchat..service..*(..))")
     public Object logServiceLayer(ProceedingJoinPoint joinPoint) throws Throwable {
         String className = joinPoint.getSignature().getDeclaringTypeName();
