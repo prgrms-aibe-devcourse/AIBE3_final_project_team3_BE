@@ -3,3 +3,9 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev} # 배포시 dev만 prod로 변경
   config:
     import: optional:file:.env.${spring.profiles.active}.properties
+
+  datasource:
+    url: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
+    username: ${MYSQL_USER}
+    password: ${MYSQL_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver

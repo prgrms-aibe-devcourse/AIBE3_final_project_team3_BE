@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.member.service;
+package triplestar.mixchat.domain.member.member.service;
 
 import org.springframework.stereotype.Service;
 

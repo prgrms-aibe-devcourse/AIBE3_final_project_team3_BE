@@ -9,29 +9,46 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: ${TZ:-Asia/Seoul}
     ports:
       - "3306:3306"
     volumes:
       - ./docker/config/mysql/schema.sql:/docker-entrypoint-initdb.d/schema.sql
       - ./docker/config/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    networks:
+      - mixchat-network
 
   redis:
-    image: redis:7.0
+    image: redis:8.0
     container_name: redis
     restart: always
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    command: sh -c "redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}"
+    networks:
+      - mixchat-network
 
   redis-init:
-    image: redis:7.0
+    image: redis:8.0
     depends_on:
       - redis
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     entrypoint: >
-      sh -c "sleep 5 && cat /init.redis | redis-cli -h redis"
+      sh -c "sleep 5 && cat /init.redis | redis-cli -h redis -a ${REDIS_PASSWORD} --no-auth-warning"
     volumes:
       - ./docker/config/redis/init.redis:/init.redis
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   mongo:
     image: mongo:6.0
@@ -47,7 +64,35 @@ services:
       - mongo_data:/data/db
       - ./docker/config/mongo/schema.js:/docker-entrypoint-initdb.d/schema.js
       - ./docker/config/mongo/init.js:/docker-entrypoint-initdb.d/init.js
+    networks:
+      - mixchat-network
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: mixchat-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - mixchat-network
 
 volumes:
+  mysql_data:
+    driver: local
   redis_data:
+    driver: local
+  minio_data:
+    driver: local
   mongo_data:
+    driver: local
+
+networks:
+  mixchat-network:
+    driver: bridge

@@ -1,0 +1,114 @@
+package triplestar.mixchat.global.exceptionHandler;
+
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+
+import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import triplestar.mixchat.global.customException.ServiceException;
+import triplestar.mixchat.global.response.ApiResponse;
+
+@Slf4j
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @Value("${spring.profiles.active}")
+    private String activeProfile;
+
+    private void commonExceptionLog(Exception e) {
+        log.warn("[ExceptionHandler] {} : {}", e.getClass().getSimpleName(), e.getMessage(), e);
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handle(EntityNotFoundException e) {
+        commonExceptionLog(e);
+
+        return new ResponseEntity<>(
+                new ApiResponse<>(
+                        NOT_FOUND.value(),
+                        "존재하지 않는 엔티티에 접근했습니다."
+                ),
+                NOT_FOUND
+        );
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handle(IllegalArgumentException e) {
+        commonExceptionLog(e);
+
+        return new ResponseEntity<>(
+                new ApiResponse<>(
+                        BAD_REQUEST.value(),
+                        "잘못된 요청입니다."
+                ),
+                BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Void>> handle(MethodArgumentNotValidException e) {
+        commonExceptionLog(e);
+
+        return new ResponseEntity<>(
+                new ApiResponse<>(
+                        BAD_REQUEST.value(),
+                        "요청 값이 유효하지 않습니다."
+                ),
+                BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handle(HttpMessageNotReadableException e) {
+        commonExceptionLog(e);
+
+        return new ResponseEntity<>(
+                new ApiResponse<>(
+                        BAD_REQUEST.value(),
+                        "요청 본문 형식이 잘못되었거나 필수 값이 누락되었습니다."
+                ),
+                BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(ServiceException.class)
+    public ResponseEntity<ApiResponse<Void>> handle(ServiceException e) {
+        commonExceptionLog(e);
+
+        return new ResponseEntity<>(
+                new ApiResponse<>(
+                        e.getStatusCode(),
+                        e.getMessage()
+                ),
+                HttpStatus.valueOf(e.getStatusCode())
+        );
+    }
+
+    // TODO : 429 AI API 호출 관련 핸들러 추후 추가 요망
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Void>> handle(Exception e) throws Exception {
+        log.error("[ExceptionHandler] {} : {}", e.getClass().getSimpleName(), e.getMessage(), e);
+
+        // 개발 환경에서는 예외를 숨기지 않고 그대로 던짐
+        if ("dev".equals(activeProfile)) {
+            throw e;
+        }
+
+        return new ResponseEntity<>(
+                new ApiResponse<>(
+                        INTERNAL_SERVER_ERROR.value(),
+                        "서버에서 알 수 없는 오류가 발생했습니다."
+                ),
+                INTERNAL_SERVER_ERROR
+        );
+    }
+}

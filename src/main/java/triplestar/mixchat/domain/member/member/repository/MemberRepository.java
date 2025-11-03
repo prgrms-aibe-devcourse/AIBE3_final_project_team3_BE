@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.member.repository;
+package triplestar.mixchat.domain.member.member.repository;
 
 import org.springframework.stereotype.Repository;
 
