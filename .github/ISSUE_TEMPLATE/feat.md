@@ -2,6 +2,7 @@
 name: feat
 about: Suggest an idea for this project
 title: "[feat] "
+type: Feature
 labels: enhancement
 assignees: ''
 
@@ -17,6 +18,9 @@ assignees: ''
 ## #️⃣ 어떤 기능인가요?
 
 > 추가하려는 기능 또는 개선하려는 부분에 대해 간결하게 설명해주세요.
+
+## #️⃣ 예상 브랜치 이름
+- feat/member
 
 ## #️⃣ 이 기능이 필요한 이유는 무엇인가요?(선택)
 
