@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Email;
 import java.time.LocalDateTime;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
+import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
 import triplestar.mixchat.domain.member.member.constant.Role;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
