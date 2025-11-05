@@ -60,7 +60,8 @@ dependencies {
     implementation("software.amazon.awssdk:s3")
 
     // Spring security
-    // implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    testImplementation("org.springframework.security:spring-security-test")
 
     // dotenv-java dependency
     implementation("io.github.cdimascio:dotenv-java:3.0.0")
