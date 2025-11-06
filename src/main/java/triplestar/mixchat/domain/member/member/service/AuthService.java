@@ -48,6 +48,7 @@ public class AuthService {
                 .nickname(req.nickname())
                 .country(Country.findByCode(req.country()))
                 .englishLevel(EnglishLevel.valueOf(req.englishLevel().toUpperCase()))
+                .interest(req.interest())
                 .description(req.description())
                 .build();
     }

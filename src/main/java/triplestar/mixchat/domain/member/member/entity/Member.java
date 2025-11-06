@@ -5,6 +5,7 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import java.time.LocalDateTime;
 import lombok.Builder;
@@ -18,6 +19,7 @@ import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
 @Entity
 @Getter
+@Table(name = "members")
 @NoArgsConstructor
 public class Member extends BaseEntity {
 
@@ -81,5 +83,9 @@ public class Member extends BaseEntity {
         this.englishLevel = englishLevel;
         this.interest = interest;
         this.description = description;
+        this.role = Role.ROLE_MEMBER;
+        this.membershipGrade = MembershipGrade.BASIC;
+        this.isBlocked = false;
+        this.isDeleted = false;
     }
 }
