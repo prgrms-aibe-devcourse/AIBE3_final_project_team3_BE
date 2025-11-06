@@ -6,4 +6,5 @@ import triplestar.mixchat.domain.member.member.entity.Member;
 
 @Repository
 public interface MemberRepository extends JpaRepository<Member, Long> {
+    boolean existsByEmail(String reqEmail);
 }
