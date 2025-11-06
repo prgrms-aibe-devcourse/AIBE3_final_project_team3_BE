@@ -29,8 +29,8 @@ class ApiV1AuthControllerTest {
     private AuthService authService;
 
     @Test
-    @DisplayName("회원가입 응답")
-    void t1() throws Exception {
+    @DisplayName("회원가입 응답 - 성공")
+    void join() throws Exception {
         ResultActions resultActions = mvc
                 .perform(
                         post("/api/v1/auth/join")
@@ -58,5 +58,37 @@ class ApiV1AuthControllerTest {
 
                 //상태 코드 확인
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("회원가입 패스워드 확인 불일치")
+    void join_passwordConfirm_fail() throws Exception {
+        ResultActions resultActions = mvc
+                .perform(
+                        post("/api/v1/auth/join")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                            "email": "user@example.com",
+                                            "password": "ValidPassword123",
+                                            "passwordConfirm": "ValidPassword1234",
+                                            "name": "홍길동",
+                                            "country": "KR",
+                                            "nickname": "믹스마스터",
+                                            "englishLevel": "INTERMEDIATE",
+                                            "interest": "요리, 여행, 음악",
+                                            "description": "안녕하세요. 자기소개입니다."
+                                        }
+                                        """)
+                )
+                .andDo(print());
+
+        resultActions
+                //실행처 확인
+                .andExpect(handler().handlerType(ApiV1AuthController.class))
+                .andExpect(handler().methodName("join"))
+
+                //상태 코드 확인
+                .andExpect(status().isBadRequest());
     }
 }
