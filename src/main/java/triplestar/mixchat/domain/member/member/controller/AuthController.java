@@ -1,7 +1,8 @@
 package triplestar.mixchat.domain.member.member.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,9 +18,9 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @GetMapping("/join")
+    @PostMapping("/join")
     public ApiResponse<MemberSummaryResp> join(
-            @RequestBody MemberJoinReq memberJoinReq
+            @RequestBody @Valid MemberJoinReq memberJoinReq
     ) {
         MemberSummaryResp resp = authService.join(memberJoinReq);
         return ApiResponse.ok("회원가입에 성공했습니다.", resp);
