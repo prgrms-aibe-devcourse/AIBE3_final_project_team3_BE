@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import triplestar.mixchat.domain.member.member.dto.MemberJoinReq;
+import triplestar.mixchat.domain.member.member.dto.MemberSignInReq;
 import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.member.dto.SignInResp;
 import triplestar.mixchat.domain.member.member.service.AuthService;
 import triplestar.mixchat.global.response.ApiResponse;
 
@@ -28,5 +30,14 @@ public class ApiV1AuthController {
     ) {
         MemberSummaryResp resp = authService.join(memberJoinReq);
         return ApiResponse.ok("회원가입에 성공했습니다.", resp);
+    }
+
+    @Operation(summary = "로그인", description = "사용자 인증을 수행하고 토큰을 발급합니다.")
+    @PostMapping("/login")
+    public ApiResponse<SignInResp> signIn(
+            @RequestBody @Valid MemberSignInReq signInReq
+    ) {
+        SignInResp resp = authService.signIn(signInReq);
+        return ApiResponse.ok("로그인에 성공했습니다.", resp);
     }
 }

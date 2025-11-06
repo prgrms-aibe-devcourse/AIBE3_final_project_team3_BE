@@ -4,13 +4,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.member.member.constant.Country;
-import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.dto.MemberJoinReq;
+import triplestar.mixchat.domain.member.member.dto.MemberSignInReq;
 import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.member.dto.SignInResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.customException.UniqueConstraintException;
+import triplestar.mixchat.global.jwt.AuthJwtProvider;
 
 @Service
 @RequiredArgsConstructor
@@ -51,5 +53,16 @@ public class AuthService {
                 .interest(req.interest())
                 .description(req.description())
                 .build();
+    }
+
+    public SignInResp signIn(MemberSignInReq req) {
+        Member member = memberRepository.findByEmail(req.email())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다: " + req.email()));
+
+        if (member.getPassword().matches(req.password(),  passwordEncoder)) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+
+        return null;
     }
 }
