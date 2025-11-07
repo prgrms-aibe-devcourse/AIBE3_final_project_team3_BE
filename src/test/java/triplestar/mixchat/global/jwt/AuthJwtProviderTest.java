@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import triplestar.mixchat.domain.member.member.constant.Role;
+import triplestar.mixchat.global.security.jwt.AccessTokenPayload;
+import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
 
 @ActiveProfiles("test")
 @DisplayName("jwt 생성/파싱/검증 테스트")

@@ -13,8 +13,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import triplestar.mixchat.global.jwt.AccessTokenPayload;
-import triplestar.mixchat.global.jwt.AuthJwtProvider;
+import triplestar.mixchat.global.security.jwt.AccessTokenPayload;
+import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
 
 // AccessToken 기반 인증 처리 필터
 @Component

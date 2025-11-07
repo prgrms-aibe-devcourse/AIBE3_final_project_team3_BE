@@ -75,11 +75,14 @@ public class ApiV1AuthController {
 
     @PostMapping("/reissue")
     @Operation(summary = "토큰 재발급", description = "만료된 액세스 토큰을 재발급합니다.")
-    public ApiResponse<String> reissue(HttpServletRequest httpServletRequest) {
+    public ApiResponse<String> reissue(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
         String refreshToken = findFreshTokenOnCookie(httpServletRequest);
-        String accessToken = authService.reissueAccessToken(refreshToken);
+        SignInResp resp = authService.reissueAccessToken(refreshToken);
 
-        return ApiResponse.ok("액세스 토큰이 재발급되었습니다.", accessToken);
+        Cookie cookie = generateRefreshTokenCookie(resp.refreshToken());
+        httpServletResponse.addCookie(cookie);
+
+        return ApiResponse.ok("액세스 토큰이 재발급되었습니다.", resp.accessToken());
     }
 
     private String findFreshTokenOnCookie(HttpServletRequest httpServletRequest) {

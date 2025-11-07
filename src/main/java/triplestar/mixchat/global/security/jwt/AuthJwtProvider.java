@@ -1,4 +1,4 @@
-package triplestar.mixchat.global.jwt;
+package triplestar.mixchat.global.security.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
