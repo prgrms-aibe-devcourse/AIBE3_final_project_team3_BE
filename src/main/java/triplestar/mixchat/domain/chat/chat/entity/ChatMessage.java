@@ -2,7 +2,12 @@ package triplestar.mixchat.domain.chat.chat.entity;
 
 import jakarta.persistence.Id;
 import lombok.*;
-import triplestar.mixchat.global.jpa.entity.BaseEntity;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+
+import java.time.LocalDateTime;
 
 //mongoDB용 Entity
 @Getter
@@ -10,8 +15,8 @@ import triplestar.mixchat.global.jpa.entity.BaseEntity;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-//@Document(collection = "chat_messages")
-public class ChatMessage extends BaseEntity {
+@Document(collection = "chat_messages")
+public class ChatMessage {
     @Id
     private String id; //mongoDB용 ID
 
@@ -24,6 +29,14 @@ public class ChatMessage extends BaseEntity {
     public enum MessageType {
         TEXT, IMAGE, FILE, SYSTEM
     }
+
+    @CreatedDate
+    @Field("created_at")
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Field("updated_at")
+    private LocalDateTime updatedAt;
 }
 
 //대량 insert 시 Bulk Write 사용?

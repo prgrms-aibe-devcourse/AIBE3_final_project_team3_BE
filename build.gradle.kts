@@ -64,6 +64,9 @@ dependencies {
 
     // dotenv-java dependency
     implementation("io.github.cdimascio:dotenv-java:3.0.0")
+
+    //mongoDB
+    runtimeOnly("org.springframework.boot:spring-boot-starter-data-mongodb")
 }
 
 tasks.withType<Test> {
