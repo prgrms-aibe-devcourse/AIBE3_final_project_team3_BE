@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Table(name = "chat_members")
-@Index()
 public class ChatMember extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

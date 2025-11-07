@@ -46,7 +46,7 @@ public class ApiV1AuthController {
         return ApiResponse.ok("회원가입에 성공했습니다.", resp);
     }
 
-    @PostMapping("/login")
+    @PostMapping("/sign-in")
     @Operation(summary = "로그인", description = "사용자 인증을 수행하고 토큰을 발급합니다.")
     public ApiResponse<String> signIn(
             @RequestBody @Valid MemberSignInReq signInReq,
@@ -76,7 +76,7 @@ public class ApiV1AuthController {
     @PostMapping("/reissue")
     @Operation(summary = "토큰 재발급", description = "만료된 액세스 토큰을 재발급합니다.")
     public ApiResponse<String> reissue(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
-        String refreshToken = findFreshTokenOnCookie(httpServletRequest);
+        String refreshToken = findRefreshTokenCookie(httpServletRequest);
         SignInResp resp = authService.reissueAccessToken(refreshToken);
 
         Cookie cookie = generateRefreshTokenCookie(resp.refreshToken());
@@ -85,7 +85,7 @@ public class ApiV1AuthController {
         return ApiResponse.ok("액세스 토큰이 재발급되었습니다.", resp.accessToken());
     }
 
-    private String findFreshTokenOnCookie(HttpServletRequest httpServletRequest) {
+    private String findRefreshTokenCookie(HttpServletRequest httpServletRequest) {
         Cookie[] cookies = httpServletRequest.getCookies();
         if (cookies == null || cookies.length == 0) {
             throw new BadCredentialsException("리프레시 토큰이 존재하지 않습니다.");

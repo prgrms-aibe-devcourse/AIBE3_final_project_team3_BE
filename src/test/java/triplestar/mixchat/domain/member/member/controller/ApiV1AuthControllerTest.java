@@ -1,6 +1,5 @@
 package triplestar.mixchat.domain.member.member.controller;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.handler;
@@ -90,5 +89,23 @@ class ApiV1AuthControllerTest {
 
                 //상태 코드 확인
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("로그인 응답 - 성공")
+    void signIn() throws Exception {
+        ResultActions resultActions = mvc
+                .perform(
+                        post("/api/v1/auth/sign-in")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                            "email": "user@example.com",
+                                            "password": "ValidPassword123"
+                                        }
+                                        """)
+                )
+                .andDo(print());
+
     }
 }
