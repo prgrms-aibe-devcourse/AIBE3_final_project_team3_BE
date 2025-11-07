@@ -70,6 +70,21 @@ CREATE TABLE IF NOT EXISTS `translation_tags` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
+CREATE TABLE IF NOT EXISTS `reports` (
+    `id`              BIGINT       NOT NULL AUTO_INCREMENT,
+    `created_at`      DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `modified_at`     DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+
+    `target_content`  TEXT         NULL,
+    `target_member_id` BIGINT      NOT NULL,
+    `status`          VARCHAR(10)  NOT NULL,
+    `category`          VARCHAR(20) NOT NULL,
+    `reason_text`     VARCHAR(255) NULL,
+
+    PRIMARY KEY (`id`),
+    KEY `idx_reports_status_created` (`status`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
