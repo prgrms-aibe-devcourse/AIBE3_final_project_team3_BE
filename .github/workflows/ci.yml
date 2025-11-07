@@ -52,3 +52,4 @@ jobs:
 
       - name: Build and run tests
         run: ./gradlew clean build --no-daemon --parallel
+
