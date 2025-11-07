@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.chat.chat.entity;
+package triplestar.mixchat.domain.chat.entity;
 
 import jakarta.persistence.Id;
 import lombok.*;

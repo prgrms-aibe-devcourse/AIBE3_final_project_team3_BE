@@ -1,10 +1,10 @@
-package triplestar.mixchat.domain.chat.chat.entity;
+package triplestar.mixchat.domain.chat.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import triplestar.mixchat.global.jpa.entity.BaseEntity;
 import triplestar.mixchat.domain.member.member.entity.Member;
+import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
 import java.time.LocalDateTime;
 
