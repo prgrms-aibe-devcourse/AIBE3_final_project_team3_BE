@@ -37,10 +37,7 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
 
     // MongoDB
-    // implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
-    // 논블로킹 MongoDB 사용 시 아래 의존성 추가 위의 의존성 제거
-    // implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
-    // testImplementation("io.projectreactor:reactor-test")
+    implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
 
     // MySQL
     runtimeOnly("com.mysql:mysql-connector-j")
