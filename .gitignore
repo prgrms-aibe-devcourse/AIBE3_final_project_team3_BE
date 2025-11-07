@@ -37,5 +37,4 @@ out/
 .vscode/
 
 # 환경변수 파일
-.env
-.env*.properties
+.env.prod.properties
