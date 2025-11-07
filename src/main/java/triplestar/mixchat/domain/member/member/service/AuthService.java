@@ -75,4 +75,17 @@ public class AuthService {
 
         return new SignInResp(accessToken, refreshToken);
     }
+
+    public String reissueAccessToken(String refreshToken) {
+        // TODO : refresh token redis 검증 조회
+        // TODO : refresh token 재발급
+
+        Long memberId = authJwtProvider.parseRefreshToken(refreshToken);
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다: " + memberId));
+
+        return authJwtProvider.generateAccessToken(
+                new AccessTokenPayload(member.getId(), member.getRole()));
+    }
 }

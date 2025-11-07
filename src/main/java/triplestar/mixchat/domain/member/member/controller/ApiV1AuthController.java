@@ -6,9 +6,9 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.NotNull;
+import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -71,5 +71,26 @@ public class ApiV1AuthController {
         cookie.setMaxAge(refreshTokenExpireSeconds);
 
         return cookie;
+    }
+
+    @PostMapping("/reissue")
+    @Operation(summary = "토큰 재발급", description = "만료된 액세스 토큰을 재발급합니다.")
+    public ApiResponse<String> reissue(HttpServletRequest httpServletRequest) {
+        String refreshToken = findFreshTokenOnCookie(httpServletRequest);
+        String accessToken = authService.reissueAccessToken(refreshToken);
+
+        return ApiResponse.ok("액세스 토큰이 재발급되었습니다.", accessToken);
+    }
+
+    private String findFreshTokenOnCookie(HttpServletRequest httpServletRequest) {
+        Cookie[] cookies = httpServletRequest.getCookies();
+        if (cookies == null || cookies.length == 0) {
+            throw new BadCredentialsException("리프레시 토큰이 존재하지 않습니다.");
+        }
+
+        return Arrays.stream(cookies).filter(cookie -> cookie.getName().equals("RefreshToken"))
+                .findFirst()
+                .orElseThrow(() -> new BadCredentialsException("리프레시 토큰이 존재하지 않습니다."))
+                .getValue();
     }
 }
