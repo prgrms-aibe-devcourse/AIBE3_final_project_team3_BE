@@ -4,14 +4,16 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import triplestar.mixchat.domain.report.report.constant.ReportReason;
+import jakarta.persistence.Table;
+import triplestar.mixchat.domain.report.report.constant.ReportCategory;
 import triplestar.mixchat.domain.report.report.constant.ReportStatus;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
+
 @Entity
+@Table(name = "reports")
 public class Report extends BaseEntity {
 
-    @Column(nullable = true)
     private String targetContent;
 
     @Column(nullable = false)
@@ -23,9 +25,8 @@ public class Report extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ReportReason reason;
+    private ReportCategory category;
 
-    @Column(nullable = true)
     private String reasonText;
 
 }
