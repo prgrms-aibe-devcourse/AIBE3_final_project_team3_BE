@@ -9,16 +9,16 @@ import triplestar.mixchat.domain.translation.translation.constant.TranslationTag
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
 @Entity
-@Table(name = "sentenceGames")
+@Table(name = "sentence_games")
 public class SentenceGame extends BaseEntity {
 
-    @Column(nullable = false)
+    @Column(name = "original_content", nullable = false)
     private String originalContent;      // 수정 전 문장
 
-    @Column(nullable = false)
-    private String correctedContent;     // 수정 후 문장
+    @Column(name = "corrected_content", nullable = false)
+        private String correctedContent;     // 수정 후 문장
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "code", nullable = false)
     private TranslationTagCode code;
 }
