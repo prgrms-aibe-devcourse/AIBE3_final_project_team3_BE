@@ -49,6 +49,25 @@ CREATE TABLE IF NOT EXISTS `reports` (
     PRIMARY KEY (`id`),
     KEY `idx_reports_status_created` (`status`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `sentenceGames` (
+    `id`             BIGINT       NOT NULL AUTO_INCREMENT,
+    `created_at`     DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `modified_at`    DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+
+    `original_content`  TEXT         NOT NULL,
+    `corrected_original_content` TEXT         NOT NULL,
+    `tag`            VARCHAR(50)  NOT NULL,
+
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `translation_tags` (
+    `id`       BIGINT       NOT NULL AUTO_INCREMENT,
+    `code`     VARCHAR(50)  NOT NULL UNIQUE,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
