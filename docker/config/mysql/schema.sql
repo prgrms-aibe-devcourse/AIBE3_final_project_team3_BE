@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `reports` (
     `target_content`  TEXT         NULL,
     `target_member_id` BIGINT      NOT NULL,
     `status`          VARCHAR(10)  NOT NULL,
-    `reason`          VARCHAR(20) NOT NULL,
+    `category`          VARCHAR(20) NOT NULL,
     `reason_text`     VARCHAR(255) NULL,
 
     PRIMARY KEY (`id`),
