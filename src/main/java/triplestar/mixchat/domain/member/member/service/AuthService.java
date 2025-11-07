@@ -1,5 +1,6 @@
 package triplestar.mixchat.domain.member.member.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.customException.UniqueConstraintException;
+import triplestar.mixchat.global.jwt.AccessTokenPayload;
 import triplestar.mixchat.global.jwt.AuthJwtProvider;
 
 @Service
@@ -20,6 +22,7 @@ public class AuthService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthJwtProvider authJwtProvider;
 
     public MemberSummaryResp join(MemberJoinReq req) {
         validateJoinReq(req);
@@ -57,12 +60,19 @@ public class AuthService {
 
     public SignInResp signIn(MemberSignInReq req) {
         Member member = memberRepository.findByEmail(req.email())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다: " + req.email()));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 이메일입니다: " + req.email()));
 
-        if (member.getPassword().matches(req.password(),  passwordEncoder)) {
+        if (!member.getPassword().matches(req.password(), passwordEncoder)) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        return null;
+        String accessToken = authJwtProvider.generateAccessToken(
+                new AccessTokenPayload(member.getId(), member.getRole()));
+
+        String refreshToken = authJwtProvider.generateRefreshToken(member.getId());
+
+        // TODO : refresh token redis 저장
+
+        return new SignInResp(accessToken, refreshToken);
     }
 }
