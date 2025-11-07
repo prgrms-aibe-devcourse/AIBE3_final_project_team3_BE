@@ -37,4 +37,8 @@ out/
 .vscode/
 
 # 환경변수 파일
-.env.prod.properties
+.env
+.env*.properties
+
+# jwt 비밀키 파일
+src/main/resources/application-secret.yml
