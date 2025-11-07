@@ -11,10 +11,8 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
+@Table(name = "chat_members")
 public class ChatMember extends BaseEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")

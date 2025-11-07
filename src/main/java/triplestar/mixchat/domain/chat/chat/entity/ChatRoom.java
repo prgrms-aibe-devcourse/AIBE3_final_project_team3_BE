@@ -11,11 +11,8 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
+@Table(name = "chat_rooms")
 public class ChatRoom extends BaseEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
     private String name; //채팅방 이름
 
