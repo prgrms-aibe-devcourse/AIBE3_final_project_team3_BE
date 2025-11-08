@@ -15,7 +15,7 @@ public class Password {
     private String password;
 
     // 8자 이상, 최소 1개의 영문(소문자/대문자)과 1개의 숫자를 포함을 확인하는 정규표현식
-    private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[a-zA-Z])(?=.*\\d)\\S{8,}$");
+    private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[a-zA-Z])(?=.*\\d)\\S{8,20}$");
 
     private Password(String password) {
         this.password = password;
