@@ -21,6 +21,7 @@ class PasswordTest {
     void t1() {
         String pw = "test1234";
         Password password = Password.encrypt(pw, passwordEncoder);
+//        assertThat(password.getPassword()).isEqualTo("");
         assertThat(password.matches("test1234", passwordEncoder)).isTrue();
     }
 
