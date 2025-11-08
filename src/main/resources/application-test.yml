@@ -31,8 +31,3 @@ cloud:
       static: ap-northeast-2
     s3:
       bucket: test-bucket
-
-# 테스트를 위한 짧은 토큰 유효기간 설정
-jwt:
-  access-token-expiration-seconds: 10
-  refresh-token-expiration-seconds: 30

@@ -21,6 +21,7 @@ import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
 @RequiredArgsConstructor
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
+    // 표준화 되어있기 때문에 @Value 불필요?
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
 
@@ -35,12 +36,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
         if (header != null && header.startsWith(BEARER_PREFIX)) {
             String token = header.substring(BEARER_PREFIX.length());
-            boolean isValid = authJwtProvider.validateAccessToken(token);
-            if (isValid) {
-                AuthenticateByToken(token);
-            } else {
-                throw new BadCredentialsException("유효하지 않은 액세스 토큰입니다.");
-            }
+            AuthenticateByToken(token);
         }
 
         filterChain.doFilter(request, response);
