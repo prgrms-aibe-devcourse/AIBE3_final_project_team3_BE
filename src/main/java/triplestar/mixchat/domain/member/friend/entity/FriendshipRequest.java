@@ -8,6 +8,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import triplestar.mixchat.domain.member.friend.constant.FriendshipRequestStatus;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
@@ -24,4 +25,8 @@ public class FriendshipRequest extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private FriendshipRequestStatus status;
+
+    public boolean isPending() {
+        return status == FriendshipRequestStatus.PENDING;
+    }
 }

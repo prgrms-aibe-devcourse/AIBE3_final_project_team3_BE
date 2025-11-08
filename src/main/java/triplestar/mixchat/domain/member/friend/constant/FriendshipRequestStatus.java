@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.member.friend.entity;
+package triplestar.mixchat.domain.member.friend.constant;
 
 public enum FriendshipRequestStatus {
     PENDING,
