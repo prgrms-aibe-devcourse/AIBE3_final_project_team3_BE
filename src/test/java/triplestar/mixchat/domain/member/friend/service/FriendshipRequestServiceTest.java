@@ -93,7 +93,7 @@ class FriendshipRequestServiceTest {
     @DisplayName("친구 요청 수락/거절 이미 친구관계")
     void send_fail_already_friends() {
         Long requestId = friendshipRequestService.sendRequest(member1.getId(), member2.getId());
-        friendshipRequestService.processRequest(member1.getId(), requestId, true);
+        friendshipRequestService.processRequest(member2.getId(), requestId, true);
 
         assertThatThrownBy(() -> friendshipRequestService.sendRequest(member1.getId(), member2.getId()))
                 .isInstanceOf(IllegalStateException.class)
