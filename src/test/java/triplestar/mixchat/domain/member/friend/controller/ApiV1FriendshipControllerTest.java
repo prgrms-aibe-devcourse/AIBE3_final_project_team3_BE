@@ -47,11 +47,11 @@ class ApiV1FriendshipControllerTest {
 
     @Test
     @DisplayName("친구요청 성공")
-    @WithUserDetails()
+//    @WithUserDetails()
     void friend_request_success() throws Exception {
         ResultActions resultActions = mvc
                 .perform(
-                        post("api/v1/member/friends")
+                        post("/api/v1/member/friends")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                         {
@@ -69,11 +69,11 @@ class ApiV1FriendshipControllerTest {
 
     @Test
     @DisplayName("친구요청 수락")
-    @WithUserDetails()
+//    @WithUserDetails()
     void friend_accept_success() throws Exception {
         ResultActions resultActions = mvc
                 .perform(
-                        patch("/{requestId}/accept", 1L)
+                        patch("/api/v1/member/friends/{requestId}/accept", 1L)
                 )
                 .andDo(print());
 
@@ -85,11 +85,11 @@ class ApiV1FriendshipControllerTest {
 
     @Test
     @DisplayName("친구요청 거절")
-    @WithUserDetails()
+//    @WithUserDetails()
     void friend_reject_success() throws Exception {
         ResultActions resultActions = mvc
                 .perform(
-                        patch("/{requestId}/reject", 1L)
+                        patch("/api/v1/member/friends/{requestId}/reject", 1L)
                 )
                 .andDo(print());
 
