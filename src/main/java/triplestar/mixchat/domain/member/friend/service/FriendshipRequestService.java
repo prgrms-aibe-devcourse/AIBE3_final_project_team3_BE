@@ -61,14 +61,9 @@ public class FriendshipRequestService {
 
         if (isAccepted) {
             friendshipService.createFriendship(request.getSender(), request.getReceiver());
-            request.accept();
-        } else {
-            request.reject();
         }
 
-        // NOTE : 친구 요청 softDelete? hardDelete? 현재는 softDelete로 구현
-        // 이 경우 어떻게 쌓인 데이터를 관리할지 고민 필요
-        friendshipRequestRepository.save(request);
+        friendshipRequestRepository.delete(request);
     }
 
     private FriendshipRequest validateFriendshipRequest(Long memberId, Long requestId) {
@@ -77,10 +72,6 @@ public class FriendshipRequestService {
 
         if (!request.getReceiver().getId().equals(memberId)) {
             throw new IllegalArgumentException("본인의 친구 요청만 처리할 수 있습니다");
-        }
-
-        if (!request.isPending()) {
-            throw new IllegalStateException("이미 처리된 친구 요청입니다");
         }
         return request;
     }
