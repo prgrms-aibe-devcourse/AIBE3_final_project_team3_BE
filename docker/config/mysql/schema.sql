@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS `members` (
 
     `country`          VARCHAR(50)  NOT NULL,
     `english_level`    VARCHAR(20)  NOT NULL,
+    `interest`         VARCHAR(100) NOT NULL,
     `description`      TEXT NULL,
 
     `role`             VARCHAR(20)  NOT NULL,
@@ -31,6 +32,40 @@ CREATE TABLE IF NOT EXISTS `members` (
     `is_deleted`       BOOLEAN      NOT NULL DEFAULT FALSE,
     `deleted_at`       DATETIME(6),
 
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS `reports` (
+    `id`              BIGINT       NOT NULL AUTO_INCREMENT,
+    `created_at`      DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `modified_at`     DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+
+    `target_content`  TEXT         NULL,
+    `target_member_id` BIGINT      NOT NULL,
+    `status`          VARCHAR(10)  NOT NULL,
+    `category`          VARCHAR(20) NOT NULL,
+    `reason_text`     VARCHAR(255) NULL,
+
+    PRIMARY KEY (`id`),
+    KEY `idx_reports_status_created` (`status`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `sentence_games` (
+    `id`             BIGINT       NOT NULL AUTO_INCREMENT,
+    `created_at`     DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `modified_at`    DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+
+    `original_content`  TEXT         NOT NULL,
+    `corrected_content` TEXT         NOT NULL,
+    `code`            VARCHAR(50)  NOT NULL,
+
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `translation_tags` (
+    `id`       BIGINT       NOT NULL AUTO_INCREMENT,
+    `code`     VARCHAR(50)  NOT NULL UNIQUE,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
