@@ -27,14 +27,18 @@ public class ApiV1AuthController {
 
     private final AuthService authService;
     private final int refreshTokenExpireSeconds;
+    private final String cookieDomain;
 
     public ApiV1AuthController(
             AuthService authService,
             @Value("${jwt.refresh-token-expiration-seconds}")
-            int refreshTokenExpireSeconds
+            int refreshTokenExpireSeconds,
+            @Value("${cookie.domain}")
+            String cookieDomain
     ) {
         this.authService = authService;
         this.refreshTokenExpireSeconds = refreshTokenExpireSeconds;
+        this.cookieDomain = cookieDomain;
     }
 
     @PostMapping("/join")
@@ -65,7 +69,7 @@ public class ApiV1AuthController {
 
         cookie.setPath("/");
         cookie.setHttpOnly(true);
-        cookie.setDomain("localhost");
+        cookie.setDomain(cookieDomain);
         cookie.setSecure(true);
         cookie.setAttribute("SameSite", "strict");
         cookie.setMaxAge(refreshTokenExpireSeconds);

@@ -18,3 +18,5 @@ jwt:
 redis:
   prefix:
     refresh-token: "refresh:"
+cookie:
+  domain: ${DOMAIN_NAME:mixchat.shop}
