@@ -2,6 +2,7 @@ package triplestar.mixchat.domain.member.friend.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.friend.entity.FriendshipRequest;
@@ -21,22 +22,23 @@ public class FriendshipRequestService {
     /**
      * 친구 요청 생성
      */
-    public void sendRequest(Long senderId, Long receiverId) {
+    public Long sendRequest(Long senderId, Long receiverId) {
         Member sender = findMemberById(senderId);
         Member receiver = findMemberById(receiverId);
         validateFriendshipRequest(sender, receiver);
 
         FriendshipRequest friendshipRequest = new FriendshipRequest(sender, receiver);
-        friendshipRequestRepository.save(friendshipRequest);
+        FriendshipRequest entity = friendshipRequestRepository.save(friendshipRequest);
+        return entity.getId();
     }
 
     private void validateFriendshipRequest(Member sender, Member receiver) {
         if (sender.equals(receiver)) {
-            throw new IllegalArgumentException("자기 자신에게 친구 요청을 보낼 수 없습니다");
+            throw new IllegalArgumentException("자기 자신에게 친구 요청을 보낼 수 없습니다.");
         }
         boolean friendshipExists = friendshipService.isFriends(sender.getId(), receiver.getId());
         if (friendshipExists) {
-            throw new IllegalStateException("이미 친구 관계입니다");
+            throw new IllegalStateException("이미 친구 관계입니다.");
         }
 
         boolean requestExists = friendshipRequestRepository
@@ -44,20 +46,20 @@ public class FriendshipRequestService {
         boolean reverseRequestExists = friendshipRequestRepository
                 .existsBySenderAndReceiver(receiver, sender);
         if (requestExists || reverseRequestExists) {
-            throw new IllegalStateException("이미 친구 요청이 존재합니다");
+            throw new IllegalStateException("이미 친구 요청이 존재합니다.");
         }
     }
 
     private Member findMemberById(Long id) {
         return memberRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다"));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다."));
     }
 
     /**
      * 친구 요청 처리
      */
-    public void processRequest(Long memberId, Long requestId, boolean isAccepted) {
-        FriendshipRequest request = validateFriendshipRequest(memberId, requestId);
+    public void processRequest(Long memberId, Long friendshipRequestId, boolean isAccepted) {
+        FriendshipRequest request = validateFriendshipRequest(memberId, friendshipRequestId);
 
         if (isAccepted) {
             friendshipService.createFriendship(request.getSender(), request.getReceiver());
@@ -68,10 +70,10 @@ public class FriendshipRequestService {
 
     private FriendshipRequest validateFriendshipRequest(Long memberId, Long requestId) {
         FriendshipRequest request = friendshipRequestRepository.findByIdWithSenderReceiver(requestId)
-                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 친구 요청입니다"));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 친구 요청입니다."));
 
         if (!request.getReceiver().getId().equals(memberId)) {
-            throw new IllegalArgumentException("본인의 친구 요청만 처리할 수 있습니다");
+            throw new AccessDeniedException("본인이 받은 친구 요청만 처리할 수 있습니다.");
         }
         return request;
     }
