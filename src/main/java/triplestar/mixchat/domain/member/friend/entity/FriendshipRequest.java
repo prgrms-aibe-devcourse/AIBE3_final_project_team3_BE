@@ -7,6 +7,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import triplestar.mixchat.domain.member.friend.constant.FriendshipRequestStatus;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -15,6 +16,7 @@ import triplestar.mixchat.global.jpa.entity.BaseEntity;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "friendship_requests")
+@Getter
 public class FriendshipRequest extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -26,7 +28,21 @@ public class FriendshipRequest extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private FriendshipRequestStatus status;
 
+    public FriendshipRequest(Member sender, Member receiver) {
+        this.sender = sender;
+        this.receiver = receiver;
+        this.status = FriendshipRequestStatus.PENDING;
+    }
+
     public boolean isPending() {
         return status == FriendshipRequestStatus.PENDING;
+    }
+
+    public void accept() {
+        this.status = FriendshipRequestStatus.ACCEPTED;
+    }
+
+    public void reject() {
+        this.status = FriendshipRequestStatus.REJECTED;
     }
 }
