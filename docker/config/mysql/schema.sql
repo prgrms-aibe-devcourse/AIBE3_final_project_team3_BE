@@ -36,6 +36,47 @@ CREATE TABLE IF NOT EXISTS `members` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `friendships` (
+    `id`                BIGINT       NOT NULL AUTO_INCREMENT,
+    `smaller_member_id` BIGINT       NOT NULL,
+    `larger_member_id`  BIGINT       NOT NULL,
+
+    `created_at`        DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+
+
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_smaller_larger_member` (`smaller_member_id`, `larger_member_id`),
+
+    -- 외래 키 제약 조건
+    CONSTRAINT `fk_friendships_smaller_member`
+    FOREIGN KEY (`smaller_member_id`)
+    REFERENCES `members` (`id`),
+
+    CONSTRAINT `fk_friendships_larger_member`
+    FOREIGN KEY (`larger_member_id`)
+    REFERENCES `members` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `friendship_requests` (
+    `id`               BIGINT       NOT NULL AUTO_INCREMENT,
+    `sender_id`        BIGINT       NOT NULL,
+    `receiver_id`      BIGINT       NOT NULL,
+
+    `created_at`       DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_sender_receiver_pair` (`sender_id`, `receiver_id`),
+
+    -- 외래 키 제약 조건
+    CONSTRAINT `fk_friendship_requests_sender`
+    FOREIGN KEY (`sender_id`)
+    REFERENCES `members` (`id`),
+
+    CONSTRAINT `fk_friendship_requests_receiver`
+    FOREIGN KEY (`receiver_id`)
+    REFERENCES `members` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 CREATE TABLE IF NOT EXISTS `reports` (
     `id`              BIGINT       NOT NULL AUTO_INCREMENT,
