@@ -13,9 +13,8 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./docker/config/mysql/init.sql:/docker-entrypoint-initdb.d/1-init.sql
-      - ./docker/config/mysql/schema.sql:/docker-entrypoint-initdb.d/2-schema.sql
-      - ./docker/config/mysql/baseData.sql:/docker-entrypoint-initdb.d/3-baseData.sql
+      - ./docker/config/mysql/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./docker/config/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
       - mysql_data:/var/lib/mysql
     command:
       - --character-set-server=utf8mb4

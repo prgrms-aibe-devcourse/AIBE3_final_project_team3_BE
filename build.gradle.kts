@@ -37,7 +37,10 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
 
     // MongoDB
-    implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
+    // implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
+    // 논블로킹 MongoDB 사용 시 아래 의존성 추가 위의 의존성 제거
+    // implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
+    // testImplementation("io.projectreactor:reactor-test")
 
     // MySQL
     runtimeOnly("com.mysql:mysql-connector-j")
@@ -57,13 +60,7 @@ dependencies {
     implementation("software.amazon.awssdk:s3")
 
     // Spring security
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    testImplementation("org.springframework.security:spring-security-test")
-
-    // JWT
-    implementation("io.jsonwebtoken:jjwt-api:0.13.0")
-    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
-    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
+    // implementation("org.springframework.boot:spring-boot-starter-security")
 
     // dotenv-java dependency
     implementation("io.github.cdimascio:dotenv-java:3.0.0")

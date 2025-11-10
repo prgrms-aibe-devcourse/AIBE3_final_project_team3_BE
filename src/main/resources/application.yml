@@ -1,8 +1,6 @@
 spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev} # 배포시 dev만 prod로 변경
-    include:
-      - secret
   config:
     import: optional:file:.env.${spring.profiles.active}.properties
 
@@ -11,7 +9,3 @@ spring:
     username: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
-
-jwt:
-  access-token-expiration-seconds: "#{60 * 15}"
-  refresh-token-expiration-seconds: "#{60 * 60 * 24 * 7}"
