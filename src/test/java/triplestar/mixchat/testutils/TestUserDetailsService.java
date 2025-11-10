@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.global.security.CustomUserDetails;
 
 @Profile("test")
 @Service
@@ -22,7 +23,6 @@ public class TestUserDetailsService implements UserDetailsService {
         Member member = memberRepository.findByNickname(username)
                 .orElseThrow(() -> new UsernameNotFoundException(username + " 테스트 회원이 존재하지 않습니다."));
 
-        return null;
-//        return new CustomUserDetails(member.getId(), member.getRole());
+        return new CustomUserDetails(member.getId(), member.getRole());
     }
 }
