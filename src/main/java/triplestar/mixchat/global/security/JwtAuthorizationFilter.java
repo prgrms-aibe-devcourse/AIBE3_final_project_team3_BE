@@ -41,6 +41,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             }
             filterChain.doFilter(request, response);
         } catch (BadCredentialsException e) {
+            // filter에 발생한 예외는 ControllerAdvice에 잡히지 않으므로 여기서 직접 응답 처리
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json;charset=UTF-8");
             response.getWriter().write("유효하지 않은 JWT Token");
