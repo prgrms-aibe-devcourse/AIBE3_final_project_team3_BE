@@ -17,6 +17,11 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
 
+# 테스트를 위한 짧은 토큰 유효기간 설정
+jwt:
+  access-token-expiration-seconds: 10
+  refresh-token-expiration-seconds: 30
+
 minio:
   endpoint: http://localhost:9000
   access-key: minio-key

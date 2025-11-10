@@ -1,115 +1,55 @@
-name: CI - Test Only
+name: CI
 
 on:
   pull_request:
     branches: [ dev ]
+  push:
+    branches: [ dev ]
 
 jobs:
-  test:
-    name: Run Gradle tests (Linux only)
-    runs-on: ubuntu-latest
+  build:
+    name: Build and test
+    runs-on: self-hosted
+    # application-test.yml에서 사용하는 환경변수를 주입합니다.
+    # 민감한 값은 GitHub Secrets에 등록한 뒤 secrets로 참조하시길 권장합니다.
     env:
-      SPRING_PROFILES_ACTIVE: test
-      # Test profile specific vars
       MYSQL_TEST_DATABASE: ${{ secrets.MYSQL_TEST_DATABASE }}
       MYSQL_TEST_USER: ${{ secrets.MYSQL_TEST_USER }}
       MYSQL_TEST_PASSWORD: ${{ secrets.MYSQL_TEST_PASSWORD }}
-      # Compose required vars (may be empty -> fallback used)
-      MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-      MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
       MYSQL_USER: ${{ secrets.MYSQL_USER }}
       MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
       MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
       MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}
-      MONGO_DB: ${{ secrets.MONGO_DB }}
       MONGO_TEST_DB: ${{ secrets.MONGO_TEST_DB }}
-      MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
-      MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
-      TZ: Asia/Seoul
+      REDIS_HOST: ${{ secrets.REDIS_HOST }}
+      REDIS_PORT: ${{ secrets.REDIS_PORT }}
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      SPRING_PROFILES_ACTIVE: test
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Detect Docker availability
-        id: detect-docker
-        shell: bash
-        run: |
-          if command -v docker >/dev/null 2>&1; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Prepare compose env (.env)
-        if: steps.detect-docker.outputs.available == 'true'
-        shell: bash
-        run: |
-          set -e
-          {
-            echo "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpw}";
-            echo "MYSQL_DATABASE=${MYSQL_DATABASE:-mysql_test}";
-            echo "MYSQL_USER=${MYSQL_USER:-testuser}";
-            echo "MYSQL_PASSWORD=${MYSQL_PASSWORD:-testpass}";
-            echo "REDIS_PASSWORD=${REDIS_PASSWORD:-redispass}";
-            echo "MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME:-mongoadmin}";
-            echo "MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD:-mongopass}";
-            echo "MONGO_DB=${MONGO_DB:-mongo_test}";
-            echo "MINIO_ROOT_USER=${MINIO_ROOT_USER:-minio-key}";
-            echo "MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minio-secret}";
-            echo "TZ=${TZ:-Asia/Seoul}";
-          } > .env
-          echo "Generated .env for docker-compose:"; cat .env
-
-      - name: Docker Compose up (only required services)
-        if: steps.detect-docker.outputs.available == 'true'
-        shell: bash
-        run: |
-          set -e
-          # start only essential services for tests
-          docker compose -f docker-compose.yml up -d mysql redis redis-init mongo || docker-compose -f docker-compose.yml up -d mysql redis redis-init mongo
-          docker compose -f docker-compose.yml ps || docker-compose -f docker-compose.yml ps
-
-      - name: Wait for services (ports)
-        if: steps.detect-docker.outputs.available == 'true'
-        shell: bash
-        run: |
-          set -e
-          for port in 3306 6379 27017; do
-            echo "Waiting for port $port..."
-            for i in {1..60}; do
-              if (echo > /dev/tcp/127.0.0.1/$port) >/dev/null 2>&1; then
-                echo "Port $port is up"; break
-              fi
-              sleep 2
-            done
-          done
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
+          cache: 'gradle'
 
-      - name: Make gradlew executable
+      - name: Cache Gradle wrapper and caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Run tests with services
-        if: steps.detect-docker.outputs.available == 'true'
-        uses: gradle/gradle-build-action@v3
-        with:
-          arguments: clean test --no-daemon
+      - name: Build and run tests
+        run: ./gradlew clean build --no-daemon --parallel
 
-      - name: Run tests without external services
-        if: steps.detect-docker.outputs.available != 'true'
-        env:
-          SPRING_AUTOCONFIGURE_EXCLUDE: >-
-            org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,
-            org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration,
-            org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration,
-            org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-          SPRING_MAIN_LAZY_INITIALIZATION: 'true'
-        uses: gradle/gradle-build-action@v3
-        with:
-          arguments: clean test --no-daemon

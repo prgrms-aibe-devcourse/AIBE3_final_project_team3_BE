@@ -13,9 +13,8 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./docker/config/mysql/init.sql:/docker-entrypoint-initdb.d/1-init.sql
-      - ./docker/config/mysql/schema.sql:/docker-entrypoint-initdb.d/2-schema.sql
-      - ./docker/config/mysql/initData.sql:/docker-entrypoint-initdb.d/3-initData.sql
+      - ./docker/config/mysql/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./docker/config/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
       - mysql_data:/var/lib/mysql
     command:
       - --character-set-server=utf8mb4
@@ -31,10 +30,6 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      REDIS_PORT: ${REDIS_PORT:-6379}
-      REDIS_HOST: redis
     command: sh -c "redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}"
     networks:
       - mixchat-network
@@ -45,7 +40,6 @@ services:
       - redis
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-      REDIS_PORT: ${REDIS_PORT:-6379}
     entrypoint: >
       sh -c "sleep 5 && cat /init.redis | redis-cli -h redis -a ${REDIS_PASSWORD} --no-auth-warning"
     volumes:
