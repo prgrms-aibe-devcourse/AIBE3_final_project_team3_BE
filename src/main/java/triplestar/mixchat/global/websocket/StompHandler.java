@@ -1,8 +1,6 @@
 package triplestar.mixchat.global.websocket;
 
 
-import triplestar.mixchat.global.security.CustomUserDetails;
-import triplestar.mixchat.global.security.jwt.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -15,21 +13,23 @@ import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
-import triplestar.mixchat.domain.chat.chat.entity.ChatRoom;
-import triplestar.mixchat.domain.chat.chat.repository.ChatRoomRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.global.security.CustomUserDetails;
+import triplestar.mixchat.global.security.jwt.AccessTokenPayload;
+import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
 
 import java.security.Principal;
 
 @Component
 @RequiredArgsConstructor
+// stompHandler는 웹소켓 메시지를 가로채는 인터셉터
+// order + 99를 통해 기본 인터셉터들보다는 늦게, 다른 커스텀보다는 빠르게 설정
 @Order(Ordered.HIGHEST_PRECEDENCE + 99)
 public class StompHandler implements ChannelInterceptor {
 
-    private final JwtUtil jwtUtil;
+    private final AuthJwtProvider authJwtProvider;
     private final MemberRepository memberRepository;
-    private final ChatRoomRepository chatRoomRepository;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -46,29 +46,31 @@ public class StompHandler implements ChannelInterceptor {
                 jwtToken = jwtToken.substring(7);
             }
 
-            if (jwtToken != null && !jwtUtil.isExpired(jwtToken)) {
-                String email = jwtUtil.getEmail(jwtToken);
-                Member member = memberRepository.findByEmail(email)
-                        .orElseThrow(() -> new RuntimeException("인증된 사용자를 DB에서 찾을 수 없습니다."));
+            if (jwtToken != null) {
+                try {
+                    AccessTokenPayload payload = authJwtProvider.parseAccessToken(jwtToken);
+                    Long memberId = payload.memberId();
+                    Member member = memberRepository.findById(memberId)
+                            .orElseThrow(() -> new RuntimeException("인증된 사용자를 DB에서 찾을 수 없습니다."));
 
-                CustomUserDetails userDetails = new CustomUserDetails(member);
-                Authentication authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities()
-                );
-                accessor.setUser(authentication);
+                    CustomUserDetails userDetails = new CustomUserDetails(member.getId(), member.getRole());
+                    Authentication authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities()
+                    );
+                    accessor.setUser(authentication);
+                } catch (Exception e) {
+                    throw new SecurityException("유효하지 않은 토큰입니다.", e);
+                }
             }
-        } 
-        else if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
-            String destination = accessor.getDestination();
+        } else if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
             Principal principal = accessor.getUser();
-
+            if (principal != null) {
                 Authentication user = (Authentication) principal;
                 CustomUserDetails userDetails = (CustomUserDetails) user.getPrincipal();
-                
+
                 Long id = userDetails.getId();
-                Member member = memberRepository.findById(id)
+                memberRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("사용자 정보를 찾을 수 없습니다: " + id));
-                Long memberId = member.getId();
             }
         }
 

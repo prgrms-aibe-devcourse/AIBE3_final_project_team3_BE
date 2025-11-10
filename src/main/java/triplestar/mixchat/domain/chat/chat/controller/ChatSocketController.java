@@ -34,8 +34,8 @@ public class ChatSocketController {
             throw new RuntimeException("사용자 인증 정보 없음");
         }
         CustomUserDetails customUserDetails = (CustomUserDetails) ((Authentication) principal).getPrincipal();
-        return memberRepository.findByEmail(customUserDetails.getEmail())
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + customUserDetails.getEmail()));
+        return memberRepository.findById(customUserDetails.getId())
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + customUserDetails.getId()));
     }
 
     @MessageMapping("/chats/sendMessage")
