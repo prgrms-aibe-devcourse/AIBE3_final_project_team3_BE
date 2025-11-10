@@ -12,8 +12,6 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommentLikeId implements Serializable {
-    private Long memberId;
-    private Long commentId;
+    private Long member;
+    private Long comment;
 }
-
-
