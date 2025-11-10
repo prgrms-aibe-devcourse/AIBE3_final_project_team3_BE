@@ -62,25 +62,13 @@ public class StompHandler implements ChannelInterceptor {
             String destination = accessor.getDestination();
             Principal principal = accessor.getUser();
 
-            if (destination != null && destination.startsWith("/topic/canvas/")) {
-                if (principal == null) {
-                    throw new SecurityException("캔버스 구독은 인증된 사용자만 가능합니다.");
-                }
-
                 Authentication user = (Authentication) principal;
                 CustomUserDetails userDetails = (CustomUserDetails) user.getPrincipal();
-
-                String canvasIdStr = destination.substring("/topic/canvas/".length());
-                Long canvasId = Long.parseLong(canvasIdStr);
                 
-                String email = userDetails.getEmail();
-                Member member = memberRepository.findByEmail(email)
-                        .orElseThrow(() -> new RuntimeException("사용자 정보를 찾을 수 없습니다: " + email));
+                Long id = userDetails.getId();
+                Member member = memberRepository.findById(id)
+                        .orElseThrow(() -> new RuntimeException("사용자 정보를 찾을 수 없습니다: " + id));
                 Long memberId = member.getId();
-
-                ChatRoom chatRoom = chatRoomRepository.findById(canvasId)
-                        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 캔버스(채팅방) ID 입니다: " + canvasId));
-
             }
         }
 

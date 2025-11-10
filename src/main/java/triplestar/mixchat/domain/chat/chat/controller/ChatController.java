@@ -35,8 +35,7 @@ public class ChatController {
         if (currentUser == null) {
             throw new RuntimeException("인증된 사용자 정보가 없습니다.");
         }
-        // todo : id로 검증
-        return memberRepository.findByEmail(currentUser.getEmail())
+        return memberRepository.findById(currentUser.getId())
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
     }
 
