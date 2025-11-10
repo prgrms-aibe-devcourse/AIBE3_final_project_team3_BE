@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.dto.MemberJoinReq;
 import triplestar.mixchat.domain.member.member.dto.SigninReq;
@@ -19,6 +20,7 @@ import triplestar.mixchat.global.security.redis.redisTokenRepository;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AuthService {
 
     private final MemberRepository memberRepository;
