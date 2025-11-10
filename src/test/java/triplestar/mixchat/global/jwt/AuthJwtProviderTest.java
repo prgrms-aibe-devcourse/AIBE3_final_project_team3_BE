@@ -16,7 +16,7 @@ import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
 class AuthJwtProviderTest {
 
     AuthJwtProvider authJwtProvider = new AuthJwtProvider(
-            10,
+            5,
             60,
             "abcdefghijklmnopqrstuvwxyz123456",
             "abcdefghijklmnopqrstuvwxyz654321"
@@ -46,7 +46,7 @@ class AuthJwtProviderTest {
     void validate_fail() throws InterruptedException {
         String accessToken = authJwtProvider.generateAccessToken(new AccessTokenPayload(1L, Role.ROLE_MEMBER));
 
-        Thread.sleep(1000 * 12);
+        Thread.sleep(1000 * 7);
 
         Assertions.assertThatThrownBy(() -> authJwtProvider.parseAccessToken(accessToken))
                 .isInstanceOf(BadCredentialsException.class);

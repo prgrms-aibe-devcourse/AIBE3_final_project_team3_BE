@@ -8,6 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.dto.MemberJoinReq;
@@ -19,6 +20,7 @@ import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.customException.UniqueConstraintException;
 import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
 
+@ActiveProfiles("test")
 @DisplayName("회원 - 인증 서비스")
 @Transactional
 @SpringBootTest
