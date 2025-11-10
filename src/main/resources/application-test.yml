@@ -31,3 +31,6 @@ cloud:
       static: ap-northeast-2
     s3:
       bucket: test-bucket
+logging:
+  level:
+    root: debug

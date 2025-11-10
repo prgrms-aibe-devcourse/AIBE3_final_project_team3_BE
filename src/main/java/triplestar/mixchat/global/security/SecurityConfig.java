@@ -1,6 +1,7 @@
 package triplestar.mixchat.global.security;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -11,13 +12,17 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
+@RequiredArgsConstructor
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private final JwtAuthorizationFilter JwtAuthorizationFilter;
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -29,14 +34,14 @@ public class SecurityConfig {
                                 // 인증 불필요
                                 .requestMatchers(
                                         "/", "/swagger-ui/**","/v3/api-docs/**",
-                                        "/api/*/auth/join", "/api/*/auth/login",
-                                        // 임시 허용
-                                        "/api/*/**").permitAll()
+                                        "/api/*/auth/join", "/api/*/auth/login").permitAll()
                                 // ADMIN 권한 필요
                                 .requestMatchers("/api/*/admin").hasRole("ADMIN")
                                 // 나머지 모든 요청은 인증 필요
                                 .requestMatchers("/**").authenticated()
                 )
+                // JWT 인증 필터 적용
+                .addFilterBefore(JwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class)
 
                 // REST API는 사용하지 않는 Security 기본 기능 비활성화
                 .csrf(AbstractHttpConfigurer::disable) // csrf 보호기능 비활성화

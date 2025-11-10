@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record MemberSignInReq(
+public record SigninReq(
         @Schema(description = "사용자 이메일 주소", example = "user@example.com")
         @NotNull
         @Email

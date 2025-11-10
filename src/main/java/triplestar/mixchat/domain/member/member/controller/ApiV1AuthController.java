@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import triplestar.mixchat.domain.member.member.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.member.dto.MemberSignInReq;
+import triplestar.mixchat.domain.member.member.dto.SigninReq;
 import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.dto.SignInResp;
 import triplestar.mixchat.domain.member.member.service.AuthService;
@@ -53,7 +53,7 @@ public class ApiV1AuthController {
     @PostMapping("/sign-in")
     @Operation(summary = "로그인", description = "사용자 인증을 수행하고 토큰을 발급합니다.")
     public ApiResponse<String> signIn(
-            @RequestBody @Valid MemberSignInReq signInReq,
+            @RequestBody @Valid SigninReq signInReq,
             HttpServletResponse httpServletResponse
     ) {
         SignInResp resp = authService.signIn(signInReq);

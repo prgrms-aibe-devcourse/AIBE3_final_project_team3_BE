@@ -6,7 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.member.dto.MemberSignInReq;
+import triplestar.mixchat.domain.member.member.dto.SigninReq;
 import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.dto.SignInResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -66,7 +66,7 @@ public class AuthService {
     /**
      * 로그인
      */
-    public SignInResp signIn(MemberSignInReq req) {
+    public SignInResp signIn(SigninReq req) {
         Member member = memberRepository.findByEmail(req.email())
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 이메일입니다: " + req.email()));
 

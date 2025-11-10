@@ -11,7 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.member.dto.MemberSignInReq;
+import triplestar.mixchat.domain.member.member.dto.SigninReq;
 import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.dto.SignInResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -106,36 +106,36 @@ class AuthServiceTest {
     void signIn_success() {
         joinDummy("test@test1.com");
 
-        SignInResp signInResp = authService.signIn(new MemberSignInReq("test@test1.com", "user1234"));
+        SignInResp signInResp = authService.signIn(new SigninReq("test@test1.com", "user1234"));
         authJwtProvider.parseAccessToken(signInResp.accessToken());
         authJwtProvider.parseRefreshToken(signInResp.refreshToken());
     }
 
     @Test
-    @DisplayName("로그인 - 등록되지 않은 이메일")
+    @DisplayName("로그인 - 실패 등록되지 않은 이메일")
     void signIn_email_not_found() {
         joinDummy("test@test1.com");
 
         Assertions.assertThatThrownBy(() -> {
-            authService.signIn(new MemberSignInReq("undefined@test1.com", "user1234"));
+            authService.signIn(new SigninReq("undefined@test1.com", "user1234"));
         }).isInstanceOf(EntityNotFoundException.class);
     }
 
     @Test
-    @DisplayName("로그인 - 비밀번호 실패")
+    @DisplayName("로그인 - 실패 비밀번호")
     void signIn_password_fail() {
         joinDummy("test@test1.com");
 
         Assertions.assertThatThrownBy(() -> {
-            authService.signIn(new MemberSignInReq("test@test1.com", "user12345"));
+            authService.signIn(new SigninReq("test@test1.com", "user12345"));
         }).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    @DisplayName("토큰 재발급 - 로그인 결과로 나온 refresh token 으로 액세스 토큰 재발급 성공")
+    @DisplayName("토큰 재발급 - 성공 로그인 결과로 나온 refresh token 으로 액세스 토큰 재발급")
     void reissue_success() {
         joinDummy("test@test1.com");
-        SignInResp signInResp = authService.signIn(new MemberSignInReq("test@test1.com", "user1234"));
+        SignInResp signInResp = authService.signIn(new SigninReq("test@test1.com", "user1234"));
         String refreshToken = signInResp.refreshToken();
 
         authService.reissueAccessToken(refreshToken);

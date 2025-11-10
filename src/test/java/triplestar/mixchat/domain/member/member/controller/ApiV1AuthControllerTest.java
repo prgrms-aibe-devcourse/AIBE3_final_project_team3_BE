@@ -1,5 +1,6 @@
 package triplestar.mixchat.domain.member.member.controller;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.handler;
@@ -12,13 +13,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.dto.MemberJoinReq;
+import triplestar.mixchat.domain.member.member.dto.SignInResp;
+import triplestar.mixchat.domain.member.member.dto.SigninReq;
 import triplestar.mixchat.domain.member.member.service.AuthService;
+import triplestar.mixchat.testutils.TestHelperController;
 
+@ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
@@ -54,7 +60,6 @@ class ApiV1AuthControllerTest {
                 .andDo(print());
 
         resultActions
-                //실행처 확인
                 .andExpect(handler().handlerType(ApiV1AuthController.class))
                 .andExpect(handler().methodName("join"))
                 .andExpect(status().isOk())
@@ -62,7 +67,7 @@ class ApiV1AuthControllerTest {
     }
 
     @Test
-    @DisplayName("회원가입 패스워드 확인 불일치")
+    @DisplayName("회원가입 실패 - 패스워드 확인 불일치")
     void join_passwordConfirm_fail() throws Exception {
         ResultActions resultActions = mvc
                 .perform(
@@ -85,11 +90,8 @@ class ApiV1AuthControllerTest {
                 .andDo(print());
 
         resultActions
-                //실행처 확인
                 .andExpect(handler().handlerType(ApiV1AuthController.class))
                 .andExpect(handler().methodName("join"))
-
-                //상태 코드 확인
                 .andExpect(status().isBadRequest());
     }
 
@@ -178,10 +180,51 @@ class ApiV1AuthControllerTest {
                 .andDo(print());
 
         resultActions
-                //실행처 확인
                 .andExpect(handler().handlerType(ApiV1AuthController.class))
                 .andExpect(handler().methodName("signIn"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.msg").value("잘못된 요청입니다."));
+    }
+
+    @Test
+    @DisplayName("발급받은 accessToken을 이용해 인증 필터 통과 - 성공")
+    void accessToken_filter_success() throws Exception {
+        joinTestData();
+
+        SignInResp signInResp = authService.signIn(new SigninReq("test@example.com", "test1234"));
+        String accessToken = signInResp.accessToken();
+
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/test/auth")
+                                .header("Authorization", "Bearer " + accessToken)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(TestHelperController.class))
+                .andExpect(handler().methodName("test"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("위조된 액세스토큰 - 실패")
+    void accessToken_filter_counterfeit_fail() throws Exception {
+        joinTestData();
+
+        SignInResp signInResp = authService.signIn(new SigninReq("test@example.com", "test1234"));
+        String accessToken = signInResp.accessToken();
+
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/test/auth")
+                                .header("Authorization", "Bearer " + "abc" + accessToken)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(TestHelperController.class))
+                .andExpect(handler().methodName("test"))
+                .andExpect(status().isOk());
     }
 }
