@@ -3,6 +3,7 @@ package triplestar.mixchat.global.exceptionHandler;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -89,6 +91,19 @@ public class GlobalExceptionHandler {
                         e.getMessage()
                 ),
                 HttpStatus.valueOf(e.getStatusCode())
+        );
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiResponse<Void>> handle(BadCredentialsException e) {
+        commonExceptionLog(e);
+
+        return new ResponseEntity<>(
+                new ApiResponse<>(
+                        UNAUTHORIZED.value(),
+                        "사용자 인증에 실패했습니다."
+                ),
+                UNAUTHORIZED
         );
     }
 

@@ -6,6 +6,9 @@ import triplestar.mixchat.domain.member.member.entity.Member;
 @Schema(description = "회원가입 완료 또는 멤버 조회 시 반환되는 요약된 사용자 정보")
 public record MemberSummaryResp(
 
+        @Schema(description = "사용자 고유 ID", example = "1")
+        Long id,
+
         @Schema(description = "사용자의 실명", example = "홍길동")
         String name,
 
@@ -26,6 +29,7 @@ public record MemberSummaryResp(
 ) {
     public MemberSummaryResp(Member savedMember) {
         this(
+                savedMember.getId(),
                 savedMember.getName(),
                 savedMember.getCountry().getCode(),
                 savedMember.getNickname(),

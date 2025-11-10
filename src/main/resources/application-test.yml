@@ -1,4 +1,8 @@
 spring:
+  config:
+    import:
+      - optional:file:.env.test.properties
+      - optional:file:.env.properties
   datasource:
     url: jdbc:mysql://localhost:3306/${MYSQL_TEST_DATABASE:mysql_test}
     username: ${MYSQL_TEST_USER:${MYSQL_USER}}
@@ -16,12 +20,6 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
-
-# 테스트를 위한 짧은 토큰 유효기간 설정
-jwt:
-  access-token-expiration-seconds: 10
-  refresh-token-expiration-seconds: 30
-
 minio:
   endpoint: http://localhost:9000
   access-key: minio-key

@@ -1,4 +1,4 @@
-package triplestar.mixchat.global.jwt;
+package triplestar.mixchat.global.security.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -10,6 +10,7 @@ import java.util.Date;
 import javax.crypto.SecretKey;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
 import triplestar.mixchat.domain.member.member.constant.Role;
 
@@ -67,7 +68,7 @@ public class AuthJwtProvider {
     }
 
     /**
-     * 토큰 파싱
+     * 토큰 파싱(검증 포함)
      * */
     private Claims parseToken(String token, SecretKey key) {
         return Jwts.parser()
@@ -85,7 +86,7 @@ public class AuthJwtProvider {
             return new AccessTokenPayload(memberId, Role.valueOf(role));
         } catch (JwtException | NumberFormatException e) {
             log.warn(e.getMessage());
-            throw new IllegalArgumentException("유효하지 않은 JWT Token", e);
+            throw new BadCredentialsException("유효하지 않은 JWT Token", e);
         }
     }
 
@@ -95,31 +96,7 @@ public class AuthJwtProvider {
             return Long.parseLong(claims.getSubject());
         } catch (JwtException | NumberFormatException e) {
             log.warn(e.getMessage());
-            throw new IllegalArgumentException("유효하지 않은 JWT Token", e);
+            throw new BadCredentialsException("유효하지 않은 JWT Token", e);
         }
-    }
-
-    /**
-     * 토큰 유효성 검사
-     */
-    private boolean validateToken(String token, SecretKey key) {
-        try {
-            Jwts.parser()
-                    .verifyWith(key)
-                    .build()
-                    .parseSignedClaims(token);
-            return true;
-        } catch (JwtException e) {
-            log.info(e.getMessage());
-            return false;
-        }
-    }
-
-    public boolean validateAccessToken(String token) {
-        return validateToken(token, accessKey);
-    }
-
-    public boolean validateRefreshToken(String token) {
-        return validateToken(token, refreshKey);
     }
 }
