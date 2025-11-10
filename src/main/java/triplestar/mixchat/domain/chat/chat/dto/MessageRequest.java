@@ -1,7 +1,7 @@
-package triplestar.mixchat.domain.chat.dto;
+package triplestar.mixchat.domain.chat.chat.dto;
 
 import lombok.Data;
-import triplestar.mixchat.domain.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 
 @Data
 public class MessageRequest {

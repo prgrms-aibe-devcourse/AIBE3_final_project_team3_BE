@@ -1,15 +1,15 @@
-package triplestar.mixchat.domain.chat.dto;
+package triplestar.mixchat.domain.chat.chat.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import triplestar.mixchat.domain.chat.entity.ChatMessage;
+import lombok.Getter;
+import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 
 import java.time.LocalDateTime;
 
-@Data
-@AllArgsConstructor
+@Getter
 @Builder
+@AllArgsConstructor
 public class MessageResponse {
     private String id;
     private Long senderId;

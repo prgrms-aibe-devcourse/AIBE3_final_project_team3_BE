@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.chat.entity;
+package triplestar.mixchat.domain.chat.chat.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -20,8 +20,9 @@ public class ChatRoom extends BaseEntity {
     private List<ChatMember> members = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
-    private RoomType roomType; // 1:1, GROUP
+    private RoomType roomType;
 
+    // 1:1, GROUP
     public enum RoomType {
         DIRECT, GROUP
     }

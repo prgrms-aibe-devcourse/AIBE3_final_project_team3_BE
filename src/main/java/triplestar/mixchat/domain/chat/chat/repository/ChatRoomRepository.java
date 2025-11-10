@@ -1,11 +1,11 @@
-package triplestar.mixchat.domain.chat.repository;
+package triplestar.mixchat.domain.chat.chat.repository;
 
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import triplestar.mixchat.domain.chat.entity.ChatRoom;
+import triplestar.mixchat.domain.chat.chat.entity.ChatRoom;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
 import java.util.List;

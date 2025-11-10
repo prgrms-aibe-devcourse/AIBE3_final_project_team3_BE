@@ -1,23 +1,24 @@
-package triplestar.mixchat.domain.chat.dto;
+package triplestar.mixchat.domain.chat.chat.dto;
 
-import triplestar.mixchat.domain.chat.entity.ChatRoom;
+
+import triplestar.mixchat.domain.chat.chat.entity.ChatRoom;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-public record ChatRoomResponseDto(
+public record ChatRoomResp(
         Long id,
         String name,
         ChatRoom.RoomType roomType,
         List<MemberDto> members
 ) {
-    public static ChatRoomResponseDto from(ChatRoom entity) {
+    public static ChatRoomResp from(ChatRoom entity) {
         List<MemberDto> memberDtos = entity.getMembers().stream()
                 .map(chatMember -> MemberDto.from(chatMember.getMember()))
                 .collect(Collectors.toList());
 
-        return new ChatRoomResponseDto(
+        return new ChatRoomResp(
                 entity.getId(),
                 entity.getName(),
                 entity.getRoomType(),

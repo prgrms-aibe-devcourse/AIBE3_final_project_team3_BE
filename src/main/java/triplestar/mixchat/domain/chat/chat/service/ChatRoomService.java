@@ -1,14 +1,14 @@
-package triplestar.mixchat.domain.chat.service;
+package triplestar.mixchat.domain.chat.chat.service;
 
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import triplestar.mixchat.domain.chat.dto.ChatRoomResponseDto;
-import triplestar.mixchat.domain.chat.entity.ChatMember;
-import triplestar.mixchat.domain.chat.entity.ChatRoom;
-import triplestar.mixchat.domain.chat.repository.ChatRoomRepository;
+import triplestar.mixchat.domain.chat.chat.dto.ChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
+import triplestar.mixchat.domain.chat.chat.entity.ChatRoom;
+import triplestar.mixchat.domain.chat.chat.repository.ChatRoomRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 
@@ -49,7 +49,7 @@ public class ChatRoomService {
 
                     ChatRoom savedRoom = chatRoomRepository.save(newRoom);
 
-                    ChatRoomResponseDto roomDto = ChatRoomResponseDto.from(savedRoom);
+                    ChatRoomResp roomDto = ChatRoomResp.from(savedRoom);
                     messagingTemplate.convertAndSend("/topic/user/" + member1.getId() + "/rooms", roomDto);
                     messagingTemplate.convertAndSend("/topic/user/" + member2.getId() + "/rooms", roomDto);
 
@@ -82,7 +82,7 @@ public class ChatRoomService {
 
         ChatRoom savedRoom = chatRoomRepository.save(newRoom);
 
-        ChatRoomResponseDto roomDto = ChatRoomResponseDto.from(savedRoom);
+        ChatRoomResp roomDto = ChatRoomResp.from(savedRoom);
         members.forEach(member -> {
             messagingTemplate.convertAndSend("/topic/user/" + member.getId() + "/rooms", roomDto);
         });
@@ -96,6 +96,16 @@ public class ChatRoomService {
 
     public ChatRoom getRoom(Long id) {
         return chatRoomRepository.findById(id).orElseThrow(() -> new RuntimeException("채팅방 없음"));
+    }
+
+    @Transactional
+    public ChatRoom createPublicGroupRoom(String roomName, Member creator) {
+        List<Member> allMembers = memberRepository.findAll();
+        List<Long> allMemberIds = allMembers.stream()
+                .map(Member::getId)
+                .collect(Collectors.toList());
+
+        return createGroupRoom(roomName, allMemberIds, creator);
     }
 
     @Transactional

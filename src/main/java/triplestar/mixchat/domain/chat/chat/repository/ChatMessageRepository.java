@@ -1,7 +1,7 @@
-package triplestar.mixchat.domain.chat.repository;
+package triplestar.mixchat.domain.chat.chat.repository;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
-import triplestar.mixchat.domain.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 
 import java.util.List;
 

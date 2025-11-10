@@ -15,8 +15,8 @@ import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
-import triplestar.mixchat.domain.chat.entity.ChatRoom;
-import triplestar.mixchat.domain.chat.repository.ChatRoomRepository;
+import triplestar.mixchat.domain.chat.chat.entity.ChatRoom;
+import triplestar.mixchat.domain.chat.chat.repository.ChatRoomRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 

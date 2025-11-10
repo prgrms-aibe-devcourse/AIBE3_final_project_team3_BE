@@ -1,23 +1,22 @@
-package triplestar.mixchat.domain.chat.controller;
+package triplestar.mixchat.domain.chat.chat.controller;
 
-import triplestar.mixchat.global.s3.S3Uploader;
-import triplestar.mixchat.global.security.CustomUserDetails;
-import lombok.Getter;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import triplestar.mixchat.domain.chat.dto.ChatRoomResponseDto;
-import triplestar.mixchat.domain.chat.dto.MessageResponse;
-import triplestar.mixchat.domain.chat.entity.ChatMessage;
-import triplestar.mixchat.domain.chat.entity.ChatRoom;
-import triplestar.mixchat.domain.chat.service.ChatMessageService;
-import triplestar.mixchat.domain.chat.service.ChatRoomService;
+import triplestar.mixchat.domain.chat.chat.dto.*;
+import triplestar.mixchat.domain.chat.dto.*;
+import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.entity.ChatRoom;
+import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
+import triplestar.mixchat.domain.chat.chat.service.ChatRoomService;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.global.s3.S3Uploader;
+import triplestar.mixchat.global.security.CustomUserDetails;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,14 +32,6 @@ public class ChatController {
     private final S3Uploader s3Uploader;
     private final SimpMessagingTemplate messagingTemplate;
 
-    @Getter
-    @Setter
-    public static class CreateRoomRequest {
-        private Long partnerId; // For direct messages
-        private List<Long> memberIds; // For group chats
-        private String roomName; // For group chats
-    }
-
     private Member getCurrentMember(CustomUserDetails currentUser) {
         if (currentUser == null) {
             throw new RuntimeException("인증된 사용자 정보가 없습니다.");
@@ -49,26 +40,35 @@ public class ChatController {
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
     }
 
-    @PostMapping("/rooms")
-    public ChatRoomResponseDto createRoom(@AuthenticationPrincipal CustomUserDetails currentUser,
-                                          @RequestBody CreateRoomRequest request) {
+    @PostMapping("/rooms/direct")
+    public ChatRoomResp createDirectRoom(@AuthenticationPrincipal CustomUserDetails currentUser,
+                                         @Valid @RequestBody CreateDirectChatReq request) {
         Member member = getCurrentMember(currentUser);
-        if (request.getPartnerId() != null) {
-            ChatRoom room = chatRoomService.findOrCreateDirectRoom(member, request.getPartnerId());
-            return ChatRoomResponseDto.from(room);
-        } else if (request.getMemberIds() != null && !request.getMemberIds().isEmpty() && request.getRoomName() != null) {
-            ChatRoom room = chatRoomService.createGroupRoom(request.getRoomName(), request.getMemberIds(), member);
-            return ChatRoomResponseDto.from(room);
-        } else {
-            throw new IllegalArgumentException("Invalid request to create a chat room.");
-        }
+        ChatRoom room = chatRoomService.findOrCreateDirectRoom(member, request.partnerId());
+        return ChatRoomResp.from(room);
+    }
+
+    @PostMapping("/rooms/group")
+    public ChatRoomResp createGroupRoom(@AuthenticationPrincipal CustomUserDetails currentUser,
+                                        @Valid @RequestBody CreateGroupChatReq request) {
+        Member member = getCurrentMember(currentUser);
+        ChatRoom room = chatRoomService.createGroupRoom(request.roomName(), request.memberIds(), member);
+        return ChatRoomResp.from(room);
+    }
+
+    @PostMapping("/rooms/public")
+    public ChatRoomResp createPublicGroupRoom(@AuthenticationPrincipal CustomUserDetails currentUser,
+                                              @Valid @RequestBody CreatePublicChatReq request) {
+        Member member = getCurrentMember(currentUser);
+        ChatRoom room = chatRoomService.createPublicGroupRoom(request.roomName(), member);
+        return ChatRoomResp.from(room);
     }
 
     @GetMapping("/rooms")
-    public List<ChatRoomResponseDto> getRooms(@AuthenticationPrincipal CustomUserDetails currentUser) {
+    public List<ChatRoomResp> getRooms(@AuthenticationPrincipal CustomUserDetails currentUser) {
         Member member = getCurrentMember(currentUser);
         return chatRoomService.getRoomsForUser(member).stream()
-                .map(ChatRoomResponseDto::from)
+                .map(ChatRoomResp::from)
                 .collect(Collectors.toList());
     }
 
@@ -142,4 +142,3 @@ public class ChatController {
         return ResponseEntity.ok().build();
     }
 }
-

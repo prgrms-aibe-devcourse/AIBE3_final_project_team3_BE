@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.chat.controller;
+package triplestar.mixchat.domain.chat.chat.controller;
 
 
 import lombok.RequiredArgsConstructor;
@@ -7,12 +7,12 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
-import triplestar.mixchat.domain.chat.dto.MessageRequest;
-import triplestar.mixchat.domain.chat.dto.MessageResponse;
-import triplestar.mixchat.domain.chat.entity.ChatMessage;
-import triplestar.mixchat.domain.chat.entity.ChatRoom;
-import triplestar.mixchat.domain.chat.service.ChatMessageService;
-import triplestar.mixchat.domain.chat.service.ChatRoomService;
+import triplestar.mixchat.domain.chat.chat.dto.MessageRequest;
+import triplestar.mixchat.domain.chat.chat.dto.MessageResponse;
+import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.entity.ChatRoom;
+import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
+import triplestar.mixchat.domain.chat.chat.service.ChatRoomService;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.security.CustomUserDetails;
