@@ -13,26 +13,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.member.friend.service.FriendshipRequestService;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-import triplestar.mixchat.domain.member.member.service.AuthService;
+import triplestar.mixchat.testutils.TestMemberFactory;
 
 @ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-@DisplayName("회원 - 인증 컨트롤러")
+@DisplayName("친구관계 컨트롤러")
 class ApiV1FriendshipControllerTest {
 
     @Autowired
     private MockMvc mvc;
     @Autowired
-    private AuthService authService;
+    private FriendshipRequestService friendshipRequestService;
     @Autowired
     private MemberRepository memberRepository;
 
@@ -41,23 +43,20 @@ class ApiV1FriendshipControllerTest {
 
     @BeforeEach
     void setUp() {
-//        member1 = memberRepository.save(testMemberFactory.createDefault("user1"));
-//        member2 = memberRepository.save(testMemberFactory.createDefault("user2"));
+        member1 = memberRepository.saveAndFlush(TestMemberFactory.createMember("user1"));
+        member2 = memberRepository.saveAndFlush(TestMemberFactory.createMember("user2"));
     }
 
     @Test
     @DisplayName("친구요청 성공")
-//    @WithUserDetails()
+    @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void friend_request_success() throws Exception {
+        Long receiverId = member2.getId();
         ResultActions resultActions = mvc
                 .perform(
                         post("/api/v1/member/friends")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                        {
-                                            "receiverId": 1
-                                        }
-                                        """)
+                                .content("%d".formatted(receiverId))
                 )
                 .andDo(print());
 
@@ -69,11 +68,13 @@ class ApiV1FriendshipControllerTest {
 
     @Test
     @DisplayName("친구요청 수락")
-//    @WithUserDetails()
+    @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void friend_accept_success() throws Exception {
+        Long requestId = friendshipRequestService.sendRequest(member2.getId(), member1.getId());
+
         ResultActions resultActions = mvc
                 .perform(
-                        patch("/api/v1/member/friends/{requestId}/accept", 1L)
+                        patch("/api/v1/member/friends/{requestId}/accept", requestId)
                 )
                 .andDo(print());
 
@@ -85,11 +86,13 @@ class ApiV1FriendshipControllerTest {
 
     @Test
     @DisplayName("친구요청 거절")
-//    @WithUserDetails()
+    @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void friend_reject_success() throws Exception {
+        Long requestId = friendshipRequestService.sendRequest(member2.getId(), member1.getId());
+
         ResultActions resultActions = mvc
                 .perform(
-                        patch("/api/v1/member/friends/{requestId}/reject", 1L)
+                        patch("/api/v1/member/friends/{requestId}/reject", requestId)
                 )
                 .andDo(print());
 
