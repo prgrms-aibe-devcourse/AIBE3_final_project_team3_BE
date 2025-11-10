@@ -1,8 +1,10 @@
 spring:
+  config:
+    import: optional:classpath:application-secret-default.yml,optional:classpath:application-secret.yml
   datasource:
     url: jdbc:mysql://localhost:3306/${MYSQL_TEST_DATABASE:mysql_test}
-    username: ${MYSQL_TEST_USER:${MYSQL_USER}}
-    password: ${MYSQL_TEST_PASSWORD:${MYSQL_PASSWORD}}
+    username: ${MYSQL_TEST_USER:${MYSQL_USER:root}}
+    password: ${MYSQL_TEST_PASSWORD:${MYSQL_PASSWORD:${MYSQL_ROOT_PASSWORD:rootpw}}}
   jpa:
     properties:
       hibernate:
@@ -15,7 +17,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      password: ${REDIS_PASSWORD:redispass}
 
 minio:
   endpoint: http://localhost:9000

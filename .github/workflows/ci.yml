@@ -86,6 +86,18 @@ jobs:
             done
           done
 
+      - name: Verify MySQL readiness (optional)
+        if: steps.detect-docker.outputs.available == 'true'
+        shell: bash
+        run: |
+          set -e
+          for i in {1..30}; do
+            if docker exec mysql mysqladmin ping -h127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD:-rootpw}" --silent; then
+              echo "MySQL is ready"; break
+            fi
+            sleep 2
+          done
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -97,9 +109,7 @@ jobs:
 
       - name: Run tests with services
         if: steps.detect-docker.outputs.available == 'true'
-        uses: gradle/gradle-build-action@v3
-        with:
-          arguments: clean test --no-daemon
+        run: ./gradlew clean test --no-daemon
 
       - name: Run tests without external services
         if: steps.detect-docker.outputs.available != 'true'
@@ -110,6 +120,4 @@ jobs:
             org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration,
             org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
           SPRING_MAIN_LAZY_INITIALIZATION: 'true'
-        uses: gradle/gradle-build-action@v3
-        with:
-          arguments: clean test --no-daemon
+        run: ./gradlew clean test --no-daemon
