@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `reports` (
     `created_at`      DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     `modified_at`     DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
 
-    `target_content`  TEXT         NULL,
+    `target_msg_content`  TEXT         NULL,
     `target_member_id` BIGINT      NOT NULL,
     `status`          VARCHAR(10)  NOT NULL,
     `category`          VARCHAR(20) NOT NULL,

@@ -15,6 +15,7 @@ import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
 import triplestar.mixchat.domain.member.member.constant.Role;
+import triplestar.mixchat.domain.report.report.constant.ReportCategory;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
 @Entity
@@ -87,5 +88,11 @@ public class Member extends BaseEntity {
         this.membershipGrade = MembershipGrade.BASIC;
         this.isBlocked = false;
         this.isDeleted = false;
+    }
+
+    public void blockByReport(ReportCategory category) {
+        this.isBlocked = true;
+        this.blockedAt = LocalDateTime.now();
+        this.blockReason = category.name();
     }
 }
