@@ -40,3 +40,5 @@ out/
 .env
 .env*.properties
 src/main/resources/application-secret.yml
+
+.secret
