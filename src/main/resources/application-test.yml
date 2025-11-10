@@ -13,11 +13,27 @@ spring:
     mongodb:
       uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/${MONGO_TEST_DB:mongo_test}
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
-      password: ${REDIS_PASSWORD}
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
 
 # 테스트를 위한 짧은 토큰 유효기간 설정
 jwt:
   access-token-expiration-seconds: 10
   refresh-token-expiration-seconds: 30
+
+minio:
+  endpoint: http://localhost:9000
+  access-key: minio-key
+  secret-key: minio-secret
+  bucket-name: test-bucket
+
+cloud:
+  aws:
+    credentials:
+      access-key: aws-key
+      secret-key: aws-secret
+    region:
+      static: ap-northeast-2
+    s3:
+      bucket: test-bucket

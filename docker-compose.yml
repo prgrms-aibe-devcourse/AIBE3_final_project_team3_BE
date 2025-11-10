@@ -15,7 +15,7 @@ services:
     volumes:
       - ./docker/config/mysql/init.sql:/docker-entrypoint-initdb.d/1-init.sql
       - ./docker/config/mysql/schema.sql:/docker-entrypoint-initdb.d/2-schema.sql
-      - ./docker/config/mysql/initData.sql:/docker-entrypoint-initdb.d/3-initData.sql
+      - ./docker/config/mysql/baseData.sql:/docker-entrypoint-initdb.d/3-baseData.sql
       - mysql_data:/var/lib/mysql
     command:
       - --character-set-server=utf8mb4
