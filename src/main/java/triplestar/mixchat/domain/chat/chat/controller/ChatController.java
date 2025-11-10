@@ -2,19 +2,18 @@ package triplestar.mixchat.domain.chat.chat.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.chat.chat.dto.*;
-import triplestar.mixchat.domain.chat.dto.*;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.entity.ChatRoom;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
 import triplestar.mixchat.domain.chat.chat.service.ChatRoomService;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.global.response.ApiResponse;
 import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.global.security.CustomUserDetails;
 
@@ -36,53 +35,57 @@ public class ChatController {
         if (currentUser == null) {
             throw new RuntimeException("인증된 사용자 정보가 없습니다.");
         }
+        // todo : id로 검증
         return memberRepository.findByEmail(currentUser.getEmail())
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
     }
 
     @PostMapping("/rooms/direct")
-    public ChatRoomResp createDirectRoom(@AuthenticationPrincipal CustomUserDetails currentUser,
-                                         @Valid @RequestBody CreateDirectChatReq request) {
+    public ApiResponse<ChatRoomResp> createDirectRoom(@AuthenticationPrincipal CustomUserDetails currentUser,
+                                                      @Valid @RequestBody CreateDirectChatReq request) {
         Member member = getCurrentMember(currentUser);
         ChatRoom room = chatRoomService.findOrCreateDirectRoom(member, request.partnerId());
-        return ChatRoomResp.from(room);
+        return ApiResponse.ok("1:1 채팅방 생성/조회에 성공하였습니다.", ChatRoomResp.from(room));
     }
 
     @PostMapping("/rooms/group")
-    public ChatRoomResp createGroupRoom(@AuthenticationPrincipal CustomUserDetails currentUser,
-                                        @Valid @RequestBody CreateGroupChatReq request) {
+    public ApiResponse<ChatRoomResp> createGroupRoom(@AuthenticationPrincipal CustomUserDetails currentUser,
+                                                     @Valid @RequestBody CreateGroupChatReq request) {
         Member member = getCurrentMember(currentUser);
         ChatRoom room = chatRoomService.createGroupRoom(request.roomName(), request.memberIds(), member);
-        return ChatRoomResp.from(room);
+        return ApiResponse.ok("그룹 채팅방 생성에 성공하였습니다.", ChatRoomResp.from(room));
     }
 
     @PostMapping("/rooms/public")
-    public ChatRoomResp createPublicGroupRoom(@AuthenticationPrincipal CustomUserDetails currentUser,
-                                              @Valid @RequestBody CreatePublicChatReq request) {
+    public ApiResponse<ChatRoomResp> createPublicGroupRoom(@AuthenticationPrincipal CustomUserDetails currentUser,
+                                                           @Valid @RequestBody CreatePublicChatReq request) {
         Member member = getCurrentMember(currentUser);
         ChatRoom room = chatRoomService.createPublicGroupRoom(request.roomName(), member);
-        return ChatRoomResp.from(room);
+        return ApiResponse.ok("공개 그룹 채팅방 생성에 성공하였습니다.", ChatRoomResp.from(room));
     }
 
     @GetMapping("/rooms")
-    public List<ChatRoomResp> getRooms(@AuthenticationPrincipal CustomUserDetails currentUser) {
+    public ApiResponse<List<ChatRoomResp>> getRooms(@AuthenticationPrincipal CustomUserDetails currentUser) {
         Member member = getCurrentMember(currentUser);
-        return chatRoomService.getRoomsForUser(member).stream()
+        List<ChatRoomResp> rooms = chatRoomService.getRoomsForUser(member).stream()
                 .map(ChatRoomResp::from)
                 .collect(Collectors.toList());
+        return ApiResponse.ok("채팅방 목록 조회에 성공하였습니다.", rooms);
     }
 
     @PostMapping("/rooms/{roomId}/message")
-    public ChatMessage sendMessage(@PathVariable Long roomId,
-                                   @RequestParam Long memberId,
-                                   @RequestBody String content) {
+    public ApiResponse<MessageResponse> sendMessage(@PathVariable Long roomId,
+                                                    @RequestParam Long memberId,
+                                                    @RequestBody String content) {
         ChatRoom room = chatRoomService.getRoom(roomId);
         Member member = memberRepository.getReferenceById(memberId);
-        return chatMessageService.saveMessage(room, member, content, ChatMessage.MessageType.TEXT);
+        ChatMessage savedMessage = chatMessageService.saveMessage(room, member, content, ChatMessage.MessageType.TEXT);
+        String senderName = member.getNickname() != null ? member.getNickname() : member.getEmail();
+        return ApiResponse.ok("메시지 전송에 성공하였습니다.", MessageResponse.from(savedMessage, senderName));
     }
 
     @GetMapping("/rooms/{roomId}/messages")
-    public List<MessageResponse> getMessages(@PathVariable Long roomId) {
+    public ApiResponse<List<MessageResponse>> getMessages(@PathVariable Long roomId) {
         List<ChatMessage> messages = chatMessageService.getMessages(roomId);
 
         List<Long> senderIds = messages.stream()
@@ -93,52 +96,53 @@ public class ChatController {
         java.util.Map<Long, Member> membersById = memberRepository.findAllById(senderIds).stream()
                 .collect(Collectors.toMap(Member::getId, member -> member));
 
-        return messages.stream()
+        List<MessageResponse> messageResponses = messages.stream()
                 .map(message -> {
                     Member sender = membersById.get(message.getSenderId());
                     String senderName = (sender != null) ? sender.getNickname() : "Unknown";
                     return MessageResponse.from(message, senderName);
                 })
                 .collect(Collectors.toList());
+        return ApiResponse.ok("메시지 목록 조회에 성공하였습니다.", messageResponses);
     }
 
     @PostMapping("/rooms/{roomId}/files")
-    public ResponseEntity<MessageResponse> uploadFile(@PathVariable Long roomId,
-                                                      @AuthenticationPrincipal CustomUserDetails currentUser,
-                                                      @RequestParam("file") MultipartFile file,
-                                                      @RequestParam("messageType") ChatMessage.MessageType messageType) {
+    public ApiResponse<MessageResponse> uploadFile(@PathVariable Long roomId,
+                                                   @AuthenticationPrincipal CustomUserDetails currentUser,
+                                                   @RequestParam("file") MultipartFile file,
+                                                   @RequestParam("messageType") ChatMessage.MessageType messageType) {
         Member member = getCurrentMember(currentUser);
         ChatRoom room = chatRoomService.getRoom(roomId);
 
-        String fileUrl = s3Uploader.uploadFile(file, "chat-files"); // "chat-files"는 S3 버킷 내 디렉토리 이름
+        // todo : 하드 코딩 제거
+        String fileUrl = s3Uploader.uploadFile(file, "chat-files");
         ChatMessage savedMessage = chatMessageService.saveFileMessage(room, member, fileUrl, messageType);
 
-        // WebSocket으로 메시지 전송
-        String senderName = member.getNickname() != null ? member.getNickname() : member.getEmail(); // 닉네임이 없으면 이메일 사용
+        String senderName = member.getNickname() != null ? member.getNickname() : member.getEmail();
         MessageResponse messageResponse = MessageResponse.from(savedMessage, senderName);
         messagingTemplate.convertAndSend("/topic/chat/room/" + roomId, messageResponse);
 
-        return ResponseEntity.ok(messageResponse);
+        return ApiResponse.ok("파일 업로드 및 메시지 전송에 성공하였습니다.", messageResponse);
     }
 
     @DeleteMapping("/rooms/{roomId}/leave")
-    public ResponseEntity<Void> leaveRoom(@PathVariable Long roomId, @AuthenticationPrincipal CustomUserDetails currentUser) {
+    public ApiResponse<Void> leaveRoom(@PathVariable Long roomId, @AuthenticationPrincipal CustomUserDetails currentUser) {
         Member member = getCurrentMember(currentUser);
         chatRoomService.leaveRoom(roomId, member);
-        return ResponseEntity.ok().build();
+        return ApiResponse.ok("채팅방 나가기에 성공하였습니다.", null);
     }
 
     @PostMapping("/rooms/{roomId}/block")
-    public ResponseEntity<Void> blockUser(@PathVariable Long roomId, @AuthenticationPrincipal CustomUserDetails currentUser) {
+    public ApiResponse<Void> blockUser(@PathVariable Long roomId, @AuthenticationPrincipal CustomUserDetails currentUser) {
         Member member = getCurrentMember(currentUser);
         chatRoomService.blockUser(roomId, member);
-        return ResponseEntity.ok().build();
+        return ApiResponse.ok("사용자 차단에 성공하였습니다.", null);
     }
 
-    @PostMapping("/rooms/{roomId}/report")
-    public ResponseEntity<Void> reportRoom(@PathVariable Long roomId, @AuthenticationPrincipal CustomUserDetails currentUser) {
+    @PostMapping("/rooms/{roomId}/reportUser")
+    public ApiResponse<Void> reportUser(@PathVariable Long roomId, @AuthenticationPrincipal CustomUserDetails currentUser) {
         Member member = getCurrentMember(currentUser);
-        chatRoomService.reportRoom(roomId, member);
-        return ResponseEntity.ok().build();
+        chatRoomService.reportUser(roomId, member);
+        return ApiResponse.ok("유저 신고에 성공하였습니다.", null);
     }
 }

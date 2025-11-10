@@ -132,7 +132,7 @@ public class ChatRoomService {
     }
 
     @Transactional
-    public void reportRoom(Long roomId, Member currentUser) {
+    public void reportUser(Long roomId, Member currentUser) {
         ChatRoom room = getRoom(roomId);
         System.out.println("User " + currentUser.getEmail() + " reported room " + roomId);
     }
