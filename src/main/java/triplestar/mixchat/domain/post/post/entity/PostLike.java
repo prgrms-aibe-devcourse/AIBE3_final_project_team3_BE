@@ -10,16 +10,10 @@ import triplestar.mixchat.domain.member.member.entity.Member;
 
 import java.time.LocalDateTime;
 
-@Entity
 @Getter
+@Entity
 @Table(
     name = "post_likes",
-    uniqueConstraints = {
-        @UniqueConstraint(
-            name = "uk_post_like_member_post",
-            columnNames = {"member_id", "post_id"}
-        )
-    },
     indexes = {
         @Index(name = "idx_post_like_post", columnList = "post_id")
     }
