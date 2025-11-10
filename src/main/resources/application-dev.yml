@@ -14,7 +14,7 @@ spring:
       uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/${MONGO_DB}
     redis:
       host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
+      port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD}
 minio:
   endpoint: ${MINIO_ENDPOINT}
