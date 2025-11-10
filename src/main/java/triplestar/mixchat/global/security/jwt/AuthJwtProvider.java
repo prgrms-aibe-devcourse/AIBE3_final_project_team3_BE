@@ -10,6 +10,7 @@ import java.util.Date;
 import javax.crypto.SecretKey;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
 import triplestar.mixchat.domain.member.member.constant.Role;
 
@@ -85,7 +86,7 @@ public class AuthJwtProvider {
             return new AccessTokenPayload(memberId, Role.valueOf(role));
         } catch (JwtException | NumberFormatException e) {
             log.warn(e.getMessage());
-            throw new IllegalArgumentException("유효하지 않은 JWT Token", e);
+            throw new BadCredentialsException("유효하지 않은 JWT Token", e);
         }
     }
 
@@ -95,7 +96,7 @@ public class AuthJwtProvider {
             return Long.parseLong(claims.getSubject());
         } catch (JwtException | NumberFormatException e) {
             log.warn(e.getMessage());
-            throw new IllegalArgumentException("유효하지 않은 JWT Token", e);
+            throw new BadCredentialsException("유효하지 않은 JWT Token", e);
         }
     }
 }

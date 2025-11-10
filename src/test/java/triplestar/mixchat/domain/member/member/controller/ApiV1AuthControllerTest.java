@@ -223,8 +223,6 @@ class ApiV1AuthControllerTest {
                 .andDo(print());
 
         resultActions
-                .andExpect(handler().handlerType(TestHelperController.class))
-                .andExpect(handler().methodName("test"))
-                .andExpect(status().isOk());
+                .andExpect(status().isUnauthorized());
     }
 }

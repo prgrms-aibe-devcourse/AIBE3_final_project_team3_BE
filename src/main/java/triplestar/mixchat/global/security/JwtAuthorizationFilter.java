@@ -32,14 +32,19 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String header = request.getHeader(AUTHORIZATION_HEADER);
+        try {
+            String header = request.getHeader(AUTHORIZATION_HEADER);
 
-        if (header != null && header.startsWith(BEARER_PREFIX)) {
-            String token = header.substring(BEARER_PREFIX.length());
-            AuthenticateByToken(token);
+            if (header != null && header.startsWith(BEARER_PREFIX)) {
+                String token = header.substring(BEARER_PREFIX.length());
+                AuthenticateByToken(token);
+            }
+            filterChain.doFilter(request, response);
+        } catch (BadCredentialsException e) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("유효하지 않은 JWT Token");
         }
-
-        filterChain.doFilter(request, response);
     }
 
     private void AuthenticateByToken(String token) {

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.ActiveProfiles;
 import triplestar.mixchat.domain.member.member.constant.Role;
 import triplestar.mixchat.global.security.jwt.AccessTokenPayload;
@@ -37,7 +38,7 @@ class AuthJwtProviderTest {
         String accessToken = authJwtProvider.generateAccessToken(new AccessTokenPayload(1L, Role.ROLE_MEMBER));
 
         Assertions.assertThatThrownBy(() -> authJwtProvider.parseAccessToken("abc" + accessToken))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(BadCredentialsException.class);
     }
 
     @Test
@@ -48,6 +49,6 @@ class AuthJwtProviderTest {
         Thread.sleep(1000 * 12);
 
         Assertions.assertThatThrownBy(() -> authJwtProvider.parseAccessToken(accessToken))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(BadCredentialsException.class);
     }
 }
