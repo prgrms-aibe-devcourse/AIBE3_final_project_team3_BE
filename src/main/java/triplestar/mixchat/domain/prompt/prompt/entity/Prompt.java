@@ -13,8 +13,8 @@ import triplestar.mixchat.domain.member.member.entity.Member;
 @Table(name = "prompts")
 public class Prompt extends BaseEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "member_id", nullable = true)
     private Member member;
 
     @Enumerated(EnumType.STRING)
@@ -27,7 +27,4 @@ public class Prompt extends BaseEntity {
     @Lob
     @Column(name = "content", nullable = false)
     private String content;
-
-    @Column(name = "scenario_id", length = 50, nullable = false, unique = true)
-    private String scenarioId;
 }
