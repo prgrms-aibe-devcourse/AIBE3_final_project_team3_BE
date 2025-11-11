@@ -27,7 +27,7 @@ public class ReportAdminService {
             Member member = memberRepository.findById(report.getTargetMemberId())
                     .orElseThrow(() -> new IllegalArgumentException("신고 대상 회원을 찾을 수 없습니다. id=" + report.getTargetMemberId()));
 
-            member.blockByReport(report.getCategory()); // 의미 있는 도메인 메서드로 처리
+            member.blockByReport(report.getCategory());
         }
 
         return report;

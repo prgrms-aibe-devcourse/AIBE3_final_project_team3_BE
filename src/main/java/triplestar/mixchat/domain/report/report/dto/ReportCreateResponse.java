@@ -12,10 +12,10 @@ public class ReportCreateResponse {
     @Getter
     @AllArgsConstructor
     public static class Data {
-        private String id;  // "rep_1"
+        private Long id;
     }
 
-    public static ReportCreateResponse of(String reportId) {
+    public static ReportCreateResponse of(Long reportId) {
         return new ReportCreateResponse("reported", new Data(reportId));
     }
 }

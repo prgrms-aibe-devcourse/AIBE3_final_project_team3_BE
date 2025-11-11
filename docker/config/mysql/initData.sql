@@ -118,4 +118,4 @@ INSERT INTO translation_tags (code) VALUES
 ('GRAMMAR'),
 ('SPELLING'),
 ('STRUCTURE'),
-('WORD_UNKNOWN')
+('WORD_UNKNOWN');

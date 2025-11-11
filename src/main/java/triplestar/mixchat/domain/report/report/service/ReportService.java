@@ -16,6 +16,11 @@ public class ReportService {
 
     @Transactional
     public Long createReport(ReportCreateRequest request) {
+        memberRepository.findById(request.getTargetMemberId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "신고 대상 회원이 존재하지 않습니다. id=" + request.getTargetMemberId()
+                ));
+
         Report report = Report.createWaitingReport(
                 request.getTargetMemberId(),
                 request.getCategory(),
@@ -23,7 +28,6 @@ public class ReportService {
                 request.getReasonText()
         );
 
-        Report saved = reportRepository.save(report);
-        return saved.getId();
+        return reportRepository.save(report).getId();
     }
 }
