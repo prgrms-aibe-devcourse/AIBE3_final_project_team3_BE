@@ -1,0 +1,76 @@
+name: CD - Deploy to Staging
+
+on:
+  push:
+    branches: [ dev ]
+
+jobs:
+  wait-for-ci:
+    name: Wait for CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for CI workflow
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.ref }}
+          check-name: 'Run Integration Tests'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
+  deploy-staging:
+    name: Deploy to Staging Server
+    runs-on: ubuntu-latest
+    needs: wait-for-ci
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to staging server via SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          SERVER_HOST: ${{ secrets.STAGING_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.STAGING_SERVER_USER }}
+        run: |
+          # Convert repository name to lowercase
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H -p 2222 $SERVER_HOST >> ~/.ssh/known_hosts
+          
+          ssh -o StrictHostKeyChecking=no -p 2222 $SERVER_USER@$SERVER_HOST << ENDSSH
+            set -e
+            cd /opt/app/staging
+            
+            # Login to GHCR
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # Pull latest staging image
+            docker pull ghcr.io/${REPO_LOWER}:dev-latest
+            
+            # Update docker-compose and restart
+            docker compose down
+            docker compose up -d
+            
+            # Cleanup old images
+            docker image prune -f
+            
+            echo "✅ Staging deployment completed"
+          ENDSSH
+
+      - name: Verify staging deployment
+        env:
+          SERVER_HOST: ${{ secrets.STAGING_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.STAGING_SERVER_USER }}
+        run: |
+          ssh -o StrictHostKeyChecking=no -p 2222 $SERVER_USER@$SERVER_HOST << 'ENDSSH'
+            cd /opt/app/staging
+            echo "📊 Container Status:"
+            docker compose ps
+            echo ""
+            echo "📝 Recent Logs:"
+            docker compose logs --tail=50
+          ENDSSH
