@@ -172,8 +172,7 @@ public class ApiV1ReportControllerTest {
                                 .content(objectMapper.writeValueAsString(request))
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.msg").value("신고가 완료되었습니다"))
-                .andExpect(jsonPath("$.data").doesNotExist());
+                .andExpect(jsonPath("$.msg").value("신고가 완료되었습니다"));
 
         assertThat(reportRepository.count()).isEqualTo(4);
 

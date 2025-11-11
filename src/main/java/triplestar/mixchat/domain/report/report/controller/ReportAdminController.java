@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import triplestar.mixchat.domain.report.report.dto.ReportAdminListResp;
 import triplestar.mixchat.domain.report.report.dto.ReportStatusUpdateReq;
-import triplestar.mixchat.domain.report.report.dto.ReportStatusUpdateResp;
 import triplestar.mixchat.domain.report.report.entity.Report;
 import triplestar.mixchat.domain.report.report.repository.ReportRepository;
 import triplestar.mixchat.domain.report.report.service.ReportAdminService;
@@ -26,12 +25,12 @@ public class ReportAdminController  {
     private final ReportRepository reportRepository;
 
     @PatchMapping("/{reportId}")
-    public ApiResponse<ReportStatusUpdateResp> updateReportStatus(
+    public ApiResponse<Void> updateReportStatus(
             @PathVariable Long reportId,
             @RequestBody @Valid ReportStatusUpdateReq request
     ) {
         Report updated = reportAdminService.updateReportStatus(reportId, request.status());
-        return ApiResponse.ok("상태 변경 완료", ReportStatusUpdateResp.from(updated));
+        return ApiResponse.ok("상태 변경 완료");
     }
 
     @GetMapping

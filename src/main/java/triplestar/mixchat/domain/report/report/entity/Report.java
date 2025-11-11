@@ -44,7 +44,7 @@ public class Report extends BaseEntity {
         this.targetMemberId = targetMemberId;
         this.status = status;
         this.category = category;
-        this.reportedReason = this.reportedReason;
+        this.reportedReason = reportedReason;
     }
 
     public static Report createWaitingReport(

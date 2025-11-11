@@ -17,11 +17,11 @@ public class ReportController {
     private final ReportService reportService;
 
     @PostMapping
-    public ApiResponse<Void> createReport(
+    public ApiResponse<Long> createReport(
             @RequestBody @Valid ReportCreateReq request
     ) {
-        reportService.createReport(request);
+        Long reportId = reportService.createReport(request);
 
-        return ApiResponse.ok("신고가 완료되었습니다");
+        return ApiResponse.ok("신고가 완료되었습니다", reportId);
     }
 }
