@@ -1,0 +1,97 @@
+name: Build Docker Image
+
+on:
+  pull_request:
+    branches: [ dev, prod ]
+  push:
+    branches: [ dev, prod ]
+
+jobs:
+  build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image-tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          flavor: |
+            latest=false
+          tags: |
+            type=ref,event=pr,prefix=pr-
+            type=sha,format=short
+            type=raw,value=dev-latest,enable=${{ github.ref == 'refs/heads/dev' }}
+            type=raw,value=prod-latest,enable=${{ github.ref == 'refs/heads/prod' }}
+
+      - name: Debug - Show image tags
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Repository (lowercase): $(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
+          echo "Tags that will be pushed:"
+          echo "${{ steps.meta.outputs.tags }}"
+          echo "---"
+          echo "Full metadata version: ${{ steps.meta.outputs.version }}"
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify pushed image
+        run: |
+          echo "Verifying that the image was pushed successfully..."
+          # Parse tags from JSON output
+          echo '${{ steps.meta.outputs.json }}' | jq -r '.tags[]' | while read -r tag; do
+            if [[ -n "$tag" ]]; then
+              echo "Checking: $tag"
+              docker manifest inspect "$tag" && echo "✅ $tag exists" || echo "❌ $tag not found"
+            fi
+          done
+
+      - name: Make package public
+        continue-on-error: true
+        run: |
+          echo "Setting package visibility to public..."
+          PACKAGE_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2 | tr '[:upper:]' '[:lower:]')
+          
+          # Get package version
+          curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3+json" \
+               https://api.github.com/users/${{ github.repository_owner }}/packages/container/${PACKAGE_NAME}/versions \
+               | jq -r '.[0].id' > /tmp/version_id.txt
+          
+          VERSION_ID=$(cat /tmp/version_id.txt)
+          
+          if [[ "$VERSION_ID" != "null" && -n "$VERSION_ID" ]]; then
+            echo "Found package version ID: $VERSION_ID"
+            # Note: This requires admin access to the package
+            echo "Package visibility needs to be set manually in GitHub UI"
+            echo "Go to: https://github.com/${{ github.repository_owner }}?tab=packages"
+          else
+            echo "Could not find package version ID"
+          fi
