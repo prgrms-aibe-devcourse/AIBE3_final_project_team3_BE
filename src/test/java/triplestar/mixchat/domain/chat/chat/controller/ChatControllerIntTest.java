@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -80,7 +81,7 @@ class ChatControllerIntTest {
     }
 
     @Test
-    @WithUserDetails(value = "user1@example.com", userDetailsServiceBeanName = "customUserDetailsService")
+    @WithUserDetails(value = "유저1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("1:1 채팅방 생성 통합 테스트 성공")
     void createDirectRoom_integration_success() throws Exception {
         // given (준비)
