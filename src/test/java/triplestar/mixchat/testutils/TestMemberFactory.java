@@ -1,5 +1,6 @@
 package triplestar.mixchat.testutils;
 
+import java.util.List;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import triplestar.mixchat.domain.member.member.constant.Country;
@@ -19,7 +20,7 @@ public class TestMemberFactory {
                 .nickname(username)
                 .country(Country.CANADA)
                 .englishLevel(EnglishLevel.INTERMEDIATE)
-                .interest("음악")
+                .interests(List.of("음악"))
                 .description("테스트 회원입니다.")
                 .build();
     }

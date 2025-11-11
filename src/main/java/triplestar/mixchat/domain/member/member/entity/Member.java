@@ -8,7 +8,6 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Builder;
@@ -46,7 +45,7 @@ public class Member extends BaseEntity {
     private Country country;
 
     @Column(nullable = false)
-    @Convert(converter = JsonListConverter.class) // 💡 Converter 적용
+    @Convert(converter = JsonListConverter.class)
     private List<String> interests;
 
     @Column(nullable = false)
@@ -94,8 +93,8 @@ public class Member extends BaseEntity {
         this.isDeleted = false;
     }
 
-    public void update(@NotNull String name, Country country, @NotNull String nickname,
-                       @NotNull EnglishLevel englishLevel, @NotNull List<String> interests, @NotNull String description) {
+    public void update(String name, Country country, String nickname,
+                       EnglishLevel englishLevel, List<String> interests, String description) {
         this.name = name;
         this.country = country;
         this.nickname = nickname;
