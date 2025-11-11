@@ -26,7 +26,11 @@ public record ApiResponse<T>(
     }
 
     public static <T> ApiResponse<T> ok(String msg, T data) {
-        return new ApiResponse(200, msg, data);
+        return new ApiResponse<>(200, msg, data);
+    }
+
+    public static ApiResponse<Void> ok(String msg) {
+        return new ApiResponse<>(200, msg);
     }
 
     private void validateStatusCode(int statusCode) {
