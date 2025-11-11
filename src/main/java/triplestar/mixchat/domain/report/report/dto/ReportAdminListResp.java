@@ -5,23 +5,23 @@ import triplestar.mixchat.domain.report.report.constant.ReportCategory;
 import triplestar.mixchat.domain.report.report.constant.ReportStatus;
 import triplestar.mixchat.domain.report.report.entity.Report;
 
-public record  ReportAdminListResponse (
+public record ReportAdminListResp(
         Long id,
         Long targetMemberId,
-        String targetMsgContent,
+        String reportedMsgContent,
         ReportStatus status,
         ReportCategory category,
-        String reasonText,
+        String reportedReason,
         LocalDateTime createdAt
 ) {
-    public static ReportAdminListResponse from(Report report) {
-        return new ReportAdminListResponse(
+    public static ReportAdminListResp from(Report report) {
+        return new ReportAdminListResp(
                 report.getId(),
                 report.getTargetMemberId(),
-                report.getTargetMsgContent(),
+                report.getReportedMsgContent(),
                 report.getStatus(),
                 report.getCategory(),
-                report.getReasonText(),
+                report.getReportedReason(),
                 report.getCreatedAt()
         );
     }

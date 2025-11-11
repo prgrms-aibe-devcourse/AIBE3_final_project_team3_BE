@@ -82,12 +82,11 @@ CREATE TABLE IF NOT EXISTS `reports` (
                                          `id`              BIGINT       NOT NULL AUTO_INCREMENT,
                                          `created_at`      DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
                                          `modified_at`     DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-
-                                         `target_content`  TEXT         NULL,
+                                         `reported_msg_content`  TEXT         NULL,
                                          `target_member_id` BIGINT      NOT NULL,
                                          `status`          VARCHAR(10)  NOT NULL,
                                          `category`          VARCHAR(20) NOT NULL,
-                                         `reason_text`     VARCHAR(255) NULL,
+                                         `reported_reason`     VARCHAR(255) NULL,
 
                                          PRIMARY KEY (`id`),
                                          KEY `idx_reports_status_created` (`status`, `created_at`)

@@ -3,8 +3,6 @@ package triplestar.mixchat.domain.report.report.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,9 +10,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import triplestar.mixchat.domain.report.report.dto.ReportAdminListResponse;
-import triplestar.mixchat.domain.report.report.dto.ReportStatusUpdateRequest;
-import triplestar.mixchat.domain.report.report.dto.ReportStatusUpdateResponse;
+import triplestar.mixchat.domain.report.report.dto.ReportAdminListResp;
+import triplestar.mixchat.domain.report.report.dto.ReportStatusUpdateReq;
+import triplestar.mixchat.domain.report.report.dto.ReportStatusUpdateResp;
 import triplestar.mixchat.domain.report.report.entity.Report;
 import triplestar.mixchat.domain.report.report.repository.ReportRepository;
 import triplestar.mixchat.domain.report.report.service.ReportAdminService;
@@ -28,29 +26,20 @@ public class ReportAdminController  {
     private final ReportRepository reportRepository;
 
     @PatchMapping("/{reportId}")
-    public ResponseEntity<ApiResponse<ReportStatusUpdateResponse>> updateReportStatus(
+    public ApiResponse<ReportStatusUpdateResp> updateReportStatus(
             @PathVariable Long reportId,
-            @RequestBody @Valid ReportStatusUpdateRequest request
+            @RequestBody @Valid ReportStatusUpdateReq request
     ) {
         Report updated = reportAdminService.updateReportStatus(reportId, request.status());
-        return ResponseEntity.ok(
-                ApiResponse.ok("상태 변경 완료", ReportStatusUpdateResponse.from(updated))
-        );
+        return ApiResponse.ok("상태 변경 완료", ReportStatusUpdateResp.from(updated));
     }
 
-    @GetMapping("/list")
-    public ResponseEntity<ApiResponse<Page<ReportAdminListResponse>>> getReports(
+    @GetMapping
+    public ApiResponse<Page<ReportAdminListResp>> getReports(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        PageRequest pageable = PageRequest.of(page, size);
-        Page<Report> reports = reportRepository.findAll(pageable);
-
-        // Report → DTO 변환
-        var result = reports.map(ReportAdminListResponse::from);
-
-        return ResponseEntity.ok(
-                ApiResponse.ok("신고 목록 조회 성공", result)
-        );
+        Page<ReportAdminListResp> result = reportAdminService.getReports(page, size);
+        return ApiResponse.ok("신고 목록 조회 성공", result);
     }
 }

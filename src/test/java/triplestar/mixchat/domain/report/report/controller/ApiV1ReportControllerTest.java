@@ -1,10 +1,8 @@
 package triplestar.mixchat.domain.report.report.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.nullValue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -78,7 +76,6 @@ public class ApiV1ReportControllerTest {
                         .description("신고하는 유저")
                         .build()
         );
-
         admin = memberRepository.save(
                 Member.builder()
                         .email("admin@example.com")
@@ -91,7 +88,6 @@ public class ApiV1ReportControllerTest {
                         .description("관리자 유저")
                         .build()
         );
-
         target1 = memberRepository.save(
                 Member.builder()
                         .email("target1@example.com")
@@ -160,44 +156,45 @@ public class ApiV1ReportControllerTest {
 
     @Test
     @DisplayName("신고 생성 성공 - WAITING 상태로 저장되고 응답 메시지 검증")
+    @WithMockUser(username = "reporter", roles = "USER")
     void createReport_success() throws Exception {
+        // ReportCreateReq 필드 규칙에 맞춘 요청 DTO
         CreateReportRequest request = new CreateReportRequest(
                 target1.getId(),
-                "욕설이 포함된 메시지 내용입니다.",
                 ReportCategory.ABUSE,
+                "욕설이 포함된 메시지 내용입니다.",
                 "욕설 사용"
         );
 
         mockMvc.perform(
                         post("/api/v1/reports")
-                                .with(user(reporter.getId().toString()).roles("USER"))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request))
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.msg").value("신고가 완료되었습니다"))
-                .andExpect(jsonPath("$.data", nullValue()));
+                .andExpect(jsonPath("$.data").doesNotExist());
 
         assertThat(reportRepository.count()).isEqualTo(4);
 
         Report saved = reportRepository.findAll().stream()
-                .filter(r -> "욕설이 포함된 메시지 내용입니다.".equals(r.getTargetMsgContent()))
+                .filter(r -> "욕설이 포함된 메시지 내용입니다.".equals(r.getReportedMsgContent()))
                 .findFirst()
                 .orElseThrow();
 
         assertThat(saved.getTargetMemberId()).isEqualTo(target1.getId());
-        assertThat(saved.getTargetMsgContent()).isEqualTo("욕설이 포함된 메시지 내용입니다.");
+        assertThat(saved.getReportedMsgContent()).isEqualTo("욕설이 포함된 메시지 내용입니다.");
         assertThat(saved.getCategory()).isEqualTo(ReportCategory.ABUSE);
         assertThat(saved.getStatus()).isEqualTo(ReportStatus.WAITING);
-        assertThat(saved.getReasonText()).isEqualTo("욕설 사용");
+        assertThat(saved.getReportedReason()).isEqualTo("욕설 사용");
     }
 
     @Test
     @DisplayName("관리자 신고 목록 조회 - 페이지네이션 포함, 3건 조회")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void getReports_success() throws Exception {
         mockMvc.perform(
-                        get("/api/v1/admin/reports/list")
-                                .with(user(admin.getId().toString()).roles("ADMIN"))
+                        get("/api/v1/admin/reports")
                                 .param("page", "0")
                                 .param("size", "20")
                 )
@@ -268,8 +265,8 @@ public class ApiV1ReportControllerTest {
     void createReport_fail_whenUnauthenticated() throws Exception {
         CreateReportRequest request = new CreateReportRequest(
                 target1.getId(),
-                "욕설이 포함된 메시지 내용입니다.",
                 ReportCategory.ABUSE,
+                "욕설이 포함된 메시지 내용입니다.",
                 "욕설 사용"
         );
 
@@ -280,7 +277,6 @@ public class ApiV1ReportControllerTest {
                 )
                 .andExpect(status().isUnauthorized());
 
-        // 기존 3건 유지
         assertThat(reportRepository.count()).isEqualTo(3);
     }
 
@@ -300,10 +296,11 @@ public class ApiV1ReportControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    // ReportCreateReq 구조에 맞춘 테스트용 DTO
     private record CreateReportRequest(
             Long targetMemberId,
-            String targetMsgContent,
             ReportCategory category,
-            String reasonText
+            String reportedMsgContent,
+            String reportedReason
     ) {}
 }

@@ -19,7 +19,7 @@ import triplestar.mixchat.global.jpa.entity.BaseEntity;
 @NoArgsConstructor
 public class Report extends BaseEntity {
 
-    private String targetMsgContent;
+    private String reportedMsgContent;
 
     @Column(nullable = false)
     private Long targetMemberId;
@@ -32,33 +32,33 @@ public class Report extends BaseEntity {
     @Column(nullable = false)
     private ReportCategory category;
 
-    private String reasonText;
+    private String reportedReason;
 
     @Builder
-    public Report(String targetMsgContent,
+    public Report(String reportedMsgContent,
                   Long targetMemberId,
                   ReportStatus status,
                   ReportCategory category,
-                  String reasonText) {
-        this.targetMsgContent = targetMsgContent;
+                  String reportedReason) {
+        this.reportedMsgContent = reportedMsgContent;
         this.targetMemberId = targetMemberId;
         this.status = status;
         this.category = category;
-        this.reasonText = reasonText;
+        this.reportedReason = this.reportedReason;
     }
 
     public static Report createWaitingReport(
             Long targetMemberId,
             ReportCategory category,
-            String targetMsgContent,
-            String reasonText
+            String reportedMsgContent,
+            String reportedReason
     ) {
         return Report.builder()
                 .targetMemberId(targetMemberId)
                 .category(category)
                 .status(ReportStatus.WAITING)
-                .targetMsgContent(targetMsgContent)
-                .reasonText(reasonText)
+                .reportedMsgContent(reportedMsgContent)
+                .reportedReason(reportedReason)
                 .build();
     }
 
