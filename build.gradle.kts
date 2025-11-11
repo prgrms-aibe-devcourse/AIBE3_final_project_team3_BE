@@ -67,6 +67,9 @@ dependencies {
 
     // dotenv-java dependency
     implementation("io.github.cdimascio:dotenv-java:3.0.0")
+
+    // websocket
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
 }
 
 tasks.withType<Test> {

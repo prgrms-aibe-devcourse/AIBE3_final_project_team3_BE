@@ -2,9 +2,10 @@ package triplestar.mixchat.domain.chat.chat.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
-import triplestar.mixchat.global.jpa.entity.BaseEntity;
 import triplestar.mixchat.domain.member.member.entity.Member;
+import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
 import java.time.LocalDateTime;
 
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Table(name = "chat_members")
+@NoArgsConstructor
 public class ChatMember extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -26,6 +28,12 @@ public class ChatMember extends BaseEntity {
     private UserType userType;
 
     private LocalDateTime lastReadAt;
+
+    public ChatMember(Member member, ChatRoom chatRoom, UserType userType) {
+        this.member = member;
+        this.chatRoom = chatRoom;
+        this.userType = userType;
+    }
 
     public enum UserType {
         ROOM_MEMBER, ROOM_OWNER
