@@ -3,6 +3,7 @@ package triplestar.mixchat.global.exceptionHandler;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -48,6 +50,19 @@ public class GlobalExceptionHandler {
                 new ApiResponse<>(
                         BAD_REQUEST.value(),
                         "잘못된 요청입니다."
+                ),
+                BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiResponse<Void>> handle(IllegalStateException e) {
+        commonExceptionLog(e);
+
+        return new ResponseEntity<>(
+                new ApiResponse<>(
+                        BAD_REQUEST.value(),
+                        "해당 요청을 처리할 수 없는 상태입니다."
                 ),
                 BAD_REQUEST
         );
@@ -92,14 +107,27 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse<Void>> handle(AuthenticationException e) {
+        commonExceptionLog(e);
+
+        return new ResponseEntity<>(
+                new ApiResponse<>(
+                        UNAUTHORIZED.value(),
+                        "사용자 인증에 실패했습니다."
+                ),
+                UNAUTHORIZED
+        );
+    }
+
     // TODO : 429 AI API 호출 관련 핸들러 추후 추가 요망
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handle(Exception e) throws Exception {
         log.error("[ExceptionHandler] {} : {}", e.getClass().getSimpleName(), e.getMessage(), e);
 
-        // 개발 환경에서는 예외를 숨기지 않고 그대로 던짐
-        if ("dev".equals(activeProfile)) {
+        // prod 환경이 아니면 예외를 숨기지 않고 그대로 던짐
+        if (!"prod".equals(activeProfile)) {
             throw e;
         }
 

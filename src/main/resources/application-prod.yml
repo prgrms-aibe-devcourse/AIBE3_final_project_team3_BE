@@ -7,9 +7,9 @@ spring:
     mongodb:
       uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/${MONGO_DB}
     redis:
-      host: redis
-      port: 6379
-      password: ${REDIS_PASSWORD}
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
 cloud:
   aws:
     credentials:

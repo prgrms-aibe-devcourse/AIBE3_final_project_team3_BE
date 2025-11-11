@@ -25,6 +25,14 @@ public record ApiResponse<T>(
         this(statusCode, msg, null);
     }
 
+    public static <T> ApiResponse<T> ok(String msg, T data) {
+        return new ApiResponse<>(200, msg, data);
+    }
+
+    public static ApiResponse<Void> ok(String msg) {
+        return new ApiResponse<>(200, msg);
+    }
+
     private void validateStatusCode(int statusCode) {
         if (!ALLOWED_STATUS_CODES.contains(statusCode)) {
             throw new RuntimeException("허용되지 않은 상태코드 : " + statusCode);

@@ -1,6 +1,8 @@
 spring:
   config:
-    import: optional:classpath:application-secret-default.yml,optional:classpath:application-secret.yml
+    import:
+      - optional:file:.env.test.properties
+      - optional:file:.env.properties
   datasource:
     url: jdbc:mysql://localhost:3306/${MYSQL_TEST_DATABASE:mysql_test}
     username: ${MYSQL_TEST_USER:${MYSQL_USER:root}}
@@ -17,7 +19,12 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:redispass}
+      password: ${REDIS_PASSWORD:}
+
+logging:
+  level:
+    org.hibernate.sql: debug
+#    org.hibernate.orm.jdbc.bind: trace
 
 minio:
   endpoint: http://localhost:9000
