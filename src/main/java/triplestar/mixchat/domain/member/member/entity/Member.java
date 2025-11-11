@@ -1,13 +1,16 @@
 package triplestar.mixchat.domain.member.member.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,6 +18,7 @@ import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
 import triplestar.mixchat.domain.member.member.constant.Role;
+import triplestar.mixchat.global.converter.JsonListConverter;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
 @Entity
@@ -42,7 +46,8 @@ public class Member extends BaseEntity {
     private Country country;
 
     @Column(nullable = false)
-    private String interest;
+    @Convert(converter = JsonListConverter.class) // 💡 Converter 적용
+    private List<String> interests;
 
     @Column(nullable = false)
     private EnglishLevel englishLevel;
@@ -74,18 +79,28 @@ public class Member extends BaseEntity {
 
     @Builder
     public Member(String email, Password password, String name, String nickname, Country country,
-                  EnglishLevel englishLevel, String interest, String description) {
+                  EnglishLevel englishLevel, List<String> interests, String description) {
         this.email = email;
         this.password = password;
         this.name = name;
         this.nickname = nickname;
         this.country = country;
         this.englishLevel = englishLevel;
-        this.interest = interest;
+        this.interests = interests;
         this.description = description;
         this.role = Role.ROLE_MEMBER;
         this.membershipGrade = MembershipGrade.BASIC;
         this.isBlocked = false;
         this.isDeleted = false;
+    }
+
+    public void update(@NotNull String name, Country country, @NotNull String nickname,
+                       @NotNull EnglishLevel englishLevel, @NotNull List<String> interests, @NotNull String description) {
+        this.name = name;
+        this.country = country;
+        this.nickname = nickname;
+        this.englishLevel = englishLevel;
+        this.interests = interests;
+        this.description = description;
     }
 }

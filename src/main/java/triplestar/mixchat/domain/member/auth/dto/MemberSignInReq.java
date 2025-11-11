@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.member.member.dto;
+package triplestar.mixchat.domain.member.auth.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;

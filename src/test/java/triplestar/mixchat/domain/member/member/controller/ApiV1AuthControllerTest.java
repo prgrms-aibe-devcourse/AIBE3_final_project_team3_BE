@@ -17,11 +17,12 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.member.auth.controller.ApiV1AuthController;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
-import triplestar.mixchat.domain.member.member.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.member.dto.SignInResp;
-import triplestar.mixchat.domain.member.member.dto.SigninReq;
-import triplestar.mixchat.domain.member.member.service.AuthService;
+import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
+import triplestar.mixchat.domain.member.auth.dto.SignInResp;
+import triplestar.mixchat.domain.member.auth.dto.SigninReq;
+import triplestar.mixchat.domain.member.auth.service.AuthService;
 import triplestar.mixchat.testutils.TestHelperController;
 
 @ActiveProfiles("test")
