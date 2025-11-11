@@ -32,14 +32,16 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
           SERVER_HOST: ${{ secrets.STAGING_SERVER_HOST }}
           SERVER_USER: ${{ secrets.STAGING_SERVER_USER }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
+          # Convert repository name to lowercase
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H -p 2222 $SERVER_HOST >> ~/.ssh/known_hosts
           
-          ssh -o StrictHostKeyChecking=no -p 2222 $SERVER_USER@$SERVER_HOST << 'ENDSSH'
+          ssh -o StrictHostKeyChecking=no -p 2222 $SERVER_USER@$SERVER_HOST << ENDSSH
             set -e
             cd /opt/app/staging
             
@@ -47,7 +49,7 @@ jobs:
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
             # Pull latest staging image
-            docker pull ghcr.io/${GITHUB_REPOSITORY}:dev-latest
+            docker pull ghcr.io/${REPO_LOWER}:dev-latest
             
             # Update docker-compose and restart
             docker compose down

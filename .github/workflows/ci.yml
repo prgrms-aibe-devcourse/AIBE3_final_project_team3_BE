@@ -1,28 +1,22 @@
 name: CI - Integration Tests
 
 on:
-  pull_request:
-    branches: [ dev, prod ]
-  push:
-    branches: [ dev, prod ]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to test'
+        required: false
+        type: string
+  workflow_run:
+    workflows: ["Build Docker Image"]
+    types:
+      - completed
 
 jobs:
-  wait-for-build:
-    name: Wait for Docker Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Wait for build workflow
-        uses: lewagon/wait-on-check-action@v1.3.1
-        with:
-          ref: ${{ github.ref }}
-          check-name: 'Build and Push Docker Image'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
-
   test:
     name: Run Integration Tests
     runs-on: ubuntu-latest
-    needs: wait-for-build
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     env:
       TZ: Asia/Seoul
 
@@ -74,6 +68,143 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get Docker image tag
+        id: get-tag
+        run: |
+          if [[ -n "${{ inputs.image_tag }}" ]]; then
+            # Manual trigger with specific tag
+            echo "tag=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            # Triggered by build.yml completion
+            # Check if the workflow_run was triggered by a PR
+            if [[ "${{ github.event.workflow_run.event }}" == "pull_request" ]]; then
+              # For PR events, extract PR number from pull_requests array
+              PR_NUMBER="${{ github.event.workflow_run.pull_requests[0].number }}"
+              if [[ -n "$PR_NUMBER" && "$PR_NUMBER" != "null" ]]; then
+                echo "tag=pr-${PR_NUMBER}" >> $GITHUB_OUTPUT
+                echo "Detected PR event, using tag: pr-${PR_NUMBER}"
+              else
+                # Fallback to SHA if PR number not available
+                SHA_SHORT=$(echo "${{ github.event.workflow_run.head_sha }}" | cut -c1-7)
+                echo "tag=sha-${SHA_SHORT}" >> $GITHUB_OUTPUT
+                echo "PR number not found, using SHA tag: sha-${SHA_SHORT}"
+              fi
+            else
+              # Push event to dev/prod branch - use sha- prefix to match build.yml
+              SHA_SHORT=$(echo "${{ github.event.workflow_run.head_sha }}" | cut -c1-7)
+              echo "tag=sha-${SHA_SHORT}" >> $GITHUB_OUTPUT
+              echo "Detected push event, using tag: sha-${SHA_SHORT}"
+            fi
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "tag=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          else
+            # Direct trigger - use sha- prefix to match build.yml
+            SHA_SHORT=$(echo "${{ github.sha }}" | cut -c1-7)
+            echo "tag=sha-${SHA_SHORT}" >> $GITHUB_OUTPUT
+          fi
+          # Convert repository name to lowercase
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "repo=${REPO_LOWER}" >> $GITHUB_OUTPUT
+          echo "=========================================="
+          echo "Event name: ${{ github.event_name }}"
+          echo "Workflow run event: ${{ github.event.workflow_run.event }}"
+          echo "Workflow run SHA: ${{ github.event.workflow_run.head_sha }}"
+          echo "Repository (original): ${{ github.repository }}"
+          echo "Repository (lowercase): ${REPO_LOWER}"
+          TAG=$(grep '^tag=' $GITHUB_OUTPUT | tail -1 | cut -d'=' -f2)
+          echo "Tag: ${TAG}"
+          echo "Full image: ghcr.io/${REPO_LOWER}:${TAG}"
+          echo "=========================================="
+
+      - name: Debug - Check if image exists
+        run: |
+          echo "Attempting to check if image exists..."
+          docker manifest inspect ghcr.io/${{ steps.get-tag.outputs.repo }}:${{ steps.get-tag.outputs.tag }} || \
+          echo "⚠️ Image does not exist or is not accessible. This might be expected if the build just completed."
+
+      - name: Wait for image to be available
+        run: |
+          echo "Waiting for image to be available in registry..."
+          MAX_RETRIES=10
+          RETRY_COUNT=0
+          SLEEP_TIME=6
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            echo "Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES..."
+            if docker manifest inspect ghcr.io/${{ steps.get-tag.outputs.repo }}:${{ steps.get-tag.outputs.tag }} > /dev/null 2>&1; then
+              echo "✅ Image is available!"
+              break
+            else
+              echo "Image not yet available, waiting ${SLEEP_TIME}s..."
+              sleep $SLEEP_TIME
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+            fi
+          done
+          
+          if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+            echo "❌ Image not available after $MAX_RETRIES attempts"
+            echo ""
+            echo "Possible causes:"
+            echo "1. Build workflow may have failed - check build logs"
+            echo "2. Package is private - needs to be set to public in GitHub UI"
+            echo "3. Package name mismatch - check repository name case"
+            echo ""
+            echo "To fix: Go to https://github.com/${{ github.repository_owner }}?tab=packages"
+            echo "Find 'aibe3_final_project_team3_be' package and set visibility to Public"
+            exit 1
+          fi
+
+      - name: Pull and run application container
+        run: |
+          echo "Pulling Docker image..."
+          docker pull ghcr.io/${{ steps.get-tag.outputs.repo }}:${{ steps.get-tag.outputs.tag }}
+          
+          echo "Starting application container..."
+          docker run -d \
+            --name mixchat-app \
+            --network host \
+            -e SPRING_PROFILES_ACTIVE=test \
+            -e MYSQL_HOST=127.0.0.1 \
+            -e MYSQL_PORT=3306 \
+            -e MYSQL_DATABASE=${{ secrets.MYSQL_TEST_DATABASE || 'mysql_test' }} \
+            -e MYSQL_USER=${{ secrets.MYSQL_TEST_USER || 'testuser' }} \
+            -e MYSQL_PASSWORD=${{ secrets.MYSQL_TEST_PASSWORD || 'testpass' }} \
+            -e REDIS_HOST=127.0.0.1 \
+            -e REDIS_PORT=6379 \
+            -e REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD || 'redispass' }} \
+            -e MONGO_HOST=127.0.0.1 \
+            -e MONGO_PORT=27017 \
+            -e MONGO_USERNAME=${{ secrets.MONGO_INITDB_ROOT_USERNAME || 'mongoadmin' }} \
+            -e MONGO_PASSWORD=${{ secrets.MONGO_INITDB_ROOT_PASSWORD || 'mongopass' }} \
+            -e MONGO_DATABASE=${{ secrets.MONGO_TEST_DB || 'mongo_test' }} \
+            ghcr.io/${{ steps.get-tag.outputs.repo }}:${{ steps.get-tag.outputs.tag }}
+          
+          echo "Container started. Checking status..."
+          docker ps -a | grep mixchat-app || echo "Container not found in docker ps"
+          
+          # Check if container is running
+          if ! docker ps | grep -q mixchat-app; then
+            echo "ERROR: Container is not running!"
+            echo "Container logs:"
+            docker logs mixchat-app || echo "Could not get logs"
+            exit 1
+          fi
+
+      - name: Wait for application to be ready
+        run: |
+          echo "Waiting for application to start..."
+          timeout 120 bash -c 'until curl -f http://localhost:8080/actuator/health 2>/dev/null; do sleep 2; done' || \
+          timeout 120 bash -c 'until curl -f http://localhost:8080/health 2>/dev/null; do sleep 2; done' || \
+          timeout 120 bash -c 'until curl -f http://localhost:8080/ 2>/dev/null; do sleep 2; done' || \
+          echo "Application may not have health endpoint, continuing..."
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -83,15 +214,6 @@ jobs:
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
-
-      - name: Wait for services to be ready
-        run: |
-          echo "Waiting for MySQL..."
-          timeout 60 bash -c 'until mysqladmin ping -h127.0.0.1 -P3306 -uroot -p${{ secrets.MYSQL_ROOT_PASSWORD || 'rootpw' }} --silent; do sleep 2; done'
-          echo "Waiting for Redis..."
-          timeout 60 bash -c 'until redis-cli -h 127.0.0.1 -p 6379 ping; do sleep 2; done'
-          echo "Waiting for MongoDB..."
-          timeout 60 bash -c 'until mongosh --host 127.0.0.1:27017 --eval "db.adminCommand({ping:1})" --quiet; do sleep 2; done'
 
       - name: Run integration tests
         env:
@@ -109,4 +231,22 @@ jobs:
           MONGO_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME || 'mongoadmin' }}
           MONGO_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD || 'mongopass' }}
           MONGO_DATABASE: ${{ secrets.MONGO_TEST_DB || 'mongo_test' }}
+          APP_URL: http://localhost:8080
         run: ./gradlew clean test --no-daemon --stacktrace
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            build/test-results/**/*.xml
+
+      - name: Show application logs on failure
+        if: failure()
+        run: docker logs mixchat-app
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker stop mixchat-app || true
+          docker rm mixchat-app || true
