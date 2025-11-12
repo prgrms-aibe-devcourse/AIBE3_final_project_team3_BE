@@ -6,7 +6,7 @@ import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-public class SwaggerConfig implements WebMvcConfigurer {
+public class SwaggerHomeConfig implements WebMvcConfigurer {
 
     // 리다이렉트 경로를 주입
     @Value("${swagger.redirect.path}")
