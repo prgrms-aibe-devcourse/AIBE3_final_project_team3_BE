@@ -1,6 +1,7 @@
 package triplestar.mixchat.domain.chat.chat.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 
@@ -19,7 +20,7 @@ public record MessageResp(
         @Schema(description = "발신자 닉네임", example = "JohnDoe")
         String sender,
 
-        @NotNull
+        @NotBlank
         @Schema(description = "메시지 내용", example = "안녕하세요!")
         String content,
 
