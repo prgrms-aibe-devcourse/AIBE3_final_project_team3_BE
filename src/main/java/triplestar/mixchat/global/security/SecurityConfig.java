@@ -38,7 +38,7 @@ public class SecurityConfig {
                                         "/", "/swagger-ui/**","/v3/api-docs/**",
                                         "/api/*/auth/join", "/api/*/auth/sign-in").permitAll()
                                 // ADMIN 권한 필요
-                                .requestMatchers("/api/*/admin").hasRole("ADMIN")
+                                .requestMatchers("/api/*/admin/**").hasRole("ADMIN")
                                 // 나머지 모든 요청은 인증 필요
                                 .requestMatchers("/**").authenticated()
                 )

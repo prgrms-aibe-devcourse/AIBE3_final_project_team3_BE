@@ -114,11 +114,5 @@ VALUES ('deleted.user@mixchat.com',
         '2025-11-01 10:00:00.000000' -- 👈 deleted_at 필드에 명시된 시각 삽입
        );
 
-INSERT INTO translation_tags (code) VALUES
-('GRAMMAR'),
-('SPELLING'),
-('STRUCTURE'),
-('WORD_UNKNOWN');
-
 INSERT INTO prompts (member_id, prompt_type, title, content, scenario_id, created_at, modified_at)
 VALUES (1, 'PRE_SCRIPTED', '테스트 프롬프트', '테스트 프롬프트입니다.', 'SCENARIO_001', NOW(), NOW());
