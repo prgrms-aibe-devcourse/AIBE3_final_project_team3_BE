@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 
+@Schema(description = "회원 정보 수정 요청 DTO")
 public record MemberInfoModifyReq(
         @Schema(description = "실명")
         @NotNull
