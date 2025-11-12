@@ -1,6 +1,5 @@
 package triplestar.mixchat.domain.member.friend.controller;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,9 +16,8 @@ import triplestar.mixchat.global.security.CustomUserDetails;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "ApiV1FriendshipController", description = "API 친구관계 컨트롤러")
 @RequestMapping("api/v1/member/friends")
-public class ApiV1FriendshipController {
+public class ApiV1FriendshipController implements ApiFriendshipController {
 
     private final FriendshipRequestService friendshipRequestService;
     private final FriendshipService friendshipService;
