@@ -7,8 +7,8 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
-import triplestar.mixchat.domain.chat.chat.dto.MessageRequest;
-import triplestar.mixchat.domain.chat.chat.dto.MessageResponse;
+import triplestar.mixchat.domain.chat.chat.dto.MessageReq;
+import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.entity.ChatRoom;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
@@ -39,13 +39,13 @@ public class ChatSocketController {
     }
 
     @MessageMapping("/chats/sendMessage")
-    public void sendMessage(@Payload MessageRequest messageRequest, Principal principal) {
+    public void sendMessage(@Payload MessageReq messageReq, Principal principal) {
         Member member = getMemberFromPrincipal(principal);
-        ChatRoom room = chatRoomService.getRoom(messageRequest.getRoomId());
+        ChatRoom room = chatRoomService.getRoom(messageReq.roomId());
 
-        ChatMessage savedMessage = chatMessageService.saveMessage(room, member, messageRequest.getContent(), messageRequest.getMessageType());
+        ChatMessage savedMessage = chatMessageService.saveMessage(room, member, messageReq.content(), messageReq.messageType());
 
-        MessageResponse messageResponse = MessageResponse.from(savedMessage, member.getNickname());
-        messagingTemplate.convertAndSend("/topic/rooms/" + messageRequest.getRoomId(), messageResponse);
+        MessageResp messageResp = MessageResp.from(savedMessage, member.getNickname());
+        messagingTemplate.convertAndSend("/topic/rooms/" + messageReq.roomId(), messageResp);
     }
 }

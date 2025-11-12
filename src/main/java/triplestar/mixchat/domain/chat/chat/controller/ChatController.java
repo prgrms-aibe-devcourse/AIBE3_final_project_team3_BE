@@ -74,18 +74,18 @@ public class ChatController {
     }
 
     @PostMapping("/rooms/{roomId}/message")
-    public ApiResponse<MessageResponse> sendMessage(@PathVariable Long roomId,
+    public ApiResponse<MessageResp> sendMessage(@PathVariable Long roomId,
                                                     @RequestParam Long memberId,
                                                     @RequestBody String content) {
         ChatRoom room = chatRoomService.getRoom(roomId);
         Member member = memberRepository.getReferenceById(memberId);
         ChatMessage savedMessage = chatMessageService.saveMessage(room, member, content, ChatMessage.MessageType.TEXT);
         String senderName = member.getNickname() != null ? member.getNickname() : member.getEmail();
-        return ApiResponse.ok("메시지 전송에 성공하였습니다.", MessageResponse.from(savedMessage, senderName));
+        return ApiResponse.ok("메시지 전송에 성공하였습니다.", MessageResp.from(savedMessage, senderName));
     }
 
     @GetMapping("/rooms/{roomId}/messages")
-    public ApiResponse<List<MessageResponse>> getMessages(@PathVariable Long roomId) {
+    public ApiResponse<List<MessageResp>> getMessages(@PathVariable Long roomId) {
         List<ChatMessage> messages = chatMessageService.getMessages(roomId);
 
         List<Long> senderIds = messages.stream()
@@ -96,18 +96,18 @@ public class ChatController {
         java.util.Map<Long, Member> membersById = memberRepository.findAllById(senderIds).stream()
                 .collect(Collectors.toMap(Member::getId, member -> member));
 
-        List<MessageResponse> messageResponses = messages.stream()
+        List<MessageResp> messageResps = messages.stream()
                 .map(message -> {
                     Member sender = membersById.get(message.getSenderId());
                     String senderName = (sender != null) ? sender.getNickname() : "Unknown";
-                    return MessageResponse.from(message, senderName);
+                    return MessageResp.from(message, senderName);
                 })
                 .collect(Collectors.toList());
-        return ApiResponse.ok("메시지 목록 조회에 성공하였습니다.", messageResponses);
+        return ApiResponse.ok("메시지 목록 조회에 성공하였습니다.", messageResps);
     }
 
     @PostMapping("/rooms/{roomId}/files")
-    public ApiResponse<MessageResponse> uploadFile(@PathVariable Long roomId,
+    public ApiResponse<MessageResp> uploadFile(@PathVariable Long roomId,
                                                    @AuthenticationPrincipal CustomUserDetails currentUser,
                                                    @RequestParam("file") MultipartFile file,
                                                    @RequestParam("messageType") ChatMessage.MessageType messageType) {
@@ -119,10 +119,10 @@ public class ChatController {
         ChatMessage savedMessage = chatMessageService.saveFileMessage(room, member, fileUrl, messageType);
 
         String senderName = member.getNickname() != null ? member.getNickname() : member.getEmail();
-        MessageResponse messageResponse = MessageResponse.from(savedMessage, senderName);
-        messagingTemplate.convertAndSend("/topic/chat/room/" + roomId, messageResponse);
+        MessageResp messageResp = MessageResp.from(savedMessage, senderName);
+        messagingTemplate.convertAndSend("/topic/chat/room/" + roomId, messageResp);
 
-        return ApiResponse.ok("파일 업로드 및 메시지 전송에 성공하였습니다.", messageResponse);
+        return ApiResponse.ok("파일 업로드 및 메시지 전송에 성공하였습니다.", messageResp);
     }
 
     @DeleteMapping("/rooms/{roomId}/leave")

@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 
-public record MessageRequest(
+public record MessageReq(
         @NotNull
         @Schema(description = "채팅방 ID", example = "1")
         Long roomId,

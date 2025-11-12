@@ -6,7 +6,7 @@ import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 
 import java.time.LocalDateTime;
 
-public record MessageResponse(
+public record MessageResp(
         @NotNull
         @Schema(description = "메시지 고유 ID", example = "60c72b2f9b1d8e001f8e4bde")
         String id,
@@ -31,8 +31,8 @@ public record MessageResponse(
         @Schema(description = "메시지 타입", example = "TALK")
         ChatMessage.MessageType messageType
 ) {
-    public static MessageResponse from(ChatMessage entity, String senderName) {
-        return new MessageResponse(
+    public static MessageResp from(ChatMessage entity, String senderName) {
+        return new MessageResp(
                 entity.getId(),
                 entity.getSenderId(),
                 senderName,
