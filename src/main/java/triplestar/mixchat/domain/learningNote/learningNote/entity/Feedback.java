@@ -21,7 +21,7 @@ import triplestar.mixchat.global.jpa.entity.BaseEntityNoModified;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Feedback extends BaseEntityNoModified {
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "learning_note_id", nullable = false)
     private LearningNote learningNote;
 
@@ -58,7 +58,7 @@ public class Feedback extends BaseEntityNoModified {
         return new Feedback(learningNote, tag, problem, correction, extra);
     }
 
-    void setLearningNote(LearningNote learningNote) {
+    void modifyLearningNote(LearningNote learningNote) {
         this.learningNote = learningNote;
     }
 }

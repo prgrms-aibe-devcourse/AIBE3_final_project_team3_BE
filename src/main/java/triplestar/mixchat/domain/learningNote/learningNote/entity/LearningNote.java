@@ -56,7 +56,7 @@ public class LearningNote extends BaseEntityNoModified {
     // 연관관계 편의 메서드
     public void addFeedback(Feedback feedback) {
         feedbacks.add(feedback);
-        feedback.setLearningNote(this);
+        feedback.modifyLearningNote(this);
     }
 
     public void mark() {
