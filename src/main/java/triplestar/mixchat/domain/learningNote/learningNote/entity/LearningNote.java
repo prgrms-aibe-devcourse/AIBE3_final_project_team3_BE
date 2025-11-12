@@ -21,7 +21,7 @@ import triplestar.mixchat.global.jpa.entity.BaseEntityNoModified;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class LearningNote extends BaseEntityNoModified {
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
@@ -37,7 +37,7 @@ public class LearningNote extends BaseEntityNoModified {
     @OneToMany(mappedBy = "learningNote", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Feedback> feedbacks = new ArrayList<>();
 
-    protected LearningNote(Member member,
+    private LearningNote(Member member,
                            String originalContent,
                            String correctedContent,
                            boolean marked) {

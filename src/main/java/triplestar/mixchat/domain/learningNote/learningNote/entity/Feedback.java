@@ -38,7 +38,7 @@ public class Feedback extends BaseEntityNoModified {
     @Column(nullable = false)
     private String extra;
 
-    protected Feedback(LearningNote learningNote,
+    private Feedback(LearningNote learningNote,
                        TranslationTagCode tag,
                        String problem,
                        String correction,
