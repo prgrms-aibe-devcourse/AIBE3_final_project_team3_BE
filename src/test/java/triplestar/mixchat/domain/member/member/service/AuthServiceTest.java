@@ -3,6 +3,7 @@ package triplestar.mixchat.domain.member.member.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ class AuthServiceTest {
                 "UK",
                 "loveCoding",
                 EnglishLevel.NATIVE,
-                "프로그래밍 좋아함",
+                List.of("프로그래밍 좋아함"),
                 "다른 것도 좋아함"
         );
         return authService.join(memberJoinReq);
@@ -64,7 +65,7 @@ class AuthServiceTest {
         assertThat(member.getCountry().getCode()).isEqualTo("UK");
         assertThat(member.getNickname()).isEqualTo("loveCoding");
         assertThat(member.getEnglishLevel()).isEqualTo(EnglishLevel.NATIVE);
-        assertThat(member.getInterest()).isEqualTo("프로그래밍 좋아함");
+        assertThat(member.getInterests()).isEqualTo(List.of("프로그래밍 좋아함"));
         assertThat(member.getDescription()).isEqualTo("다른 것도 좋아함");
     }
 
@@ -95,7 +96,7 @@ class AuthServiceTest {
                 "UK",
                 "loveCoding",
                 EnglishLevel.NATIVE,
-                "프로그래밍 좋아함",
+                List.of("프로그래밍 좋아함"),
                 "다른 것도 좋아함"
         );
 

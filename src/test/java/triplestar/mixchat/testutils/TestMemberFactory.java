@@ -13,15 +13,15 @@ public class TestMemberFactory {
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public static Member createMember(String username) {
-        return Member.builder()
-                .email(username + "@example.com")
-                .password(Password.encrypt("user1234", passwordEncoder))
-                .name(username)
-                .nickname(username)
-                .country(Country.CANADA)
-                .englishLevel(EnglishLevel.INTERMEDIATE)
-                .interests(List.of("음악"))
-                .description("테스트 회원입니다.")
-                .build();
+        return Member.createMember(
+                username + "@example.com",
+                Password.encrypt("user1234", passwordEncoder),
+                username,
+                username,
+                Country.CANADA,
+                EnglishLevel.INTERMEDIATE,
+                List.of("음악"),
+                "테스트 회원입니다."
+        );
     }
 }

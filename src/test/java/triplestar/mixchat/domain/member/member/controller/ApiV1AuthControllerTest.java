@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +54,7 @@ class ApiV1AuthControllerTest {
                                             "country": "KR",
                                             "nickname": "믹스마스터",
                                             "englishLevel": "INTERMEDIATE",
-                                            "interest": "요리, 여행, 음악",
+                                            "interests": ["요리", "여행", "음악"],
                                             "description": "안녕하세요. 자기소개입니다."
                                         }
                                         """)
@@ -83,7 +84,7 @@ class ApiV1AuthControllerTest {
                                             "country": "KR",
                                             "nickname": "믹스마스터",
                                             "englishLevel": "INTERMEDIATE",
-                                            "interest": "요리, 여행, 음악",
+                                            "interests": ["요리", "여행", "음악"],
                                             "description": "안녕하세요. 자기소개입니다."
                                         }
                                         """)
@@ -131,7 +132,7 @@ class ApiV1AuthControllerTest {
                 "KR",
                 "믹스마스터",
                 EnglishLevel.INTERMEDIATE,
-                "요리, 여행, 음악",
+                List.of("요리, 여행, 음악"),
                 "안녕하세요. 자기소개입니다."
         ));
     }

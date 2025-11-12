@@ -5,11 +5,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.auth.dto.SigninReq;
 import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.auth.dto.SignInResp;
+import triplestar.mixchat.domain.member.auth.dto.SigninReq;
+import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
@@ -53,16 +53,11 @@ public class AuthService {
     }
 
     private Member buildJoinMember(MemberJoinReq req) {
-        return Member.builder()
-                .email(req.email())
-                .password(Password.encrypt(req.password(), passwordEncoder))
-                .name(req.name())
-                .nickname(req.nickname())
-                .country(Country.findByCode(req.country()))
-                .englishLevel(req.englishLevel())
-                .interests(req.interests())
-                .description(req.description())
-                .build();
+        return Member.createMember(
+                req.email(), Password.encrypt(req.password(), passwordEncoder),
+                req.name(), req.nickname(),
+                Country.findByCode(req.country()), req.englishLevel(), req.interests(), req.description()
+        );
     }
 
     /**
