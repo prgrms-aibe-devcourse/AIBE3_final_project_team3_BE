@@ -33,8 +33,8 @@ class ApiV1PromptControllerTest {
 
     @Test
     @WithMockUser(username = "유저1", roles = "USER")
-    @DisplayName("프롬프트 생성 - 성공")
-    void createPrompt_success() throws Exception {
+    @DisplayName("프롬프트 생성")
+    void createPrompt() throws Exception {
         PromptReq req = new PromptReq("테스트 프롬프트", "프롬프트 내용입니다.", "CUSTOM");
         String json = objectMapper.writeValueAsString(req);
 
@@ -47,8 +47,8 @@ class ApiV1PromptControllerTest {
 
     @Test
     @WithMockUser(username = "유저1", roles = "USER")
-    @DisplayName("프롬프트 목록 조회 - 성공")
-    void listPrompt_success() throws Exception {
+    @DisplayName("프롬프트 목록 조회")
+    void listPrompt() throws Exception {
         promptService.create(new PromptReq("목록 프롬프트", "내용", "CUSTOM"));
 
         mvc.perform(get("/api/v1/prompt"))
@@ -58,8 +58,8 @@ class ApiV1PromptControllerTest {
 
     @Test
     @WithMockUser(username = "유저1", roles = "USER")
-    @DisplayName("프롬프트 상세 조회 - 성공")
-    void detailPrompt_success() throws Exception {
+    @DisplayName("프롬프트 상세 조회")
+    void detailPrompt() throws Exception {
         var saved = promptService.create(new PromptReq("상세 프롬프트", "상세 내용", "CUSTOM"));
         Long id = saved.id();
 
@@ -71,8 +71,8 @@ class ApiV1PromptControllerTest {
 
     @Test
     @WithMockUser(username = "유저1", roles = "USER")
-    @DisplayName("프롬프트 수정 - 성공")
-    void updatePrompt_success() throws Exception {
+    @DisplayName("프롬프트 수정")
+    void modifyPrompt() throws Exception {
         var saved = promptService.create(new PromptReq("수정 프롬프트", "내용", "CUSTOM"));
         Long id = saved.id();
         PromptReq req = new PromptReq("수정된 프롬프트", "수정된 내용입니다.", "CUSTOM");
@@ -87,8 +87,8 @@ class ApiV1PromptControllerTest {
 
     @Test
     @WithMockUser(username = "유저1", roles = "USER")
-    @DisplayName("프롬프트 삭제 - 성공")
-    void deletePrompt_success() throws Exception {
+    @DisplayName("프롬프트 삭제")
+    void deletePrompt() throws Exception {
         var saved = promptService.create(new PromptReq("삭제 프롬프트", "내용", "CUSTOM"));
         Long id = saved.id();
 

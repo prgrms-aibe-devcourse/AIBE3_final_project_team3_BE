@@ -19,8 +19,8 @@ class PromptServiceTest {
     private PromptService promptService;
 
     @Test
-    @DisplayName("프롬프트 생성 - 성공")
-    void createPrompt_success() {
+    @DisplayName("프롬프트 생성")
+    void createPrompt() {
         PromptReq req = new PromptReq("생성 테스트 프롬프트", "생성 내용", "CUSTOM");
 
         PromptDetailResp saved = promptService.create(req);
@@ -31,8 +31,8 @@ class PromptServiceTest {
     }
 
     @Test
-    @DisplayName("프롬프트 목록 조회 - 성공")
-    void listPrompt_success() {
+    @DisplayName("프롬프트 목록 조회")
+    void listPrompt() {
         promptService.create(new PromptReq("조회 테스트 프롬프트", "조회 내용", "CUSTOM"));
 
         java.util.List<PromptListResp> allPrompts = promptService.list();
@@ -43,8 +43,8 @@ class PromptServiceTest {
     }
 
     @Test
-    @DisplayName("프롬프트 상세 조회 - 성공")
-    void detailPrompt_success() {
+    @DisplayName("프롬프트 상세 조회")
+    void detailPrompt() {
         PromptReq req = new PromptReq("상세 프롬프트", "상세 내용", "CUSTOM");
         PromptDetailResp saved = promptService.create(req);
         Long id = saved.id();
@@ -57,8 +57,8 @@ class PromptServiceTest {
     }
 
     @Test
-    @DisplayName("프롬프트 수정 - 성공")
-    void updatePrompt_success() {
+    @DisplayName("프롬프트 수정")
+    void updatePrompt() {
         PromptReq req = new PromptReq("수정 전 프롬프트", "수정 전 내용", "CUSTOM");
         PromptDetailResp saved = promptService.create(req);
         Long id = saved.id();
@@ -72,8 +72,8 @@ class PromptServiceTest {
     }
 
     @Test
-    @DisplayName("프롬프트 삭제 - 성공")
-    void deletePrompt_success() {
+    @DisplayName("프롬프트 삭제")
+    void deletePrompt() {
         PromptReq req = new PromptReq("삭제 프롬프트", "삭제 내용", "CUSTOM");
         PromptDetailResp saved = promptService.create(req);
         Long id = saved.id();
