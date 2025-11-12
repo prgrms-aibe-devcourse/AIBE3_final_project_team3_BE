@@ -92,4 +92,49 @@ class ApiV1LearningNoteControllerTest {
             assertThat(f.getExtra()).isEqualTo("단어 번역");
         });
     }
+
+    @Test
+    @DisplayName("학습노트 생성 실패 - 필수값 누락 시 400 반환")
+    @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void createLearningNote_missingField_fail() throws Exception {
+        String invalidJson = """
+            {
+              "memberId": %d,
+              "correctedContent": "I go to school every day.",
+              "feedback": [
+                {"tag": "GRAMMAR", "problem": "goes", "correction": "go", "extra": "시제 수정"}
+              ]
+            }
+            """.formatted(testMember.getId());
+
+        mockMvc.perform(post("/api/v1/learning/notes/save")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidJson))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.msg").value("요청 값이 유효하지 않습니다."))
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("학습노트 생성 실패 - 인증되지 않은 사용자 401 반환")
+    void createLearningNote_unauthenticated_fail() throws Exception {
+        String requestJson = """
+            {
+              "memberId": 999,
+              "originalContent": "I goes to 학교 every day.",
+              "correctedContent": "I go to school every day.",
+              "feedback": [
+                {"tag": "GRAMMAR", "problem": "goes", "correction": "go", "extra": "시제 수정"}
+              ]
+            }
+            """;
+
+        mockMvc.perform(post("/api/v1/learning/notes/save")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson))
+                .andDo(print())
+                .andExpect(status().isUnauthorized())
+                .andExpect(status().isUnauthorized());
+    }
 }
