@@ -29,7 +29,11 @@ public record PromptDetailResp(
 
     @NotNull
     @Schema(description = "수정일시", example = "2025-11-12T12:10:00")
-    LocalDateTime modifiedAt
+    LocalDateTime modifiedAt,
+
+    @NotNull
+    @Schema(description = "멤버 ID", example = "1")
+    Long memberId
 ) {
     public static PromptDetailResp of(Prompt prompt) {
         return new PromptDetailResp(
@@ -38,8 +42,8 @@ public record PromptDetailResp(
             prompt.getType().name(),
             prompt.getContent(),
             prompt.getCreatedAt(),
-            prompt.getModifiedAt()
+            prompt.getModifiedAt(),
+            prompt.getMember().getId()
         );
     }
 }
-
