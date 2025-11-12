@@ -1,5 +1,6 @@
 package triplestar.mixchat.domain.member.member.controller;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,11 +13,13 @@ import triplestar.mixchat.global.security.CustomUserDetails;
 
 @RestController
 @RequestMapping("/api/v1/members")
-public class ApiV1MemberController {
+@RequiredArgsConstructor
+public class ApiV1MemberController implements ApiMemberController {
 
-    MemberService memberService;
+    private final MemberService memberService;
 
-    @PutMapping("/me")
+    @Override
+    @PutMapping("/profile")
     public ApiResponse<Void> updateMyProfile(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             @RequestBody MemberInfoModifyReq memberInfoModifyReq
