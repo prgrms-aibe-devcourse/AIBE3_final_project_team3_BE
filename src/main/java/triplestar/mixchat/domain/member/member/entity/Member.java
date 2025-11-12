@@ -1,7 +1,6 @@
 package triplestar.mixchat.domain.member.member.entity;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -9,7 +8,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import java.time.LocalDateTime;
-import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,7 +15,6 @@ import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
 import triplestar.mixchat.domain.member.member.constant.Role;
-import triplestar.mixchat.global.converter.JsonListConverter;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
 @Entity
@@ -101,5 +98,11 @@ public class Member extends BaseEntity {
         this.englishLevel = englishLevel;
         this.interests = interests;
         this.description = description;
+    }
+
+    public void blockByReport(ReportCategory category) {
+        this.isBlocked = true;
+        this.blockedAt = LocalDateTime.now();
+        this.blockReason = category.name();
     }
 }
