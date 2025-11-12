@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS `feedbacks` (
                                            `id`               BIGINT       NOT NULL AUTO_INCREMENT,
                                            `learning_note_id` BIGINT       NOT NULL,
                                            `created_at`    DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-                                           `tag`         VARCHAR(50)  NOT NULL,
+                                           `tag`              VARCHAR(50)  NOT NULL,
                                            `problem`          VARCHAR(100)         NOT NULL,
                                            `correction`       VARCHAR(100)         NOT NULL,
                                            `extra`            VARCHAR(100)         NOT NULL,
