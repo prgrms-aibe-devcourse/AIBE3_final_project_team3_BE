@@ -23,7 +23,6 @@ import java.lang.annotation.Target;
                 content = @Content(
                         schema = @Schema(implementation = ApiResponse.class),
                         examples = @ExampleObject(
-                                name = "400_BadRequest",
                                 summary = "잘못된 요청 예시",
                                 value = "{\"msg\": \"요청 본문의 형식이 잘못되었거나 필수 값이 누락되었습니다.\"}"
                         )
@@ -35,7 +34,6 @@ import java.lang.annotation.Target;
                 content = @Content(
                         schema = @Schema(implementation = ApiResponse.class),
                         examples = @ExampleObject(
-                                name = "404_NotFound",
                                 summary = "일반적인 리소스 미발견 예시",
                                 value = "{\"msg\": \"요청하신 경로를 찾을 수 없습니다.\"}"
                         )

@@ -23,7 +23,6 @@ import java.lang.annotation.Target;
                 content = @Content(
                         schema = @Schema(implementation = triplestar.mixchat.global.response.ApiResponse.class),
                         examples = @ExampleObject(
-                                name = "403_Forbidden",
                                 summary = "접근 권한 부족 예시",
                                 value = "{\"msg\": \"해당 리소스에 접근할 권한이 없습니다.\"}"
                         )

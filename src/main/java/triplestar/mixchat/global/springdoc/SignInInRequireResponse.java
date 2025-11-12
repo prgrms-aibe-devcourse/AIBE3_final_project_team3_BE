@@ -22,7 +22,6 @@ import java.lang.annotation.Target;
         content = @Content(
                 schema = @Schema(implementation = ApiResponse.class),
                 examples = @ExampleObject(
-                        name = "401_Unauthorized",
                         summary = "인증 실패 예시",
                         value = "{\"msg\": \"인증 정보가 유효하지 않거나 누락되었습니다.\"}"
                 )

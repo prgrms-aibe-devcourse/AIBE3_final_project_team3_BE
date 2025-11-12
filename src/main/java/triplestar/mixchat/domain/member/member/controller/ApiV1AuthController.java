@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.Arrays;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,28 +22,19 @@ import triplestar.mixchat.domain.member.member.service.AuthService;
 import triplestar.mixchat.global.response.ApiResponse;
 
 @RestController
-@Tag(name = "ApiV1AuthController", description = "API 인증/인가 컨트롤러")
 @RequestMapping("api/v1/auth")
-public class ApiV1AuthController {
+@RequiredArgsConstructor
+public class ApiV1AuthController implements ApiAuthController{
 
     private final AuthService authService;
-    private final int refreshTokenExpireSeconds;
-    private final String cookieDomain;
 
-    public ApiV1AuthController(
-            AuthService authService,
-            @Value("${jwt.refresh-token-expiration-seconds}")
-            int refreshTokenExpireSeconds,
-            @Value("${cookie.domain}")
-            String cookieDomain
-    ) {
-        this.authService = authService;
-        this.refreshTokenExpireSeconds = refreshTokenExpireSeconds;
-        this.cookieDomain = cookieDomain;
-    }
+    @Value("${jwt.refresh-token-expiration-seconds}")
+    private int refreshTokenExpireSeconds;
+
+    @Value("${cookie.domain}")
+    private String cookieDomain;
 
     @PostMapping("/join")
-    @Operation(summary = "회원가입", description = "새로운 사용자를 회원으로 가입시킵니다.")
     public ApiResponse<MemberSummaryResp> join(
             @RequestBody @Valid MemberJoinReq memberJoinReq
     ) {
@@ -51,7 +43,6 @@ public class ApiV1AuthController {
     }
 
     @PostMapping("/sign-in")
-    @Operation(summary = "로그인", description = "사용자 인증을 수행하고 토큰을 발급합니다.")
     public ApiResponse<String> signIn(
             @RequestBody @Valid SigninReq signInReq,
             HttpServletResponse httpServletResponse
@@ -78,7 +69,6 @@ public class ApiV1AuthController {
     }
 
     @PostMapping("/reissue")
-    @Operation(summary = "토큰 재발급", description = "만료된 액세스 토큰을 재발급합니다.")
     public ApiResponse<String> reissue(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
         String refreshToken = findRefreshTokenCookie(httpServletRequest);
         SignInResp resp = authService.reissueAccessToken(refreshToken);
