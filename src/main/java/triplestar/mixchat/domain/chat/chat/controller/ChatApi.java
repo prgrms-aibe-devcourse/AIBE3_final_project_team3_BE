@@ -76,7 +76,7 @@ public interface ChatApi {
     @SignInInRequireResponse
     void leaveRoom(
             @Parameter(description = "나갈 채팅방의 ID") @PathVariable Long roomId,
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
+             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 
     @Operation(summary = "채팅방 사용자 차단 (미구현)", description = "특정 사용자를 채팅방에서 차단합니다. (현재 로직 구현 안됨)")
