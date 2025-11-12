@@ -104,12 +104,6 @@ CREATE TABLE IF NOT EXISTS `sentence_games` (
                                                 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `translation_tags` (
-                                                  `id`       BIGINT       NOT NULL AUTO_INCREMENT,
-                                                  `code`     VARCHAR(50)  NOT NULL UNIQUE,
-                                                  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 # 프롬프트 테이블
 CREATE TABLE IF NOT EXISTS `prompts` (
                                          `id`            BIGINT       NOT NULL AUTO_INCREMENT,
@@ -125,6 +119,41 @@ CREATE TABLE IF NOT EXISTS `prompts` (
 
                                          PRIMARY KEY (`id`),
                                          FOREIGN KEY (`member_id`) REFERENCES `members`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `learning_notes` (
+                                                `id`                BIGINT       NOT NULL AUTO_INCREMENT,
+                                                `member_id`         BIGINT       NOT NULL,
+                                                `original_content`  VARCHAR(100)         NOT NULL,
+                                                `corrected_content` VARCHAR(100)         NOT NULL,
+                                                `created_at`    DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                                                `is_marked`         BOOLEAN      NOT NULL DEFAULT FALSE,
+
+                                                PRIMARY KEY (`id`),
+                                                KEY `idx_learning_notes_member_id` (`member_id`),
+
+                                                CONSTRAINT `fk_learning_note_member`
+                                                FOREIGN KEY (`member_id`)
+                                                REFERENCES `members` (`id`)
+                                                ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `feedbacks` (
+                                           `id`               BIGINT       NOT NULL AUTO_INCREMENT,
+                                           `learning_note_id` BIGINT       NOT NULL,
+                                           `created_at`    DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                                           `tag`         VARCHAR(50)  NOT NULL,
+                                           `problem`          VARCHAR(100)         NOT NULL,
+                                           `correction`       VARCHAR(100)         NOT NULL,
+                                           `extra`            VARCHAR(100)         NOT NULL,
+
+                                           PRIMARY KEY (`id`),
+                                           KEY `idx_learning_feedbacks_learning_note_id` (`learning_note_id`),
+
+                                           CONSTRAINT `fk_feedback_note`
+                                           FOREIGN KEY (`learning_note_id`)
+                                           REFERENCES `learning_notes` (`id`)
+                                           ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET SQL_MODE=@OLD_SQL_MODE;
