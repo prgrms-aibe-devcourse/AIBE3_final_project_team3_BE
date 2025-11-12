@@ -13,21 +13,17 @@ import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.global.response.ApiResponse;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
 import triplestar.mixchat.global.springdoc.SignInInRequireResponse;
+import triplestar.mixchat.global.springdoc.SuccessResponse;
 
 @Tag(name = "ApiV1AuthController", description = "API 인증/인가 컨트롤러")
 @CommonBadResponse
+@SuccessResponse
 public interface ApiAuthController {
 
     // --- 1. 회원가입 (POST /join) ---
     @Operation(
             summary = "회원가입",
-            description = "새로운 사용자를 회원으로 가입시킵니다.",
-            responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                            responseCode = "200", description = "성공",
-                            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-                    )
-            }
+            description = "새로운 사용자를 회원으로 가입시킵니다."
     )
     ApiResponse<MemberSummaryResp> join(
             @RequestBody(description = "가입 정보", required = true)
@@ -39,10 +35,6 @@ public interface ApiAuthController {
             summary = "로그인",
             description = "사용자 인증을 수행하고 토큰을 발급합니다.",
             responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                            responseCode = "200", description = "성공",
-                            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-                    ),
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404", description = "존재하지 않는 사용자 (MEMBER_NOT_FOUND)",
                             content = @Content(schema = @Schema(implementation = ApiResponse.class))
@@ -58,13 +50,7 @@ public interface ApiAuthController {
     // --- 3. 토큰 재발급 (POST /reissue) ---
     @Operation(
             summary = "토큰 재발급",
-            description = "만료된 액세스 토큰을 리프레시 토큰을 통해 재발급합니다.",
-            responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                            responseCode = "200", description = "성공",
-                            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-                    )
-            }
+            description = "만료된 액세스 토큰을 리프레시 토큰을 통해 재발급합니다."
     )
     @SignInInRequireResponse
     ApiResponse<String> reissue(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse);
