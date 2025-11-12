@@ -1,6 +1,7 @@
 package triplestar.mixchat.domain.member.member.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -8,6 +9,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,6 +17,8 @@ import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
 import triplestar.mixchat.domain.member.member.constant.Role;
+import triplestar.mixchat.domain.report.report.constant.ReportCategory;
+import triplestar.mixchat.global.converter.JsonListConverter;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
 @Entity
@@ -73,9 +77,9 @@ public class Member extends BaseEntity {
 
     private String blockReason;
 
-    @Builder
-    public Member(String email, Password password, String name, String nickname, Country country,
-                  EnglishLevel englishLevel, List<String> interests, String description) {
+    private Member(String email, Password password, String name, String nickname, Country country,
+                  EnglishLevel englishLevel, List<String> interests, String description, Role role) {
+        validate(email, password, name, nickname, country, englishLevel, interests, description, role);
         this.email = email;
         this.password = password;
         this.name = name;
@@ -88,6 +92,49 @@ public class Member extends BaseEntity {
         this.membershipGrade = MembershipGrade.BASIC;
         this.isBlocked = false;
         this.isDeleted = false;
+    }
+
+    private void validate(String email, Password password, String name, String nickname, Country country,
+                          EnglishLevel englishLevel, List<String> interests, String description, Role role) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("이메일은 null이거나 공백일 수 없습니다.");
+        }
+        if (password == null) {
+            throw new IllegalArgumentException("비밀번호는 null일 수 없습니다.");
+        }
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("이름은 null이거나 공백일 수 없습니다.");
+        }
+        if (nickname == null || nickname.isBlank()) {
+            throw new IllegalArgumentException("닉네임은 null이거나 공백일 수 없습니다.");
+        }
+        if (country == null) {
+            throw new IllegalArgumentException("국가 정보는 null일 수 없습니다.");
+        }
+        if (englishLevel == null) {
+            throw new IllegalArgumentException("영어 레벨은 null일 수 없습니다.");
+        }
+        if (interests == null || interests.isEmpty()) {
+            throw new IllegalArgumentException("관심사 목록은 null이거나 비어있을 수 없습니다.");
+        }
+        if (description == null || description.isBlank()) {
+            throw new IllegalArgumentException("자기소개는 null이거나 공백일 수 없습니다.");
+        }
+        if (role == null) {
+            throw new IllegalArgumentException("역할 정보는 null일 수 없습니다.");
+        }
+    }
+
+    public static Member createMember(String email, Password password, String name, String nickname, Country country,
+                                      EnglishLevel englishLevel, List<String> interests, String description) {
+        return new Member(email, password, name, nickname, country,
+                englishLevel, interests, description, Role.ROLE_MEMBER);
+    }
+
+    public static Member createAdmin(String email, Password password, String name, String nickname, Country country,
+                                      EnglishLevel englishLevel, List<String> interests, String description) {
+        return new Member(email, password, name, nickname, country,
+                englishLevel, interests, description, Role.ROLE_ADMIN);
     }
 
     public void update(String name, Country country, String nickname,

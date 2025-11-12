@@ -43,7 +43,7 @@ public record MemberJoinReq(
 
         @Schema(description = "관심사", example = "요리, 여행")
         @NotNull
-        List<String> interest,
+        List<String> interests,
 
         @Schema(description = "자기소개")
         @NotNull

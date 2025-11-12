@@ -60,7 +60,7 @@ public class AuthService {
                 .nickname(req.nickname())
                 .country(Country.findByCode(req.country()))
                 .englishLevel(req.englishLevel())
-                .interests(req.interest())
+                .interests(req.interests())
                 .description(req.description())
                 .build();
     }
