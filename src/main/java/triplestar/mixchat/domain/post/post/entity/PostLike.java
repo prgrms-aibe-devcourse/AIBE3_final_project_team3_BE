@@ -9,6 +9,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Getter
 @Entity
@@ -38,7 +39,7 @@ public class PostLike {
     private LocalDateTime createdAt;
 
     public PostLike(Member member, Post post) {
-        this.member = member;
-        this.post = post;
+        this.member = Objects.requireNonNull(member, "member must not be null");
+        this.post = Objects.requireNonNull(post, "post must not be null");
     }
 }

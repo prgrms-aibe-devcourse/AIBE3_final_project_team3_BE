@@ -2,7 +2,6 @@ package triplestar.mixchat.domain.post.post.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -10,6 +9,7 @@ import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -45,12 +45,12 @@ public class Comment extends BaseEntity {
     @Column(nullable = false)
     private int likeCount = 0;
 
-    @Builder
+    // 필수 필드 null 체크 생성자 (parent는 선택)
     public Comment(Member author, Post post, Comment parent, String content) {
-        this.author = author;
-        this.post = post;
-        this.parent = parent;
-        this.content = content;
+        this.author = Objects.requireNonNull(author, "author must not be null");
+        this.post = Objects.requireNonNull(post, "post must not be null");
+        this.parent = parent; // nullable 허용
+        this.content = Objects.requireNonNull(content, "content must not be null");
         this.likeCount = 0;
     }
 

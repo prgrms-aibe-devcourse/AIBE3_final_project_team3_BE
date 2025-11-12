@@ -1,9 +1,7 @@
-
 package triplestar.mixchat.domain.post.post.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -11,6 +9,7 @@ import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -35,17 +34,27 @@ public class Post extends BaseEntity {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostImage> images = new ArrayList<>();
 
-    @Builder
+    // 필수 필드 null 체크 생성자
     public Post(Member author, String title, String content) {
-        this.author = author;
-        this.title = title;
-        this.content = content;
+        this.author = Objects.requireNonNull(author, "author must not be null");
+        this.title = Objects.requireNonNull(title, "title must not be null");
+        this.content = Objects.requireNonNull(content, "content must not be null");
         this.viewCount = 0;
     }
 
+    // 도메인 메서드: 이미지 추가 (엔티티 인스턴스)
     public void addImage(PostImage postImage) {
+        Objects.requireNonNull(postImage, "postImage must not be null");
+        // 연관관계 편의 메서드: 양방향 설정
+        postImage.assignPost(this);
         this.images.add(postImage);
-        postImage.setPost(this);
+    }
+
+    // 도메인 메서드: 이미지 URL로 바로 추가 (편의 메서드)
+    public void addImage(String imageUrl) {
+        Objects.requireNonNull(imageUrl, "imageUrl must not be null");
+        PostImage image = new PostImage(imageUrl);
+        image.assignPost(this);
+        this.images.add(image);
     }
 }
-

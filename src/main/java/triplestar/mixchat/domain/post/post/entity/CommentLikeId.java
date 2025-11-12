@@ -1,5 +1,6 @@
 package triplestar.mixchat.domain.post.post.entity;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -9,7 +10,7 @@ import java.io.Serializable;
 
 @Getter
 @EqualsAndHashCode
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class CommentLikeId implements Serializable {
     private Long member;
