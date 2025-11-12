@@ -7,7 +7,7 @@
 
 ### 기능별 브랜치
 - feat/? : 새로운 기능 개발
-- chore/? : 설정, 빌드 관련
-- fix/? : dev 브랜치 버그 수정
+- chore/? : 설정, 빌드, 기타 관련 사항
+- fix/? : dev/release 브랜치 버그 수정
 - refactor/? : 리팩토링
-- hotfix : release/main 브랜치 긴급 버그 수정
+- hotfix/? : main 브랜치 긴급 버그 수정
