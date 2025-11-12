@@ -28,6 +28,7 @@ public class ChatController {
     private final ChatRoomService chatRoomService;
     private final ChatMessageService chatMessageService;
     private final MemberRepository memberRepository;
+    //todo : member자체보다 memberid를 참조해 repository호출 제거 고려
     private final S3Uploader s3Uploader;
     private final SimpMessagingTemplate messagingTemplate;
 

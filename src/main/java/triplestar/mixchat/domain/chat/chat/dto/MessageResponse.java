@@ -21,6 +21,7 @@ public class MessageResponse {
     private String memo;
     private Long serviceId;
 
+    // todo : builder 패턴 피하고, record로 통일
     public static MessageResponse from(ChatMessage entity, String senderName) {
         return MessageResponse.builder()
                 .id(entity.getId())

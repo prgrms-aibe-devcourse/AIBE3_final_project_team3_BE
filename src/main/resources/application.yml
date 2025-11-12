@@ -19,6 +19,8 @@ spring:
 jwt:
   access-token-expiration-seconds: "#{60 * 15}"
   refresh-token-expiration-seconds: "#{60 * 60 * 24 * 7}"
+  access-secret: "localtestjwtsecret123456789012345678901234" # 삭제예정
+  refresh-secret: "localtestjwtsecret123456789012345678901234" # 삭제예정
 redis:
   prefix:
     refresh-token: "refresh:"
