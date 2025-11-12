@@ -9,7 +9,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import triplestar.mixchat.domain.chat.chat.dto.MessageReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
 import triplestar.mixchat.domain.chat.chat.service.ChatRoomService;
 import triplestar.mixchat.global.security.CustomUserDetails;
@@ -26,11 +25,9 @@ public class ChatSocketController {
     @MessageMapping("/chats/sendMessage")
     public void sendMessage(@Payload MessageReq messageReq, @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long senderId = userDetails.getId();
-        String senderName = userDetails.getUsername();
 
-        ChatMessage savedMessage = chatMessageService.saveMessage(messageReq.roomId(), senderId, messageReq.content(), messageReq.messageType());
+        MessageResp messageResp = chatMessageService.saveMessage(messageReq.roomId(), senderId, messageReq.content(), messageReq.messageType());
 
-        MessageResp messageResp = MessageResp.from(savedMessage, senderName);
         messagingTemplate.convertAndSend("/topic/rooms/" + messageReq.roomId(), messageResp);
     }
 }

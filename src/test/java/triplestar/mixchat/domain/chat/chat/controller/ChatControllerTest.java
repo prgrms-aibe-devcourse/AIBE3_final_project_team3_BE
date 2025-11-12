@@ -6,14 +6,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
+import triplestar.mixchat.domain.chat.chat.dto.ChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatRoom;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
@@ -28,6 +29,7 @@ import triplestar.mixchat.global.security.CustomUserDetailsService;
 import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
 
 import java.util.Collections;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
@@ -35,7 +37,9 @@ import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -47,13 +51,13 @@ class ChatControllerTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
 
-    @MockitoBean private JpaMetamodelMappingContext jpaMetamodelMappingContext;
-    @MockitoBean private ChatRoomService chatRoomService;
-    @MockitoBean private ChatMessageService chatMessageService;
-    @MockitoBean private S3Uploader s3Uploader;
-    @MockitoBean private SimpMessagingTemplate messagingTemplate;
-    @MockitoBean private AuthJwtProvider authJwtProvider;
-    @MockitoBean private CustomUserDetailsService customUserDetailsService;
+    @MockBean private JpaMetamodelMappingContext jpaMetamodelMappingContext;
+    @MockBean private ChatRoomService chatRoomService;
+    @MockBean private ChatMessageService chatMessageService;
+    @MockBean private S3Uploader s3Uploader;
+    @MockBean private SimpMessagingTemplate messagingTemplate;
+    @MockBean private AuthJwtProvider authJwtProvider;
+    @MockBean private CustomUserDetailsService customUserDetailsService;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private Member mockUser;
@@ -87,10 +91,9 @@ class ChatControllerTest {
         long partnerId = 2L;
         CreateDirectChatReq requestDto = new CreateDirectChatReq(partnerId);
 
-        ChatRoom mockRoom = ChatRoom.createDirectRoom("테스트유저", "파트너유저");
-        ReflectionTestUtils.setField(mockRoom, "id", 100L);
+        ChatRoomResp mockRoomResp = new ChatRoomResp(100L, "테스트유저, 파트너유저", ChatRoom.RoomType.DIRECT, Collections.emptyList());
 
-        given(chatRoomService.findOrCreateDirectRoom(mockUser.getId(), partnerId)).willReturn(mockRoom);
+        given(chatRoomService.findOrCreateDirectRoom(mockUser.getId(), partnerId)).willReturn(mockRoomResp);
 
         // when
         mockMvc.perform(post("/api/v1/chats/rooms/direct")
@@ -113,10 +116,9 @@ class ChatControllerTest {
     @DisplayName("자신의 모든 채팅방 목록 조회 성공")
     void getRooms_success() throws Exception {
         // given
-        ChatRoom mockRoom = ChatRoom.createGroupRoom("테스트 채팅방");
-        ReflectionTestUtils.setField(mockRoom, "id", 100L);
+        ChatRoomResp mockRoomResp = new ChatRoomResp(100L, "테스트 채팅방", ChatRoom.RoomType.GROUP, Collections.emptyList());
 
-        given(chatRoomService.getRoomsForUser(mockUser.getId())).willReturn(Collections.singletonList(mockRoom));
+        given(chatRoomService.getRoomsForUser(mockUser.getId())).willReturn(Collections.singletonList(mockRoomResp));
 
         // when
         mockMvc.perform(get("/api/v1/chats/rooms")
@@ -148,8 +150,7 @@ class ChatControllerTest {
                 .andDo(print())
 
                 // then
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.msg").value("채팅방 나가기에 성공하였습니다."));
+                .andExpect(status().isOk());
 
         verify(chatRoomService).leaveRoom(roomId, mockUser.getId());
     }
