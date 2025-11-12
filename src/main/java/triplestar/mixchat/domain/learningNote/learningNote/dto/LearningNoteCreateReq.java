@@ -20,6 +20,6 @@ public record LearningNoteCreateReq(
 
         @NotNull
         @Schema(description = "피드백 리스트", example = """
-                        [{"tag":"Grammar","problem":"goes","correction":"go","extra":"시제 수정"},]""")
+                        [{"tag":"Grammar","problem":"goes","correction":"go","extra":"시제 수정"}]""")
         List<FeedbackItemReq> feedback
 ) {}

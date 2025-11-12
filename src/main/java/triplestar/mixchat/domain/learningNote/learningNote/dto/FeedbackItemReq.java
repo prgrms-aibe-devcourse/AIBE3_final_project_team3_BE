@@ -19,6 +19,6 @@ public record FeedbackItemReq(
         String correction,
 
         @NotNull
-        @Schema(description = "부가 설명", example = "")
+        @Schema(description = "부가 설명", example = "시제 수정")
         String extra
 ) {}
