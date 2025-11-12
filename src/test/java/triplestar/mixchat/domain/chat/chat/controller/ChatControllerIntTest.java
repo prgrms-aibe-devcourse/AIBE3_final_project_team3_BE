@@ -97,8 +97,7 @@ class ChatControllerIntTest {
 
         // then (검증) - 1. API 응답 검증
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("1:1 채팅방 생성/조회에 성공하였습니다."))
+                .andExpect(jsonPath("$.msg").value("1:1 채팅방 생성/조회에 성공하였습니다."))
                 .andExpect(jsonPath("$.data.name").value("유저1, 유저2"));
 
         // then (검증) - 2. DB 상태 검증

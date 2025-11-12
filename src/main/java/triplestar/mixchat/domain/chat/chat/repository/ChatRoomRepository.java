@@ -14,17 +14,18 @@ import java.util.Optional;
 @Repository
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
-    //querydsl 로 변경 예정
+    // querydsl 로 변경 예정
+    // nativeQuery 라서 table 어미에 s추가 했습니다.
     @Query(value = """
     SELECT cr.*
-    FROM chat_room cr
+    FROM chat_rooms cr
     WHERE cr.room_type = 'DIRECT'
       AND EXISTS (
-          SELECT 1 FROM chat_member cm 
+          SELECT 1 FROM chat_members cm 
           WHERE cm.chat_room_id = cr.id AND cm.member_id = :#{#member1.id}
       )
       AND EXISTS (
-          SELECT 1 FROM chat_member cm 
+          SELECT 1 FROM chat_members cm 
           WHERE cm.chat_room_id = cr.id AND cm.member_id = :#{#member2.id}
       )
     """, nativeQuery = true)
