@@ -8,6 +8,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
@@ -142,5 +143,15 @@ class AuthServiceTest {
         String refreshToken = signInResp.refreshToken();
 
         authService.reissueAccessToken(refreshToken);
+    }
+
+    @Test
+    @DisplayName("회원가입시 디폴트 프로필 이미지 확인")
+    void check_default_image() {
+        MemberSummaryResp resp = joinDummy("test@test1.com");
+        Long id = resp.id();
+        Member member = memberRepository.findById(id).orElseThrow(AssertionError::new);
+
+        assertThat(member.getProfileImageUrl()).isEqualTo("http://localhost:9000/test-bucket/default-profile.webp");
     }
 }
