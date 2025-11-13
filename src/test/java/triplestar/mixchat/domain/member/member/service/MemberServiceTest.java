@@ -8,6 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
@@ -68,5 +69,25 @@ class MemberServiceTest {
         assertThat(updatedMember.getEnglishLevel()).isEqualTo(EnglishLevel.ADVANCED);
         assertThat(updatedMember.getInterests()).containsExactlyInAnyOrder("독서", "운동");
         assertThat(updatedMember.getDescription()).isEqualTo("업데이트된 자기소개입니다.");
+    }
+
+    @Test
+    @DisplayName("프로필 이미지 변경 성공")
+    void upload_profile_image_success() {
+        MockMultipartFile testFile = new MockMultipartFile(
+                "multipartFile",
+                "profile.png",
+                "image/png",
+                "dummy image content".getBytes()
+        );
+
+        memberService.uploadProfileImage(member.getId(), testFile);
+
+        Member updatedMember = memberRepository.findById(member.getId())
+                .orElseThrow(() -> new AssertionError("멤버 조회 실패"));
+
+        // minio에 UUID로 저장되므로 파일 이름이 아닌 확장자만 확인
+        assertThat(updatedMember.getProfileImageUrl()).isNotEqualTo("http://localhost:9000/test-bucket/default-profile.webp");
+        assertThat(updatedMember.getProfileImageUrl()).endsWith(".png");
     }
 }
