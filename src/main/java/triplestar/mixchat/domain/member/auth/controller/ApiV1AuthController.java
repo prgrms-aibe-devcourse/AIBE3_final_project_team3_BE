@@ -1,7 +1,5 @@
-package triplestar.mixchat.domain.member.member.controller;
+package triplestar.mixchat.domain.member.auth.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,17 +12,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import triplestar.mixchat.domain.member.member.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.member.dto.SigninReq;
-import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
-import triplestar.mixchat.domain.member.member.dto.SignInResp;
-import triplestar.mixchat.domain.member.member.service.AuthService;
+import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
+import triplestar.mixchat.domain.member.auth.dto.SigninReq;
+import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.auth.dto.SignInResp;
+import triplestar.mixchat.domain.member.auth.service.AuthService;
 import triplestar.mixchat.global.response.ApiResponse;
 
 @RestController
 @RequestMapping("api/v1/auth")
 @RequiredArgsConstructor
-public class ApiV1AuthController implements ApiAuthController{
+public class ApiV1AuthController implements ApiAuthController {
 
     private final AuthService authService;
 

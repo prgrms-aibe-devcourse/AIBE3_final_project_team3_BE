@@ -1,9 +1,10 @@
-package triplestar.mixchat.domain.member.member.dto;
+package triplestar.mixchat.domain.member.auth.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 
 @Schema(description = "사용자의 회원가입 요청 정보")
@@ -42,7 +43,7 @@ public record MemberJoinReq(
 
         @Schema(description = "관심사", example = "요리, 여행")
         @NotNull
-        String interest,
+        List<String> interests,
 
         @Schema(description = "자기소개")
         @NotNull

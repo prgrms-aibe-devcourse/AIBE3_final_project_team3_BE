@@ -1,6 +1,7 @@
-package triplestar.mixchat.domain.member.member.dto;
+package triplestar.mixchat.domain.member.auth.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
 @Schema(description = "회원가입 완료 또는 멤버 조회 시 반환되는 요약된 사용자 정보")
@@ -22,7 +23,7 @@ public record MemberSummaryResp(
         String englishLevel,
 
         @Schema(description = "관심사 목록", example = "TRAVEL, FOOD")
-        String interest,
+        List<String> interest,
 
         @Schema(description = "자기소개")
         String description
@@ -34,7 +35,7 @@ public record MemberSummaryResp(
                 savedMember.getCountry().getCode(),
                 savedMember.getNickname(),
                 savedMember.getEnglishLevel().name(),
-                savedMember.getInterest(),
+                savedMember.getInterests(),
                 savedMember.getDescription()
         );
     }

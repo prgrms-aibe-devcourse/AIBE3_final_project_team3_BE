@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -65,66 +66,41 @@ public class ApiV1ReportControllerTest {
     @BeforeEach
     void setUp() {
         reporter = memberRepository.save(
-                Member.builder()
-                        .email("user@example.com")
-                        .password(Password.encrypt("ValidPassword123", passwordEncoder))
-                        .name("일반유저")
-                        .nickname("reporter")
-                        .country(Country.SOUTH_KOREA)
-                        .englishLevel(EnglishLevel.INTERMEDIATE)
-                        .interest("테스트")
-                        .description("신고하는 유저")
-                        .build()
+                Member.createMember(
+                        "user@example.com", Password.encrypt("ValidPassword123", passwordEncoder),
+                        "일반유저", "일반유저",
+                        Country.SOUTH_KOREA, EnglishLevel.INTERMEDIATE, List.of("테스트"), "신고하는 유저"
+                )
         );
         admin = memberRepository.save(
-                Member.builder()
-                        .email("admin@example.com")
-                        .password(Password.encrypt("ValidPassword123", passwordEncoder))
-                        .name("관리자")
-                        .nickname("admin")
-                        .country(Country.SOUTH_KOREA)
-                        .englishLevel(EnglishLevel.INTERMEDIATE)
-                        .interest("관리")
-                        .description("관리자 유저")
-                        .build()
+                Member.createAdmin(
+                        "admin@example.com", Password.encrypt("ValidPassword123", passwordEncoder),
+                        "관리자", "admin",
+                        Country.SOUTH_KOREA, EnglishLevel.INTERMEDIATE, List.of("관리"), "관리자 유저"
+                )
         );
         target1 = memberRepository.save(
-                Member.builder()
-                        .email("target1@example.com")
-                        .password(Password.encrypt("Password1!", passwordEncoder))
-                        .name("신고대상1")
-                        .nickname("target1")
-                        .country(Country.SOUTH_KOREA)
-                        .englishLevel(EnglishLevel.BEGINNER)
-                        .interest("travel")
-                        .description("신고 대상 유저1")
-                        .build()
+                Member.createMember(
+                        "target1@example.com", Password.encrypt("Password1!", passwordEncoder),
+                        "신고대상1", "target1",
+                        Country.SOUTH_KOREA, EnglishLevel.BEGINNER, List.of("travel"), "신고 대상 유저1"
+                )
         );
 
         target2 = memberRepository.save(
-                Member.builder()
-                        .email("target2@example.com")
-                        .password(Password.encrypt("Password2!", passwordEncoder))
-                        .name("신고대상2")
-                        .nickname("target2")
-                        .country(Country.SOUTH_KOREA)
-                        .englishLevel(EnglishLevel.BEGINNER)
-                        .interest("travel")
-                        .description("신고 대상 유저2")
-                        .build()
+                Member.createMember(
+                        "target2@example.com", Password.encrypt("Password2!", passwordEncoder),
+                        "신고대상2", "target2",
+                        Country.SOUTH_KOREA, EnglishLevel.BEGINNER, List.of("travel"), "신고 대상 유저2"
+                )
         );
 
         target3 = memberRepository.save(
-                Member.builder()
-                        .email("target3@example.com")
-                        .password(Password.encrypt("Password3!", passwordEncoder))
-                        .name("신고대상3")
-                        .nickname("target3")
-                        .country(Country.SOUTH_KOREA)
-                        .englishLevel(EnglishLevel.BEGINNER)
-                        .interest("travel")
-                        .description("신고 대상 유저3")
-                        .build()
+                Member.createMember(
+                        "target3@example.com", Password.encrypt("Password3!", passwordEncoder),
+                        "신고대상3", "target3",
+                        Country.SOUTH_KOREA, EnglishLevel.BEGINNER, List.of("travel"), "신고 대상 유저3"
+                )
         );
 
         // 공통으로 사용할 기본 신고 3건

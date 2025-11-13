@@ -1,6 +1,7 @@
 package triplestar.mixchat.domain.chat.chat.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -58,26 +59,15 @@ class ChatControllerIntTest {
     void setUp() {
         // 테스트 실행 전, 실제 DB에 테스트용 사용자를 저장합니다.
         // @Transactional에 의해 테스트가 끝나면 롤백됩니다.
-        user1 = memberRepository.save(Member.builder()
-                .email("user1@example.com")
-                .nickname("유저1")
-                .password(Password.encrypt("ValidPassword123", passwordEncoder))
-                .name("유저1")
-                .country(Country.SOUTH_KOREA)
-                .englishLevel(EnglishLevel.BEGINNER)
-                .interest("테스트")
-                .description("테스트 유저 1")
-                .build());
-        user2 = memberRepository.save(Member.builder()
-                .email("user2@example.com")
-                .nickname("유저2")
-                .password(Password.encrypt("ValidPassword123", passwordEncoder))
-                .name("유저2")
-                .country(Country.UNITED_STATES)
-                .englishLevel(EnglishLevel.INTERMEDIATE)
-                .interest("테스트")
-                .description("테스트 유저 2")
-                .build());
+        // TestFactoryMember도 활용 가능합니다.
+        user1 = memberRepository.save(Member.createMember(
+                "user1@example.com", Password.encrypt("ValidPassword123", passwordEncoder),
+                "유저1", "유저1", Country.SOUTH_KOREA, EnglishLevel.BEGINNER,
+                List.of("테스트"), "테스트 유저 1"));
+        user2 = memberRepository.save(Member.createMember(
+                "user2@example.com", Password.encrypt("ValidPassword123", passwordEncoder),
+                "유저2", "유저2", Country.UNITED_STATES, EnglishLevel.INTERMEDIATE,
+                List.of("테스트"), "테스트 유저 2"));
     }
 
     @Test

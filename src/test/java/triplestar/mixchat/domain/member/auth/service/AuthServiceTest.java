@@ -1,20 +1,22 @@
-package triplestar.mixchat.domain.member.member.service;
+package triplestar.mixchat.domain.member.auth.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
-import triplestar.mixchat.domain.member.member.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.member.dto.SigninReq;
-import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
-import triplestar.mixchat.domain.member.member.dto.SignInResp;
+import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
+import triplestar.mixchat.domain.member.auth.dto.SigninReq;
+import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.auth.dto.SignInResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.customException.UniqueConstraintException;
@@ -44,7 +46,7 @@ class AuthServiceTest {
                 "UK",
                 "loveCoding",
                 EnglishLevel.NATIVE,
-                "프로그래밍 좋아함",
+                List.of("프로그래밍 좋아함"),
                 "다른 것도 좋아함"
         );
         return authService.join(memberJoinReq);
@@ -63,7 +65,7 @@ class AuthServiceTest {
         assertThat(member.getCountry().getCode()).isEqualTo("UK");
         assertThat(member.getNickname()).isEqualTo("loveCoding");
         assertThat(member.getEnglishLevel()).isEqualTo(EnglishLevel.NATIVE);
-        assertThat(member.getInterest()).isEqualTo("프로그래밍 좋아함");
+        assertThat(member.getInterests()).isEqualTo(List.of("프로그래밍 좋아함"));
         assertThat(member.getDescription()).isEqualTo("다른 것도 좋아함");
     }
 
@@ -94,7 +96,7 @@ class AuthServiceTest {
                 "UK",
                 "loveCoding",
                 EnglishLevel.NATIVE,
-                "프로그래밍 좋아함",
+                List.of("프로그래밍 좋아함"),
                 "다른 것도 좋아함"
         );
 
@@ -141,5 +143,15 @@ class AuthServiceTest {
         String refreshToken = signInResp.refreshToken();
 
         authService.reissueAccessToken(refreshToken);
+    }
+
+    @Test
+    @DisplayName("회원가입시 디폴트 프로필 이미지 확인")
+    void check_default_image() {
+        MemberSummaryResp resp = joinDummy("test@test1.com");
+        Long id = resp.id();
+        Member member = memberRepository.findById(id).orElseThrow(AssertionError::new);
+
+        assertThat(member.getProfileImageUrl()).isEqualTo("http://localhost:9000/test-bucket/default-profile.webp");
     }
 }

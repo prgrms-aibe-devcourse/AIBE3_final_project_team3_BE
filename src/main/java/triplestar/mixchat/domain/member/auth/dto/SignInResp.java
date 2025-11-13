@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.member.member.dto;
+package triplestar.mixchat.domain.member.auth.dto;
 
 public record SignInResp (
         String accessToken,

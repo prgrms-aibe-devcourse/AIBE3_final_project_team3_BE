@@ -1,15 +1,15 @@
-package triplestar.mixchat.domain.member.member.controller;
+package triplestar.mixchat.domain.member.auth.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody; // Swagger @RequestBody 임포트
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import triplestar.mixchat.domain.member.member.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.member.dto.SigninReq;
-import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
+import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.auth.dto.SigninReq;
 import triplestar.mixchat.global.response.ApiResponse;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
 import triplestar.mixchat.global.springdoc.SignInInRequireResponse;
