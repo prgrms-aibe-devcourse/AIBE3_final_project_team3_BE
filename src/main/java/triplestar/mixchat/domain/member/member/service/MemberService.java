@@ -21,9 +21,6 @@ public class MemberService {
 
     private final S3Uploader s3Uploader;
 
-    @Qualifier("defaultProfileBaseURL")
-    private final String defaultProfileBaseURL;
-
     public void updateInfo(Long memberId, MemberInfoModifyReq req) {
         Member member = findMemberById(memberId);
 

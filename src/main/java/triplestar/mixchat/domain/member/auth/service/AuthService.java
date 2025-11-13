@@ -2,6 +2,7 @@ package triplestar.mixchat.domain.member.auth.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,12 +29,20 @@ public class AuthService {
     private final AuthJwtProvider authJwtProvider;
     private final redisTokenRepository redisTokenRepository;
 
+    @Qualifier("defaultProfileBaseURL")
+    private final String defaultProfileBaseURL;
+
     /**
      * 회원가입
      */
     public MemberSummaryResp join(MemberJoinReq req) {
         validateJoinReq(req);
-        Member member = buildJoinMember(req);
+        Member member = Member.createMember(
+                req.email(), Password.encrypt(req.password(), passwordEncoder),
+                req.name(), req.nickname(),
+                Country.findByCode(req.country()), req.englishLevel(), req.interests(), req.description()
+        );
+        member.updateProfileImageUrl(defaultProfileBaseURL);
 
         Member savedMember = memberRepository.save(member);
         return new MemberSummaryResp(savedMember);
@@ -50,14 +59,6 @@ public class AuthService {
         if (!reqPassword.equals(reqPasswordConfirm)) {
             throw new IllegalArgumentException("비밀번호와 비밀번호 확인이 일치하지 않습니다.");
         }
-    }
-
-    private Member buildJoinMember(MemberJoinReq req) {
-        return Member.createMember(
-                req.email(), Password.encrypt(req.password(), passwordEncoder),
-                req.name(), req.nickname(),
-                Country.findByCode(req.country()), req.englishLevel(), req.interests(), req.description()
-        );
     }
 
     /**

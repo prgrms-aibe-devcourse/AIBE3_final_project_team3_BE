@@ -95,7 +95,6 @@ public class Member extends BaseEntity {
         this.membershipGrade = MembershipGrade.BASIC;
         this.isBlocked = false;
         this.isDeleted = false;
-        // 임시
         this.profileImageUrl = "";
     }
 
