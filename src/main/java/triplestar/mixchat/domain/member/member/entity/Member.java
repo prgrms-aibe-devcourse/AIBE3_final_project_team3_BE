@@ -80,9 +80,6 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private String profileImageUrl;
 
-    @Value("${member.default-profile-image-url}")
-    private String defaultProfileImageUrl;
-
     private Member(String email, Password password, String name, String nickname, Country country,
                   EnglishLevel englishLevel, List<String> interests, String description, Role role) {
         validate(email, password, name, nickname, country, englishLevel, interests, description, role);
@@ -98,7 +95,6 @@ public class Member extends BaseEntity {
         this.membershipGrade = MembershipGrade.BASIC;
         this.isBlocked = false;
         this.isDeleted = false;
-        this.profileImageUrl = defaultProfileImageUrl;
     }
 
     private void validate(String email, Password password, String name, String nickname, Country country,
@@ -152,6 +148,10 @@ public class Member extends BaseEntity {
         this.englishLevel = englishLevel;
         this.interests = interests;
         this.description = description;
+    }
+
+    public void updateProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
     }
 
     public void blockByReport(ReportCategory category) {
