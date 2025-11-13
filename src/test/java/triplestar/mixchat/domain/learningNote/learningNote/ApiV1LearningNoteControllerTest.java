@@ -61,7 +61,7 @@ class ApiV1LearningNoteControllerTest {
             """.formatted(testMember.getId());
 
         mockMvc.perform(
-                        post("/api/v1/learning/notes/save")
+                        post("/api/v1/learning/notes")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(requestJson)
                 )
@@ -107,7 +107,7 @@ class ApiV1LearningNoteControllerTest {
             }
             """.formatted(testMember.getId());
 
-        mockMvc.perform(post("/api/v1/learning/notes/save")
+        mockMvc.perform(post("/api/v1/learning/notes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidJson))
                 .andDo(print())
@@ -130,11 +130,10 @@ class ApiV1LearningNoteControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/api/v1/learning/notes/save")
+        mockMvc.perform(post("/api/v1/learning/notes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andDo(print())
-                .andExpect(status().isUnauthorized())
                 .andExpect(status().isUnauthorized());
     }
 }

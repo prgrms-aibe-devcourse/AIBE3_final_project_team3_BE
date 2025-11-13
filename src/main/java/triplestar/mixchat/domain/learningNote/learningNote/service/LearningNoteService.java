@@ -9,17 +9,17 @@ import triplestar.mixchat.domain.learningNote.learningNote.entity.Feedback;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
-import triplestar.mixchat.domain.member.member.service.AuthService;
+import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 
 @Service
 @RequiredArgsConstructor
 public class LearningNoteService {
     private final LearningNoteRepository learningNoteRepository;
-    private final AuthService authService;
+    private final MemberRepository memberRepository;
 
     @Transactional
     public Long createWithFeedbacks(LearningNoteCreateReq req) {
-        Member member = authService.findById(req.memberId());
+        Member member = findMemberById(req.memberId());
         LearningNote note = LearningNote.create(
                 member,
                 req.originalContent(),
@@ -32,5 +32,10 @@ public class LearningNoteService {
         }
 
         return learningNoteRepository.save(note).getId();
+    }
+
+    public Member findMemberById(Long memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원이 존재하지 않습니다."));
     }
 }
