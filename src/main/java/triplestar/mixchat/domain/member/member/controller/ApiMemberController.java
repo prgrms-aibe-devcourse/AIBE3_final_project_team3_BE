@@ -16,6 +16,7 @@ import triplestar.mixchat.global.springdoc.SignInInRequireResponse;
 import triplestar.mixchat.global.springdoc.SuccessResponse;
 
 @Tag(name = "ApiV1MemberController", description = "API 회원 정보 관리 컨트롤러")
+@SuccessResponse
 @CommonBadResponse
 public interface ApiMemberController {
 
@@ -44,7 +45,6 @@ public interface ApiMemberController {
             )
     )
     @SignInInRequireResponse
-    @SuccessResponse
     ApiResponse<Void> uploadProfileImage(
             @Parameter(hidden = true)
             CustomUserDetails customUserDetails,
