@@ -87,14 +87,13 @@ public class PromptService {
         MembershipGrade grade = member.getMembershipGrade();
         List<Prompt> prompts;
         if (grade == MembershipGrade.PREMIUM) {
-            prompts = promptRepository.findAll().stream()
-                .filter(p -> p.getType() == PromptType.PRE_SCRIPTED ||
-                             (p.getType() == PromptType.CUSTOM && p.getMember() != null && p.getMember().getId().equals(member.getId())))
-                .collect(Collectors.toList());
+            List<Prompt> preScripted = promptRepository.findByType(PromptType.PRE_SCRIPTED);
+            List<Prompt> custom = promptRepository.findByTypeAndMember_Id(PromptType.CUSTOM, member.getId());
+            prompts = new java.util.ArrayList<>();
+            prompts.addAll(preScripted);
+            prompts.addAll(custom);
         } else {
-            prompts = promptRepository.findAll().stream()
-                .filter(p -> p.getType() == PromptType.PRE_SCRIPTED)
-                .collect(Collectors.toList());
+            prompts = promptRepository.findByType(PromptType.PRE_SCRIPTED);
         }
         return prompts.stream().map(PromptListResp::new).collect(Collectors.toList());
     }
