@@ -1,6 +1,8 @@
 package triplestar.mixchat.domain.member.auth.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -12,27 +14,27 @@ public record MemberSummaryResp(
         @Schema(description = "사용자 고유 ID", example = "1")
         Long id,
 
-        @NotNull
+        @NotBlank
         @Schema(description = "사용자의 실명", example = "홍길동")
         String name,
 
-        @NotNull
+        @NotBlank
         @Schema(description = "국가 코드 (Alpha-2)", example = "KR")
         String country,
 
-        @NotNull
+        @NotBlank
         @Schema(description = "사용자 닉네임", example = "MixMaster")
         String nickname,
 
-        @NotNull
+        @NotBlank
         @Schema(description = "영어 실력 레벨", example = "INTERMEDIATE")
         String englishLevel,
 
-        @NotNull
+        @NotEmpty
         @Schema(description = "관심사 목록", example = "TRAVEL, FOOD")
         List<String> interest,
 
-        @NotNull
+        @NotBlank
         @Schema(description = "자기소개")
         String description
 ) {

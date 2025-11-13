@@ -17,7 +17,7 @@ public record MessageResp(
         @Schema(description = "발신자 ID", example = "1")
         Long senderId,
 
-        @NotNull
+        @NotBlank
         @Schema(description = "발신자 닉네임", example = "JohnDoe")
         String sender,
 

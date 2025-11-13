@@ -16,7 +16,7 @@ import triplestar.mixchat.global.security.CustomUserDetails;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/v1/member/friends")
+@RequestMapping("api/v1/members/friends")
 public class ApiV1FriendshipController implements ApiFriendshipController {
 
     private final FriendshipRequestService friendshipRequestService;
