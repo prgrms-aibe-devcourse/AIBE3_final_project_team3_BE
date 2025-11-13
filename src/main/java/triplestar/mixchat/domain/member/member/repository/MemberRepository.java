@@ -27,8 +27,8 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
             
                     EXISTS (
                         SELECT fr FROM FriendshipRequest fr 
-                        WHERE fr.sender.id = :signInId 
-                          AND fr.receiver.id = :memberId 
+                        WHERE (fr.sender.id = :signInId AND fr.receiver.id = :memberId)
+                           OR (fr.sender.id = :memberId AND fr.receiver.id = :signInId)
                     )
                 )
                 FROM Member m

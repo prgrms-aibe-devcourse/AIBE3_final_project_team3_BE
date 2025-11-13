@@ -30,7 +30,7 @@ import triplestar.mixchat.testutils.TestMemberFactory;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-@DisplayName("멤버 컨트롤러")
+@DisplayName("회원 - 정보 컨트롤러")
 class ApiV1MemberControllerTest {
 
     @Autowired
