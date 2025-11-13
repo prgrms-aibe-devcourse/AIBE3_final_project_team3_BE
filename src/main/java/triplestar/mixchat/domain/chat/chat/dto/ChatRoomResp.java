@@ -41,6 +41,7 @@ public record ChatRoomResp(
         );
     }
 
+    @Schema(description = "채팅방 멤버 정보")
     public record MemberDto(
             @NotNull
             @Schema(description = "멤버 ID", example = "1")
@@ -50,6 +51,7 @@ public record ChatRoomResp(
             @Schema(description = "멤버 닉네임", example = "JohnDoe")
             String nickname
     ) {
+        // from 대신 of도 고려
         public static MemberDto from(Member member) {
             return new MemberDto(member.getId(), member.getNickname());
         }

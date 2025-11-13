@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 
+@Schema(description = "채팅 메시지 전송 요청")
 public record MessageReq(
         @NotNull
         @Schema(description = "채팅방 ID", example = "1")

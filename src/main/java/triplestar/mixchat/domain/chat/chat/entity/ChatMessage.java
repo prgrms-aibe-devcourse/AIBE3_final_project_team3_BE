@@ -41,14 +41,12 @@ public class ChatMessage {
 
     @Builder
     public ChatMessage(Long chatRoomId, Long senderId, String content, MessageType messageType) {
-        Objects.requireNonNull(chatRoomId, "chatRoomId must not be null");
-        Objects.requireNonNull(senderId, "senderId must not be null");
-        Objects.requireNonNull(messageType, "messageType must not be null");
-
-        this.chatRoomId = chatRoomId;
-        this.senderId = senderId;
-        this.content = content;
-        this.messageType = messageType;
+        this.chatRoomId = Objects.requireNonNull(chatRoomId, "채팅방 ID는 null일 수 없습니다.");
+        this.senderId = Objects.requireNonNull(senderId, "보낸 사람 ID는 null일 수 없습니다.");
+        this.messageType = Objects.requireNonNull(messageType, "메시지 타입은 null일 수 없습니다.");
+        if (content == null || content.isBlank()) {
+            throw new IllegalArgumentException("메시지 내용(content)은 비어 있을 수 없습니다.");
+        }
     }
 }
 

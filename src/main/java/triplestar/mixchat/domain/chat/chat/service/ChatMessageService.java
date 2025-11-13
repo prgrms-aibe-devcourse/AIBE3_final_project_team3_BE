@@ -25,9 +25,9 @@ public class ChatMessageService {
 
     public MessageResp saveMessage(Long roomId, Long senderId, String content, ChatMessage.MessageType messageType) {
         chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("채팅방 없음"));
+                .orElseThrow(() -> new IllegalArgumentException("채팅방 없음"));
         Member sender = memberRepository.findById(senderId)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         ChatMessage message = ChatMessage.builder()
                 .chatRoomId(roomId)

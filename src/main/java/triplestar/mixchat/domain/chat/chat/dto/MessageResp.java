@@ -7,6 +7,7 @@ import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 
 import java.time.LocalDateTime;
 
+@Schema(description = "채팅 메시지 응답")
 public record MessageResp(
         @NotNull
         @Schema(description = "메시지 고유 ID", example = "60c72b2f9b1d8e001f8e4bde")
