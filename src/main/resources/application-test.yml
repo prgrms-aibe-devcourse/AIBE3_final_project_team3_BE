@@ -25,19 +25,3 @@ logging:
   level:
     org.hibernate.sql: debug
 #    org.hibernate.orm.jdbc.bind: trace
-
-minio:
-  endpoint: http://localhost:9000
-  access-key: minio-key
-  secret-key: minio-secret
-  bucket-name: test-bucket
-
-cloud:
-  aws:
-    credentials:
-      access-key: aws-key
-      secret-key: aws-secret
-    region:
-      static: ap-northeast-2
-    s3:
-      bucket: test-bucket
