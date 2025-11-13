@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
@@ -76,6 +77,12 @@ public class Member extends BaseEntity {
 
     private String blockReason;
 
+    @Column(nullable = false)
+    private String profileImageUrl;
+
+    @Value("${member.default-profile-image-url}")
+    private String defaultProfileImageUrl;
+
     private Member(String email, Password password, String name, String nickname, Country country,
                   EnglishLevel englishLevel, List<String> interests, String description, Role role) {
         validate(email, password, name, nickname, country, englishLevel, interests, description, role);
@@ -91,6 +98,7 @@ public class Member extends BaseEntity {
         this.membershipGrade = MembershipGrade.BASIC;
         this.isBlocked = false;
         this.isDeleted = false;
+        this.profileImageUrl = defaultProfileImageUrl;
     }
 
     private void validate(String email, Password password, String name, String nickname, Country country,

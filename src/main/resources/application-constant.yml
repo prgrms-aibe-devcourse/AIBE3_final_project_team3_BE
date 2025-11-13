@@ -1,0 +1,12 @@
+jwt:
+  access-token-expiration-seconds: "#{60 * 15}"
+  refresh-token-expiration-seconds: "#{60 * 60 * 24 * 7}"
+redis:
+  prefix:
+    refresh-token: "refresh:"
+cookie:
+  domain: ${DOMAIN_NAME:mixchat.shop}
+
+# TODO : 이후 aws s3 디폴트 URL 설정 요망
+member:
+  default-profile-image-url: ${DEFAULT_PROFILE_IMAGE_URL:http://localhost:9001/browser/mixchat-files/profile.webp}
