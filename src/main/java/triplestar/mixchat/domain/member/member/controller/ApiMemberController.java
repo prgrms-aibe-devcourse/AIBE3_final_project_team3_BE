@@ -2,6 +2,7 @@ package triplestar.mixchat.domain.member.member.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
@@ -14,6 +15,7 @@ import triplestar.mixchat.global.springdoc.SuccessResponse;
 @Tag(name = "ApiV1MemberController", description = "API 회원 정보 관리 컨트롤러")
 @SuccessResponse
 @CommonBadResponse
+@SecurityRequirement(name = "Authorization")
 public interface ApiMemberController {
 
     // --- 1. 내 정보 수정 (PUT /me) ---

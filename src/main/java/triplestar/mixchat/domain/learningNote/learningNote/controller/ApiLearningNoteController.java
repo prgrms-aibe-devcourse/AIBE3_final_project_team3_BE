@@ -2,6 +2,7 @@ package triplestar.mixchat.domain.learningNote.learningNote.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteCreateReq;
@@ -13,6 +14,7 @@ import triplestar.mixchat.global.springdoc.SuccessResponse;
 @Tag(name = "ApiV1LearningNoteController", description = "API 학습노트 컨트롤러")
 @CommonBadResponse
 @SuccessResponse
+@SecurityRequirement(name = "Authorization")
 public interface ApiLearningNoteController {
 
     // --- 1. 학습노트 생성 (POST /save) ---

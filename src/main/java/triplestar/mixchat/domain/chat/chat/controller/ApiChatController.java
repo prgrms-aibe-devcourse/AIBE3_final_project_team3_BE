@@ -2,6 +2,7 @@ package triplestar.mixchat.domain.chat.chat.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,6 +23,7 @@ import java.util.List;
 @Tag(name = "Chat API", description = "채팅 관련 API")
 @CommonBadResponse
 @SuccessResponse
+@SecurityRequirement(name = "Authorization")
 public interface ApiChatController {
 
     @Operation(summary = "1:1 채팅방 생성/조회", description = "특정 사용자와의 1:1 채팅방이 없으면 새로 생성하고, 있으면 기존 채팅방 정보를 반환합니다.")

@@ -1,6 +1,7 @@
 package triplestar.mixchat.domain.report.report.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import jakarta.validation.Valid;
@@ -13,6 +14,7 @@ import triplestar.mixchat.global.springdoc.SuccessResponse;
 @Tag(name = "ApiV1ReportController", description = "API 신고 컨트롤러")
 @CommonBadResponse
 @SuccessResponse
+@SecurityRequirement(name = "Authorization")
 public interface ApiReportController {
 
     // --- 1. 신고 생성 (POST /) ---

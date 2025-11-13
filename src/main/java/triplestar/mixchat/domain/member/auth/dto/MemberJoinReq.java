@@ -17,13 +17,12 @@ public record MemberJoinReq(
         @Email
         String email,
 
-        @Schema(description = "비밀번호 (8자 이상, 대소문자/숫자 필수)",
-                example = "P@sswOrd123")
+        @Schema(description = "비밀번호 (8자 이상, 대소문자/숫자 필수)", example = "P@sswOrd123")
         @NotBlank
         @Size(min = 8, max = 20)
         String password,
 
-        @Schema(description = "비밀번호 확인 (password와 일치해야 함)")
+        @Schema(description = "비밀번호 확인 (password와 일치해야 함)", example = "P@sswOrd123")
         @NotBlank
         String passwordConfirm,
 
@@ -43,7 +42,7 @@ public record MemberJoinReq(
         @NotNull
         EnglishLevel englishLevel,
 
-        @Schema(description = "관심사", example = "요리, 여행")
+        @Schema(description = "관심사 목록 (최소 1개 이상 필수)", example = "[\"요리\", \"여행\"]")
         @NotEmpty
         List<String> interests,
 

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PathVariable;
 import triplestar.mixchat.global.response.CustomResponse;
@@ -19,6 +20,7 @@ import triplestar.mixchat.global.springdoc.SuccessResponse;
 @CommonBadResponse
 // 모든 메소드에 200 공통 응답 추가
 @SuccessResponse
+@SecurityRequirement(name = "Authorization")
 public interface ApiFriendshipController {
 
     // --- 1. 친구 요청 전송 (POST) ---
