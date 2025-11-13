@@ -31,13 +31,11 @@ public interface ApiReportAdminController {
     );
 
     // --- 2. 신고 목록 조회 (GET /) ---
-    @Operation(summary = "신고 목록 조회 (페이지네이션)", description = "관리자가 전체 신고 목록을 조회합니다.")
+    @Operation(summary = "신고 목록 조회", description = "관리자가 전체 신고 목록을 조회합니다.")
     @SecurityRequireResponse
     ApiResponse<Page<ReportAdminListResp>> getReports(
-            @Parameter(description = "페이지 번호 (기본값 0)", example = "0")
             @RequestParam(defaultValue = "0") int page,
 
-            @Parameter(description = "페이지 크기 (기본값 20)", example = "20")
             @RequestParam(defaultValue = "20") int size
     );
 }

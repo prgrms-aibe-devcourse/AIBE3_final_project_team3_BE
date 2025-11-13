@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import triplestar.mixchat.domain.report.report.constant.ReportCategory;
@@ -15,7 +16,7 @@ import triplestar.mixchat.global.jpa.entity.BaseEntity;
 @Entity
 @Table(name = "reports")
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Report extends BaseEntity {
 
     private String reportedMsgContent;
@@ -40,6 +41,9 @@ public class Report extends BaseEntity {
             ReportCategory category,
             String reportedReason
     ) {
+        if (targetMemberId == null || status == null || category == null) {
+            throw new IllegalArgumentException("필수 필드가 누락되었습니다.");
+        }
         this.reportedMsgContent = reportedMsgContent;
         this.targetMemberId = targetMemberId;
         this.status = status;
