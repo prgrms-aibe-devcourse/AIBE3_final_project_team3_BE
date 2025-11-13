@@ -13,16 +13,14 @@ import org.springframework.web.bind.annotation.RestController;
 import triplestar.mixchat.domain.report.report.dto.ReportAdminListResp;
 import triplestar.mixchat.domain.report.report.dto.ReportStatusUpdateReq;
 import triplestar.mixchat.domain.report.report.entity.Report;
-import triplestar.mixchat.domain.report.report.repository.ReportRepository;
 import triplestar.mixchat.domain.report.report.service.ReportAdminService;
 import triplestar.mixchat.global.response.ApiResponse;
 
 @RestController
 @RequestMapping("/api/v1/admin/reports")
 @RequiredArgsConstructor
-public class ReportAdminController  {
+public class ApiV1ReportAdminController implements ApiReportAdminController{
     private final ReportAdminService reportAdminService;
-    private final ReportRepository reportRepository;
 
     @PatchMapping("/{reportId}")
     public ApiResponse<Void> updateReportStatus(

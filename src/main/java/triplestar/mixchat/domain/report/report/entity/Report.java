@@ -5,7 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import triplestar.mixchat.domain.report.report.constant.ReportCategory;
@@ -34,12 +33,13 @@ public class Report extends BaseEntity {
 
     private String reportedReason;
 
-    @Builder
-    public Report(String reportedMsgContent,
-                  Long targetMemberId,
-                  ReportStatus status,
-                  ReportCategory category,
-                  String reportedReason) {
+    private Report(
+            String reportedMsgContent,
+            Long targetMemberId,
+            ReportStatus status,
+            ReportCategory category,
+            String reportedReason
+    ) {
         this.reportedMsgContent = reportedMsgContent;
         this.targetMemberId = targetMemberId;
         this.status = status;
@@ -53,13 +53,13 @@ public class Report extends BaseEntity {
             String reportedMsgContent,
             String reportedReason
     ) {
-        return Report.builder()
-                .targetMemberId(targetMemberId)
-                .category(category)
-                .status(ReportStatus.WAITING)
-                .reportedMsgContent(reportedMsgContent)
-                .reportedReason(reportedReason)
-                .build();
+        return new Report(
+                reportedMsgContent,
+                targetMemberId,
+                ReportStatus.WAITING,
+                category,
+                reportedReason
+        );
     }
 
     public void updateStatus(ReportStatus status) {
