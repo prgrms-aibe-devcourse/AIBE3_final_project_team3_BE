@@ -104,6 +104,12 @@ CREATE TABLE IF NOT EXISTS `sentence_games` (
                                                 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `translation_tags` (
+                                                  `id`       BIGINT       NOT NULL AUTO_INCREMENT,
+                                                  `code`     VARCHAR(50)  NOT NULL UNIQUE,
+                                                  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 # 프롬프트 테이블
 CREATE TABLE IF NOT EXISTS `prompts` (
                                          `id`            BIGINT       NOT NULL AUTO_INCREMENT,
@@ -142,7 +148,7 @@ CREATE TABLE IF NOT EXISTS `feedbacks` (
                                            `id`               BIGINT       NOT NULL AUTO_INCREMENT,
                                            `learning_note_id` BIGINT       NOT NULL,
                                            `created_at`    DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-                                           `tag`         VARCHAR(50)  NOT NULL,
+                                           `tag`              VARCHAR(50)  NOT NULL,
                                            `problem`          VARCHAR(100)         NOT NULL,
                                            `correction`       VARCHAR(100)         NOT NULL,
                                            `extra`            VARCHAR(100)         NOT NULL,
