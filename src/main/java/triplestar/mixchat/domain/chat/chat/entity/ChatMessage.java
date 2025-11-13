@@ -1,7 +1,10 @@
 package triplestar.mixchat.domain.chat.chat.entity;
 
 import jakarta.persistence.Id;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -11,10 +14,7 @@ import java.time.LocalDateTime;
 
 //mongoDB용 Entity
 @Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Document(collection = "chat_messages")
 public class ChatMessage {
     @Id
@@ -37,6 +37,27 @@ public class ChatMessage {
     @LastModifiedDate
     @Field("updated_at")
     private LocalDateTime updatedAt;
+
+    @Builder
+    public ChatMessage(Long chatRoomId, Long senderId, String content, MessageType messageType) {
+        if (chatRoomId == null) {
+            throw new IllegalArgumentException("chatRoomId는 null일 수 없습니다.");
+        }
+        if (senderId == null) {
+            throw new IllegalArgumentException("senderId는 null일 수 없습니다.");
+        }
+        if (messageType == null) {
+            throw new IllegalArgumentException("messageType은 null일 수 없습니다.");
+        }
+        if (content == null || content.isBlank()) {
+            throw new IllegalArgumentException("content는 비어 있을 수 없습니다.");
+        }
+
+        this.chatRoomId = chatRoomId;
+        this.senderId = senderId;
+        this.content = content;
+        this.messageType = messageType;
+    }
 }
 
 //대량 insert 시 Bulk Write 사용?

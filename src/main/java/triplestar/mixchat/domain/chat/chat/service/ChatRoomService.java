@@ -25,16 +25,19 @@ public class ChatRoomService {
     private final MemberRepository memberRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
-    @Transactional
-    public ChatRoom findOrCreateDirectRoom(Member member1, Long member2Id) {
-        Member member2 = memberRepository.findById(member2Id)
-                .orElseThrow(() -> new RuntimeException("채팅 상대를 찾을 수 없습니다. ID: " + member2Id));
+    private Member findMemberById(Long memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다. ID: " + memberId));
+    }
 
-        return chatRoomRepository.findDirectRoomByMembers(member1, member2)
+    @Transactional
+    public ChatRoomResp findOrCreateDirectRoom(Long member1Id, Long member2Id) {
+        Member member1 = findMemberById(member1Id);
+        Member member2 = findMemberById(member2Id);
+
+        ChatRoom room = chatRoomRepository.findDirectRoomByMembers(member1, member2)
                 .orElseGet(() -> {
-                    ChatRoom newRoom = new ChatRoom();
-                    newRoom.setRoomType(ChatRoom.RoomType.DIRECT);
-                    newRoom.setName(member1.getNickname() + ", " + member2.getNickname());
+                    ChatRoom newRoom = ChatRoom.createDirectRoom(member1.getNickname(), member2.getNickname());
 
                     ChatMember chatMember1 = new ChatMember(member1, newRoom, ChatMember.UserType.ROOM_MEMBER);
                     ChatMember chatMember2 = new ChatMember(member2, newRoom, ChatMember.UserType.ROOM_MEMBER);
@@ -46,23 +49,23 @@ public class ChatRoomService {
 
                     ChatRoomResp roomDto = ChatRoomResp.from(savedRoom);
 
-                    // 1:1 채팅방의 두 사용자에게 웹소켓을 통해 채팅방 생성/업데이트 이벤트를 실시간으로 전송합니다.
-                    // 클라이언트는 이 메시지를 받아 채팅방 목록을 자동으로 갱신할 수 있습니다.
                     messagingTemplate.convertAndSend("/topic/user/" + member1.getId() + "/rooms", roomDto);
                     messagingTemplate.convertAndSend("/topic/user/" + member2.getId() + "/rooms", roomDto);
 
                     return savedRoom;
                 });
+        return ChatRoomResp.from(room);
     }
 
     @Transactional
-    public ChatRoom createGroupRoom(String roomName, List<Long> memberIds, Member creator) {
-        ChatRoom newRoom = new ChatRoom();
-        newRoom.setRoomType(ChatRoom.RoomType.GROUP);
-        newRoom.setName(roomName);
+    public ChatRoomResp createGroupRoom(String roomName, List<Long> memberIds, Long creatorId) {
+        Member creator = findMemberById(creatorId);
+        ChatRoom newRoom = ChatRoom.createGroupRoom(roomName);
 
         List<Member> members = memberRepository.findAllById(memberIds);
-        members.add(creator);
+        if (!members.contains(creator)) {
+            members.add(creator);
+        }
 
         List<ChatMember> chatMembers = members.stream().map(member -> {
             ChatMember.UserType userType = member.equals(creator) ? ChatMember.UserType.ROOM_OWNER : ChatMember.UserType.ROOM_MEMBER;
@@ -78,11 +81,15 @@ public class ChatRoomService {
             messagingTemplate.convertAndSend("/topic/user/" + member.getId() + "/rooms", roomDto);
         });
 
-        return savedRoom;
+        return roomDto;
     }
 
-    public List<ChatRoom> getRoomsForUser(Member currentUser) {
-        return chatRoomRepository.findAllByMember(currentUser);
+    @Transactional(readOnly = true)
+    public List<ChatRoomResp> getRoomsForUser(Long currentUserId) {
+        Member currentUser = findMemberById(currentUserId);
+        return chatRoomRepository.findAllByMember(currentUser).stream()
+                .map(ChatRoomResp::from)
+                .collect(Collectors.toList());
     }
 
     public ChatRoom getRoom(Long id) {
@@ -90,18 +97,18 @@ public class ChatRoomService {
     }
 
     @Transactional
-    public ChatRoom createPublicGroupRoom(String roomName, Member creator) {
-        List<Member> allMembers = memberRepository.findAll();
-        List<Long> allMemberIds = allMembers.stream()
+    public ChatRoomResp createPublicGroupRoom(String roomName, Long creatorId) {
+        List<Long> allMemberIds = memberRepository.findAll().stream()
                 .map(Member::getId)
                 .collect(Collectors.toList());
 
-        return createGroupRoom(roomName, allMemberIds, creator);
+        return createGroupRoom(roomName, allMemberIds, creatorId);
     }
 
     @Transactional
-    public void leaveRoom(Long roomId, Member currentUser) {
+    public void leaveRoom(Long roomId, Long currentUserId) {
         // todo : 방장 퇴장 이후 처리 필요
+        Member currentUser = findMemberById(currentUserId);
         ChatRoom room = getRoom(roomId);
         ChatMember memberToRemove = room.getMembers().stream()
                 .filter(cm -> cm.getMember().equals(currentUser))
@@ -118,14 +125,16 @@ public class ChatRoomService {
     }
 
     @Transactional
-    public void blockUser(Long roomId, Member currentUser) {
+    public void blockUser(Long roomId, Long currentUserId) {
+        Member currentUser = findMemberById(currentUserId);
         ChatRoom room = getRoom(roomId);
-        log.info("User {} initiated a block in room {}", currentUser.getEmail(), roomId);
+        log.info("User {} with id {} initiated a block in room {}", currentUser.getEmail(), currentUserId, roomId);
     }
 
     @Transactional
-    public void reportUser(Long roomId, Member currentUser) {
+    public void reportUser(Long roomId, Long currentUserId) {
+        Member currentUser = findMemberById(currentUserId);
         ChatRoom room = getRoom(roomId);
-        log.info("User {} reported room {}", currentUser.getEmail(), roomId);
+        log.info("User {} with id {} reported room {}", currentUser.getEmail(), currentUserId, roomId);
     }
 }
