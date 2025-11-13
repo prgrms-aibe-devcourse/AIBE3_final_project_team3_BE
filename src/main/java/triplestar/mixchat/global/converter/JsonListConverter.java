@@ -11,7 +11,7 @@ import java.util.List;
 @Converter
 public class JsonListConverter implements AttributeConverter<List<String>, String> {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     // Java List -> JSON 문자열로 변환하여 DB에 저장

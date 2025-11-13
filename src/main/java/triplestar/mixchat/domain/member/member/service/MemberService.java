@@ -25,8 +25,8 @@ public class MemberService {
         Member member = findMemberById(memberId);
 
         member.updateInfo(req.name(),
-                Country.findByCode(req.country()),
                 req.nickname(),
+                Country.findByCode(req.country()),
                 req.englishLevel(),
                 req.interest(),
                 req.description());

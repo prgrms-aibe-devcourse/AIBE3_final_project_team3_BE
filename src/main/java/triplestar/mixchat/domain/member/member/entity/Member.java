@@ -77,7 +77,6 @@ public class Member extends BaseEntity {
 
     private String blockReason;
 
-    @Column(nullable = false)
     private String profileImageUrl;
 
     private Member(String email, Password password, String name, String nickname, Country country,
@@ -91,21 +90,32 @@ public class Member extends BaseEntity {
         this.englishLevel = englishLevel;
         this.interests = interests;
         this.description = description;
-        this.role = Role.ROLE_MEMBER;
+        this.role = role;
         this.membershipGrade = MembershipGrade.BASIC;
         this.isBlocked = false;
         this.isDeleted = false;
-        this.profileImageUrl = "";
     }
 
     private void validate(String email, Password password, String name, String nickname, Country country,
                           EnglishLevel englishLevel, List<String> interests, String description, Role role) {
+        validateSignInInfo(email, password);
+        validateProfileInfo(name, nickname, country, englishLevel, interests, description);
+        if (role == null) {
+            throw new IllegalArgumentException("역할 정보는 null일 수 없습니다.");
+        }
+    }
+
+    private void validateSignInInfo(String email, Password password) {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("이메일은 공백일 수 없습니다.");
         }
         if (password == null) {
             throw new IllegalArgumentException("비밀번호는 null일 수 없습니다.");
         }
+    }
+
+    private void validateProfileInfo(String name, String nickname, Country country, EnglishLevel englishLevel,
+                                  List<String> interests, String description) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("이름은 공백일 수 없습니다.");
         }
@@ -124,9 +134,6 @@ public class Member extends BaseEntity {
         if (description == null || description.isBlank()) {
             throw new IllegalArgumentException("자기소개는 공백일 수 없습니다.");
         }
-        if (role == null) {
-            throw new IllegalArgumentException("역할 정보는 null일 수 없습니다.");
-        }
     }
 
     public static Member createMember(String email, Password password, String name, String nickname, Country country,
@@ -141,11 +148,12 @@ public class Member extends BaseEntity {
                 englishLevel, interests, description, Role.ROLE_ADMIN);
     }
 
-    public void updateInfo(String name, Country country, String nickname,
+    public void updateInfo(String name, String nickname, Country country,
                            EnglishLevel englishLevel, List<String> interests, String description) {
+        validateProfileInfo(name, nickname, country, englishLevel, interests, description);
         this.name = name;
-        this.country = country;
         this.nickname = nickname;
+        this.country = country;
         this.englishLevel = englishLevel;
         this.interests = interests;
         this.description = description;

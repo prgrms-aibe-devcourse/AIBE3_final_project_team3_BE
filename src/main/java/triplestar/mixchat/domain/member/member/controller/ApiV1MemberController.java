@@ -5,6 +5,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
@@ -33,7 +34,7 @@ public class ApiV1MemberController implements ApiMemberController {
     @PutMapping("/profile/image")
     public ApiResponse<Void> uploadProfileImage(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
-            @RequestBody MultipartFile multipartFile
+            @RequestPart MultipartFile multipartFile
     ) {
         memberService.uploadProfileImage(customUserDetails.getId(), multipartFile);
         return ApiResponse.ok("프로필 이미지 업로드에 성공했습니다.");
