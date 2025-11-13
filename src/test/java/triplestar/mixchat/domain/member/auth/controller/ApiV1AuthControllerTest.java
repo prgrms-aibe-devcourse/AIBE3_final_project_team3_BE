@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
 import triplestar.mixchat.domain.member.auth.dto.SignInResp;
-import triplestar.mixchat.domain.member.auth.dto.SigninReq;
+import triplestar.mixchat.domain.member.auth.dto.SignInReq;
 import triplestar.mixchat.domain.member.auth.service.AuthService;
 import triplestar.mixchat.testutils.TestHelperController;
 
@@ -192,7 +192,7 @@ class ApiV1AuthControllerTest {
     void accessToken_filter_success() throws Exception {
         joinTestData();
 
-        SignInResp signInResp = authService.signIn(new SigninReq("test@example.com", "test1234"));
+        SignInResp signInResp = authService.signIn(new SignInReq("test@example.com", "test1234"));
         String accessToken = signInResp.accessToken();
 
         ResultActions resultActions = mvc
@@ -213,7 +213,7 @@ class ApiV1AuthControllerTest {
     void accessToken_filter_counterfeit_fail() throws Exception {
         joinTestData();
 
-        SignInResp signInResp = authService.signIn(new SigninReq("test@example.com", "test1234"));
+        SignInResp signInResp = authService.signIn(new SignInReq("test@example.com", "test1234"));
         String accessToken = signInResp.accessToken();
 
         ResultActions resultActions = mvc

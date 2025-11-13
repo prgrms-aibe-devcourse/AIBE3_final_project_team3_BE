@@ -3,12 +3,14 @@ package triplestar.mixchat.domain.member.friend.service;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.friend.entity.Friendship;
 import triplestar.mixchat.domain.member.friend.repository.FriendshipRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
 // 친구 관계 요청 검증은 FriendshipRequestService가 처리
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class FriendshipService {
 

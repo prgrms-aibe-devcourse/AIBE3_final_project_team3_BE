@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.service.MemberService;
-import triplestar.mixchat.global.response.ApiResponse;
+import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
 
 @RestController
@@ -22,21 +22,21 @@ public class ApiV1MemberController implements ApiMemberController {
 
     @Override
     @PutMapping("/profile")
-    public ApiResponse<Void> updateMyProfile(
+    public CustomResponse<Void> updateMyProfile(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             @RequestBody MemberInfoModifyReq memberInfoModifyReq
     ) {
         memberService.updateInfo(customUserDetails.getId(), memberInfoModifyReq);
-        return ApiResponse.ok("회원 정보 수정에 성공했습니다.");
+        return CustomResponse.ok("회원 정보 수정에 성공했습니다.");
     }
 
     @Override
     @PutMapping("/profile/image")
-    public ApiResponse<Void> uploadProfileImage(
+    public CustomResponse<Void> uploadProfileImage(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             @RequestPart MultipartFile multipartFile
     ) {
         memberService.uploadProfileImage(customUserDetails.getId(), multipartFile);
-        return ApiResponse.ok("프로필 이미지 업로드에 성공했습니다.");
+        return CustomResponse.ok("프로필 이미지 업로드에 성공했습니다.");
     }
 }

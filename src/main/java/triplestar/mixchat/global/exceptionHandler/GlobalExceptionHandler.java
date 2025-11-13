@@ -16,7 +16,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import triplestar.mixchat.global.customException.ServiceException;
-import triplestar.mixchat.global.response.ApiResponse;
+import triplestar.mixchat.global.response.CustomResponse;
 
 @Slf4j
 @RestControllerAdvice
@@ -30,11 +30,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handle(EntityNotFoundException e) {
+    public ResponseEntity<CustomResponse<Void>> handle(EntityNotFoundException e) {
         commonExceptionLog(e);
 
         return new ResponseEntity<>(
-                new ApiResponse<>(
+                new CustomResponse<>(
                         NOT_FOUND.value(),
                         "존재하지 않는 엔티티에 접근했습니다."
                 ),
@@ -43,11 +43,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiResponse<Void>> handle(IllegalArgumentException e) {
+    public ResponseEntity<CustomResponse<Void>> handle(IllegalArgumentException e) {
         commonExceptionLog(e);
 
         return new ResponseEntity<>(
-                new ApiResponse<>(
+                new CustomResponse<>(
                         BAD_REQUEST.value(),
                         "잘못된 요청입니다."
                 ),
@@ -56,11 +56,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ApiResponse<Void>> handle(IllegalStateException e) {
+    public ResponseEntity<CustomResponse<Void>> handle(IllegalStateException e) {
         commonExceptionLog(e);
 
         return new ResponseEntity<>(
-                new ApiResponse<>(
+                new CustomResponse<>(
                         BAD_REQUEST.value(),
                         "해당 요청을 처리할 수 없는 상태입니다."
                 ),
@@ -69,11 +69,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handle(MethodArgumentNotValidException e) {
+    public ResponseEntity<CustomResponse<Void>> handle(MethodArgumentNotValidException e) {
         commonExceptionLog(e);
 
         return new ResponseEntity<>(
-                new ApiResponse<>(
+                new CustomResponse<>(
                         BAD_REQUEST.value(),
                         "요청 값이 유효하지 않습니다."
                 ),
@@ -82,11 +82,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ApiResponse<Void>> handle(HttpMessageNotReadableException e) {
+    public ResponseEntity<CustomResponse<Void>> handle(HttpMessageNotReadableException e) {
         commonExceptionLog(e);
 
         return new ResponseEntity<>(
-                new ApiResponse<>(
+                new CustomResponse<>(
                         BAD_REQUEST.value(),
                         "요청 본문 형식이 잘못되었거나 필수 값이 누락되었습니다."
                 ),
@@ -95,11 +95,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ServiceException.class)
-    public ResponseEntity<ApiResponse<Void>> handle(ServiceException e) {
+    public ResponseEntity<CustomResponse<Void>> handle(ServiceException e) {
         commonExceptionLog(e);
 
         return new ResponseEntity<>(
-                new ApiResponse<>(
+                new CustomResponse<>(
                         e.getStatusCode(),
                         e.getMessage()
                 ),
@@ -108,11 +108,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ApiResponse<Void>> handle(AuthenticationException e) {
+    public ResponseEntity<CustomResponse<Void>> handle(AuthenticationException e) {
         commonExceptionLog(e);
 
         return new ResponseEntity<>(
-                new ApiResponse<>(
+                new CustomResponse<>(
                         UNAUTHORIZED.value(),
                         "사용자 인증에 실패했습니다."
                 ),
@@ -123,7 +123,7 @@ public class GlobalExceptionHandler {
     // TODO : 429 AI API 호출 관련 핸들러 추후 추가 요망
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handle(Exception e) throws Exception {
+    public ResponseEntity<CustomResponse<Void>> handle(Exception e) throws Exception {
         log.error("[ExceptionHandler] {} : {}", e.getClass().getSimpleName(), e.getMessage(), e);
 
         // prod 환경이 아니면 예외를 숨기지 않고 그대로 던짐
@@ -132,7 +132,7 @@ public class GlobalExceptionHandler {
         }
 
         return new ResponseEntity<>(
-                new ApiResponse<>(
+                new CustomResponse<>(
                         INTERNAL_SERVER_ERROR.value(),
                         "서버에서 알 수 없는 오류가 발생했습니다."
                 ),

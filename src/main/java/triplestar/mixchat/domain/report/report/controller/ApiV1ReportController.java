@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import triplestar.mixchat.domain.report.report.dto.ReportCreateReq;
 import triplestar.mixchat.domain.report.report.service.ReportService;
-import triplestar.mixchat.global.response.ApiResponse;
+import triplestar.mixchat.global.response.CustomResponse;
 
 @RestController
 @RequestMapping("/api/v1/reports")
@@ -18,11 +18,11 @@ public class ApiV1ReportController implements ApiReportController {
 
     @Override
     @PostMapping
-    public ApiResponse<Long> createReport(
+    public CustomResponse<Long> createReport(
             @RequestBody @Valid ReportCreateReq request
     ) {
         Long reportId = reportService.createReport(request);
 
-        return ApiResponse.ok("신고가 완료되었습니다", reportId);
+        return CustomResponse.ok("신고가 완료되었습니다", reportId);
     }
 }

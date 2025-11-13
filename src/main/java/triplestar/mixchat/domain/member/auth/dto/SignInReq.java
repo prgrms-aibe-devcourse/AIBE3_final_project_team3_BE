@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
-public record SigninReq(
+@Schema(description = "로그인 요청 DTO")
+public record SignInReq(
         @Schema(description = "사용자 이메일 주소", example = "user@example.com")
         @NotNull
         @Email

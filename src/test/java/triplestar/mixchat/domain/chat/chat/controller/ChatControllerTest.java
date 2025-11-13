@@ -42,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = ApiV1ChatController.class)
+@WebMvcTest(controllers = ApiV1ChatControllerController.class)
 @DisplayName("채팅 컨트롤러 단위 테스트")
 class ChatControllerTest {
 
