@@ -29,7 +29,6 @@ import triplestar.mixchat.global.security.CustomUserDetailsService;
 import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
 
 import java.util.Collections;
-import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
@@ -44,7 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = ChatController.class)
+@WebMvcTest(controllers = ApiV1ChatController.class)
 @DisplayName("채팅 컨트롤러 단위 테스트")
 class ChatControllerTest {
 

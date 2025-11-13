@@ -8,7 +8,6 @@ import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 @Entity
 @Getter
@@ -31,9 +30,21 @@ public class ChatMember extends BaseEntity {
     private LocalDateTime lastReadAt;
 
     public ChatMember(Member member, ChatRoom chatRoom, UserType userType) {
-        this.member = Objects.requireNonNull(member, "Member는 null일 수 없습니다.");
-        this.chatRoom = Objects.requireNonNull(chatRoom, "ChatRoom은 null일 수 없습니다.");
-        this.userType = Objects.requireNonNull(userType, "UserType은 null일 수 없습니다.");
+        if (member == null) {
+            throw new IllegalArgumentException("member는 null일 수 없습니다.");
+        }
+        if (chatRoom == null) {
+            throw new IllegalArgumentException("chatRoom은 null일 수 없습니다.");
+        }
+        if (userType == null) {
+            throw new IllegalArgumentException("userType은 null일 수 없습니다.");
+        }
+
+        this.member = member;
+        this.chatRoom = chatRoom;
+        this.userType = userType;
+        
+        //lastReadAt은 채팅 읽은 사람 수 기능 구현시 추가 예정
     }
 
     public enum UserType {

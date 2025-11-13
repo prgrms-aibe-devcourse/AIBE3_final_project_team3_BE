@@ -11,7 +11,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 //mongoDB용 Entity
 @Getter
@@ -41,12 +40,23 @@ public class ChatMessage {
 
     @Builder
     public ChatMessage(Long chatRoomId, Long senderId, String content, MessageType messageType) {
-        this.chatRoomId = Objects.requireNonNull(chatRoomId, "채팅방 ID는 null일 수 없습니다.");
-        this.senderId = Objects.requireNonNull(senderId, "보낸 사람 ID는 null일 수 없습니다.");
-        this.messageType = Objects.requireNonNull(messageType, "메시지 타입은 null일 수 없습니다.");
-        if (content == null || content.isBlank()) {
-            throw new IllegalArgumentException("메시지 내용(content)은 비어 있을 수 없습니다.");
+        if (chatRoomId == null) {
+            throw new IllegalArgumentException("chatRoomId는 null일 수 없습니다.");
         }
+        if (senderId == null) {
+            throw new IllegalArgumentException("senderId는 null일 수 없습니다.");
+        }
+        if (messageType == null) {
+            throw new IllegalArgumentException("messageType은 null일 수 없습니다.");
+        }
+        if (content == null || content.isBlank()) {
+            throw new IllegalArgumentException("content는 비어 있을 수 없습니다.");
+        }
+
+        this.chatRoomId = chatRoomId;
+        this.senderId = senderId;
+        this.content = content;
+        this.messageType = messageType;
     }
 }
 

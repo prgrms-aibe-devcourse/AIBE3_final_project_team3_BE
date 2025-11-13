@@ -16,7 +16,7 @@ import triplestar.mixchat.global.security.CustomUserDetails;
 //채팅 웹소켓을 위한 컨트롤러
 @Controller
 @RequiredArgsConstructor
-public class ChatSocketController {
+public class ApiV1ChatSocketController {
 
     private final ChatRoomService chatRoomService;
     private final ChatMessageService chatMessageService;

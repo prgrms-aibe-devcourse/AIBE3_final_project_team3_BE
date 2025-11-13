@@ -31,6 +31,13 @@ public class ChatRoom extends BaseEntity {
     }
 
     private ChatRoom(String name, RoomType roomType) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("채팅방 이름(name)은 비어 있을 수 없습니다.");
+        }
+        if (roomType == null) {
+            throw new IllegalArgumentException("roomType은 null일 수 없습니다.");
+        }
+
         this.name = name;
         this.roomType = roomType;
     }
