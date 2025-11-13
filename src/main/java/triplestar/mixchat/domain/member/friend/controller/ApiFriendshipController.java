@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PathVariable;
 import triplestar.mixchat.global.response.ApiResponse;
@@ -34,7 +35,7 @@ public interface ApiFriendshipController {
     )
 
     // 보통은 없어도 되는 코드 DTO 없이 코드 1개짜리 RequestBody 일때만 사용
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+    @RequestBody(
             description = "친구 요청 대상 ID",
             required = true,
             content = @Content(

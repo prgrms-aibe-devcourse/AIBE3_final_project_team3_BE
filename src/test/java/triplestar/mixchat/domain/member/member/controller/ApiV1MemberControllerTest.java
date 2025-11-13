@@ -47,7 +47,7 @@ class ApiV1MemberControllerTest {
     @Test
     @DisplayName("내 정보 수정 성공")
     @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    void update_my_profile_success() throws Exception {
+    void update_info_my_profile_success() throws Exception {
         ResultActions resultActions = mvc
                 .perform(
                         put("/api/v1/members/profile")

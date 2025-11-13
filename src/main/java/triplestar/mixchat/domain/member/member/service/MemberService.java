@@ -20,7 +20,7 @@ public class MemberService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다."));
 
-        member.update(req.name(),
+        member.updateInfo(req.name(),
                 Country.findByCode(req.country()),
                 req.nickname(),
                 req.englishLevel(),

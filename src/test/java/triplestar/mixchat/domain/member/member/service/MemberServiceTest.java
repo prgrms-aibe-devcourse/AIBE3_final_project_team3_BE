@@ -37,7 +37,7 @@ class MemberServiceTest {
 
     @Test
     @DisplayName("멤버 정보 수정 성공")
-    void member_update_success() {
+    void member_update_info_success() {
         assertThat(member.getEmail()).isEqualTo("test1@example.com");
         assertThat(member.getName()).isEqualTo("test1");
         assertThat(member.getNickname()).isEqualTo("test1");

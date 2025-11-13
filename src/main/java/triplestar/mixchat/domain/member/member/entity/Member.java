@@ -10,7 +10,6 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import java.time.LocalDateTime;
 import java.util.List;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import triplestar.mixchat.domain.member.member.constant.Country;
@@ -97,16 +96,16 @@ public class Member extends BaseEntity {
     private void validate(String email, Password password, String name, String nickname, Country country,
                           EnglishLevel englishLevel, List<String> interests, String description, Role role) {
         if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("이메일은 null이거나 공백일 수 없습니다.");
+            throw new IllegalArgumentException("이메일은 공백일 수 없습니다.");
         }
         if (password == null) {
             throw new IllegalArgumentException("비밀번호는 null일 수 없습니다.");
         }
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("이름은 null이거나 공백일 수 없습니다.");
+            throw new IllegalArgumentException("이름은 공백일 수 없습니다.");
         }
         if (nickname == null || nickname.isBlank()) {
-            throw new IllegalArgumentException("닉네임은 null이거나 공백일 수 없습니다.");
+            throw new IllegalArgumentException("닉네임은 공백일 수 없습니다.");
         }
         if (country == null) {
             throw new IllegalArgumentException("국가 정보는 null일 수 없습니다.");
@@ -115,10 +114,10 @@ public class Member extends BaseEntity {
             throw new IllegalArgumentException("영어 레벨은 null일 수 없습니다.");
         }
         if (interests == null || interests.isEmpty()) {
-            throw new IllegalArgumentException("관심사 목록은 null이거나 비어있을 수 없습니다.");
+            throw new IllegalArgumentException("관심사 목록은 비어있을 수 없습니다.");
         }
         if (description == null || description.isBlank()) {
-            throw new IllegalArgumentException("자기소개는 null이거나 공백일 수 없습니다.");
+            throw new IllegalArgumentException("자기소개는 공백일 수 없습니다.");
         }
         if (role == null) {
             throw new IllegalArgumentException("역할 정보는 null일 수 없습니다.");
@@ -137,8 +136,8 @@ public class Member extends BaseEntity {
                 englishLevel, interests, description, Role.ROLE_ADMIN);
     }
 
-    public void update(String name, Country country, String nickname,
-                       EnglishLevel englishLevel, List<String> interests, String description) {
+    public void updateInfo(String name, Country country, String nickname,
+                           EnglishLevel englishLevel, List<String> interests, String description) {
         this.name = name;
         this.country = country;
         this.nickname = nickname;
