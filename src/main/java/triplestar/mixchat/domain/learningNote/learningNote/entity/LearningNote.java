@@ -41,6 +41,15 @@ public class LearningNote extends BaseEntityNoModified {
                            String originalContent,
                            String correctedContent,
                            boolean marked) {
+        if (member == null) {
+            throw new IllegalArgumentException("member는 null일 수 없습니다.");
+        }
+        if (originalContent == null || originalContent.isBlank()) {
+            throw new IllegalArgumentException("originalContent는 비어 있을 수 없습니다.");
+        }
+        if (correctedContent == null || correctedContent.isBlank()) {
+            throw new IllegalArgumentException("correctedContent는 비어 있을 수 없습니다.");
+        }
         this.member = member;
         this.originalContent = originalContent;
         this.correctedContent = correctedContent;

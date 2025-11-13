@@ -13,17 +13,16 @@ import org.springframework.web.bind.annotation.RestController;
 import triplestar.mixchat.domain.report.report.dto.ReportAdminListResp;
 import triplestar.mixchat.domain.report.report.dto.ReportStatusUpdateReq;
 import triplestar.mixchat.domain.report.report.entity.Report;
-import triplestar.mixchat.domain.report.report.repository.ReportRepository;
 import triplestar.mixchat.domain.report.report.service.ReportAdminService;
 import triplestar.mixchat.global.response.ApiResponse;
 
 @RestController
 @RequestMapping("/api/v1/admin/reports")
 @RequiredArgsConstructor
-public class ReportAdminController  {
+public class ApiV1ReportAdminController implements ApiReportAdminController{
     private final ReportAdminService reportAdminService;
-    private final ReportRepository reportRepository;
 
+    @Override
     @PatchMapping("/{reportId}")
     public ApiResponse<Void> updateReportStatus(
             @PathVariable Long reportId,
@@ -33,6 +32,7 @@ public class ReportAdminController  {
         return ApiResponse.ok("상태 변경 완료");
     }
 
+    @Override
     @GetMapping
     public ApiResponse<Page<ReportAdminListResp>> getReports(
             @RequestParam(defaultValue = "0") int page,

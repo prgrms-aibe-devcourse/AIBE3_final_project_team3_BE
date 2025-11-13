@@ -17,6 +17,7 @@ import triplestar.mixchat.global.response.ApiResponse;
 public class ApiV1LearningNoteController implements ApiLearningNoteController{
     private final LearningNoteService learningNoteService;
 
+    @Override
     @PostMapping
     public ApiResponse<Long> createLearningNote(
             @RequestBody @Valid LearningNoteCreateReq req

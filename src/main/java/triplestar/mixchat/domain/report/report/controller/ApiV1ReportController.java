@@ -13,9 +13,10 @@ import triplestar.mixchat.global.response.ApiResponse;
 @RestController
 @RequestMapping("/api/v1/reports")
 @RequiredArgsConstructor
-public class ReportController {
+public class ApiV1ReportController implements ApiReportController {
     private final ReportService reportService;
 
+    @Override
     @PostMapping
     public ApiResponse<Long> createReport(
             @RequestBody @Valid ReportCreateReq request

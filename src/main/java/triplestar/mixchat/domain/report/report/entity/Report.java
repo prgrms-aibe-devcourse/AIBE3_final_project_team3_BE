@@ -5,7 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import lombok.Builder;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import triplestar.mixchat.domain.report.report.constant.ReportCategory;
@@ -16,7 +16,7 @@ import triplestar.mixchat.global.jpa.entity.BaseEntity;
 @Entity
 @Table(name = "reports")
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Report extends BaseEntity {
 
     private String reportedMsgContent;
@@ -34,12 +34,23 @@ public class Report extends BaseEntity {
 
     private String reportedReason;
 
-    @Builder
-    public Report(String reportedMsgContent,
-                  Long targetMemberId,
-                  ReportStatus status,
-                  ReportCategory category,
-                  String reportedReason) {
+    private Report(
+            String reportedMsgContent,
+            Long targetMemberId,
+            ReportStatus status,
+            ReportCategory category,
+            String reportedReason
+    ) {
+        if (targetMemberId == null) {
+            throw new IllegalArgumentException("targetMemberId는 null일 수 없습니다.");
+        }
+        if (status == null) {
+            throw new IllegalArgumentException("status는 null일 수 없습니다.");
+        }
+        if (category == null) {
+            throw new IllegalArgumentException("category는 null일 수 없습니다.");
+        }
+
         this.reportedMsgContent = reportedMsgContent;
         this.targetMemberId = targetMemberId;
         this.status = status;
@@ -53,13 +64,13 @@ public class Report extends BaseEntity {
             String reportedMsgContent,
             String reportedReason
     ) {
-        return Report.builder()
-                .targetMemberId(targetMemberId)
-                .category(category)
-                .status(ReportStatus.WAITING)
-                .reportedMsgContent(reportedMsgContent)
-                .reportedReason(reportedReason)
-                .build();
+        return new Report(
+                reportedMsgContent,
+                targetMemberId,
+                ReportStatus.WAITING,
+                category,
+                reportedReason
+        );
     }
 
     public void updateStatus(ReportStatus status) {
