@@ -1,6 +1,7 @@
 package triplestar.mixchat.domain.learningNote.learningNote;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -18,9 +19,12 @@ import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import triplestar.mixchat.domain.learningNote.learningNote.entity.Feedback;
+import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.domain.translation.translation.constant.TranslationTagCode;
 import triplestar.mixchat.testutils.TestMemberFactory;
 
 @ActiveProfiles("test")
@@ -42,6 +46,7 @@ class ApiV1LearningNoteControllerTest {
     @BeforeEach
     void setUp() {
         testMember = memberRepository.save(TestMemberFactory.createMember("testUser1"));
+
     }
 
     @Test
@@ -136,4 +141,5 @@ class ApiV1LearningNoteControllerTest {
                 .andDo(print())
                 .andExpect(status().isUnauthorized());
     }
+
 }

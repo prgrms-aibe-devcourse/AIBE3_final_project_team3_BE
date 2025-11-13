@@ -4,5 +4,4 @@ public enum TranslationTagCode {
     GRAMMAR,
     VOCABULARY,
     TRANSLATION;
-
 }
