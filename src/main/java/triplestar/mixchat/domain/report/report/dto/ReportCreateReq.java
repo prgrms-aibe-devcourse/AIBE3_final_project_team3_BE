@@ -13,7 +13,7 @@ public record  ReportCreateReq (
     Long targetMemberId,
 
     @NotNull
-    @Schema(description = "신고 카테고리 (ABUSE: 욕설/비속어, SCAM: 사기, INAPPROPRIATE: 부적절한 콘텐츠)", example = "ABUSE")
+    @Schema(description = "신고 카테고리", example = "ABUSE")
     ReportCategory category,
 
     @Nullable

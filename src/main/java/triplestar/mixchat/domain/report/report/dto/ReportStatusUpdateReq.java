@@ -7,6 +7,6 @@ import triplestar.mixchat.domain.report.report.constant.ReportStatus;
 @Schema(description = "신고 상태 변경 요청")
 public record ReportStatusUpdateReq(
         @NotNull
-        @Schema(description = "변경할 신고 상태 (WAITING, APPROVED, REJECTED)", example = "APPROVED")
+        @Schema(description = "변경할 신고 상태", example = "APPROVED")
         ReportStatus status
 ) {}

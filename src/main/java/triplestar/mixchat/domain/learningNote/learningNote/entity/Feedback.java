@@ -43,6 +43,21 @@ public class Feedback extends BaseEntityNoModified {
                        String problem,
                        String correction,
                        String extra) {
+        if (learningNote == null) {
+            throw new IllegalArgumentException("learningNote는 null일 수 없습니다.");
+        }
+        if (tag == null) {
+            throw new IllegalArgumentException("tag는 null일 수 없습니다.");
+        }
+        if (problem == null || problem.isBlank()) {
+            throw new IllegalArgumentException("problem은 비어 있을 수 없습니다.");
+        }
+        if (correction == null || correction.isBlank()) {
+            throw new IllegalArgumentException("correction은 비어 있을 수 없습니다.");
+        }
+        if (extra == null || extra.isBlank()) {
+            throw new IllegalArgumentException("extra은 비어 있을 수 없습니다.");
+        }
         this.learningNote = learningNote;
         this.tag = tag;
         this.problem = problem;

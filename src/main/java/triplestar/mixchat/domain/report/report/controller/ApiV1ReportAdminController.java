@@ -22,6 +22,7 @@ import triplestar.mixchat.global.response.ApiResponse;
 public class ApiV1ReportAdminController implements ApiReportAdminController{
     private final ReportAdminService reportAdminService;
 
+    @Override
     @PatchMapping("/{reportId}")
     public ApiResponse<Void> updateReportStatus(
             @PathVariable Long reportId,
@@ -31,6 +32,7 @@ public class ApiV1ReportAdminController implements ApiReportAdminController{
         return ApiResponse.ok("상태 변경 완료");
     }
 
+    @Override
     @GetMapping
     public ApiResponse<Page<ReportAdminListResp>> getReports(
             @RequestParam(defaultValue = "0") int page,

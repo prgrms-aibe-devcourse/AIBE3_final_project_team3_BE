@@ -16,6 +16,7 @@ import triplestar.mixchat.global.response.ApiResponse;
 public class ApiV1ReportController implements ApiReportController {
     private final ReportService reportService;
 
+    @Override
     @PostMapping
     public ApiResponse<Long> createReport(
             @RequestBody @Valid ReportCreateReq request

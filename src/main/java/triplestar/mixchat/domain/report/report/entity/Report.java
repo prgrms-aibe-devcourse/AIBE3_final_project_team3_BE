@@ -41,9 +41,16 @@ public class Report extends BaseEntity {
             ReportCategory category,
             String reportedReason
     ) {
-        if (targetMemberId == null || status == null || category == null) {
-            throw new IllegalArgumentException("필수 필드가 누락되었습니다.");
+        if (targetMemberId == null) {
+            throw new IllegalArgumentException("targetMemberId는 null일 수 없습니다.");
         }
+        if (status == null) {
+            throw new IllegalArgumentException("status는 null일 수 없습니다.");
+        }
+        if (category == null) {
+            throw new IllegalArgumentException("category는 null일 수 없습니다.");
+        }
+
         this.reportedMsgContent = reportedMsgContent;
         this.targetMemberId = targetMemberId;
         this.status = status;
