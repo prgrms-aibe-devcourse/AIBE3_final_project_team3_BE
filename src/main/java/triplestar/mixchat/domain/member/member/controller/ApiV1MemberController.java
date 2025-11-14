@@ -24,11 +24,11 @@ public class ApiV1MemberController implements ApiMemberController {
 
     @Override
     @GetMapping("/me")
-    public ApiResponse<MemberSummaryResp> getMyProfile(
+    public CustomResponse<MemberSummaryResp> getMyProfile(
             @AuthenticationPrincipal CustomUserDetails customUserDetails
     ) {
         MemberSummaryResp memberSummary = memberService.getMemberSummary(customUserDetails.getId());
-        return ApiResponse.ok("내 정보를 성공적으로 조회했습니다.", memberSummary);
+        return CustomResponse.ok("내 정보를 성공적으로 조회했습니다.", memberSummary);
     }
 
     @Override

@@ -40,7 +40,7 @@ public interface ApiMemberController {
     // --- 3. 내 정보 조회 (GET /me) ---
     @Operation(summary = "내 정보 조회", description = "인증된 사용자의 프로필 정보를 조회합니다.")
     @SignInInRequireResponse
-    ApiResponse<triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp> getMyProfile(
+    CustomResponse<triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp> getMyProfile(
             @Parameter(hidden = true)
             CustomUserDetails customUserDetails
     );
