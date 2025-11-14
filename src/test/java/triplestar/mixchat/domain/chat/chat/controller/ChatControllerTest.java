@@ -26,7 +26,6 @@ import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.global.security.CustomUserDetails;
-import triplestar.mixchat.global.security.CustomUserDetailsService;
 import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
 
 import java.util.Collections;
@@ -55,7 +54,6 @@ class ChatControllerTest {
     @MockitoBean private S3Uploader s3Uploader;
     @MockitoBean private SimpMessagingTemplate messagingTemplate;
     @MockitoBean private AuthJwtProvider authJwtProvider;
-    @MockitoBean private CustomUserDetailsService customUserDetailsService;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private Member mockUser;
