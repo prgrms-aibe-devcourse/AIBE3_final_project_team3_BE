@@ -1,6 +1,5 @@
 package triplestar.mixchat.domain.learningNote.learningNote.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -41,42 +40,21 @@ public class LearningNoteService {
         return learningNoteRepository.save(note).getId();
     }
 
-    @Transactional(readOnly = true)
-    public List<LearningNoteListResp> getLearningNotes(int page, int size, TranslationTagCode tag, LearningStatus status) {
+    @Transactional
+    public List<LearningNoteListResp> getLearningNotes(int page, int size, Long memberId, TranslationTagCode tag, LearningStatus status) {
         PageRequest pageable = PageRequest.of(page, size);
 
-        List<LearningNote> notes = learningNoteRepository.findAll(pageable).getContent();
+        List<LearningNote> notes = learningNoteRepository.findByMemberWithFilters(memberId, tag, status, pageable);
 
-        List<LearningNoteListResp> result = new ArrayList<>();
-
-        for (LearningNote note : notes) {
-            // 번역 태그, 학습 여부에 따른 필터링
-            List<Feedback> filteredFeedbacks = note.getFeedbacks().stream()
-                    .filter(f -> f.getTag() == tag)
-                    .filter(f -> switch (status) {
-                        case ALL -> true;
-                        case LEARNED -> f.isMarked();
-                        case UNLEARNED -> !f.isMarked();
-                    })
-                    .toList();
-            // 학습노트에 담을 피드백 DTO 변환
-            List<FeedbackListResp> feedbackResp = filteredFeedbacks.stream()
-                    .map(f -> new FeedbackListResp(
-                            f.getTag(),
-                            f.getProblem(),
-                            f.getCorrection(),
-                            f.getExtra(),
-                            f.isMarked()
-                    ))
-                    .toList();
-            // 학습노트 DTO 구성
-            result.add(new LearningNoteListResp(
-                    note.getOriginalContent(),
-                    note.getCorrectedContent(),
-                    feedbackResp
-            ));
-        }
-        return result;
+        return notes.stream()
+                .map(note -> new LearningNoteListResp(
+                        note.getOriginalContent(),
+                        note.getCorrectedContent(),
+                        note.getFeedbacks().stream()
+                                .map(FeedbackListResp::from)
+                                .toList()
+                ))
+                .toList();
     }
 
     public Member findMemberById(Long memberId) {

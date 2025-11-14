@@ -37,11 +37,14 @@ public interface ApiLearningNoteController {
             int page,
             @RequestParam(defaultValue = "20")
             int size,
+            @Parameter(description = "회원 ID", example = "1")
+            @RequestParam
+            Long memberId,
             @Parameter(description = "번역 태그", example = "TRANSLATION")
-            @RequestParam(required = false)
+            @RequestParam
             TranslationTagCode tag,
-            @Parameter(description = "학습 완료 여부", example = "LEARNED")
-            @RequestParam(required = false)
+            @Parameter(description = "학습 상태", example = "LEARNED")
+            @RequestParam
             LearningStatus status
     );
 }

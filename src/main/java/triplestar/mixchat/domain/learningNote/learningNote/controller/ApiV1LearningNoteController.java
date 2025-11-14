@@ -36,10 +36,11 @@ public class ApiV1LearningNoteController implements ApiLearningNoteController{
     public ApiResponse<List<LearningNoteListResp>> getLearningNotes(
             int page,
             int size,
+            Long memberId,
             TranslationTagCode tag,
             LearningStatus status
     ) {
-        List<LearningNoteListResp> result = learningNoteService.getLearningNotes(page, size, tag, status);
+        List<LearningNoteListResp> result = learningNoteService.getLearningNotes(page, size, memberId, tag, status);
         return ApiResponse.ok("학습노트 목록 조회 성공", result);
     }
 }
