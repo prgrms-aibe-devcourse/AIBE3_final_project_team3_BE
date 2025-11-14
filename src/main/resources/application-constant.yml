@@ -1,5 +1,5 @@
 jwt:
-  access-token-expiration-seconds: "#{60 * 15}"
+  access-token-expiration-seconds: "#{60 * 120}"
   refresh-token-expiration-seconds: "#{60 * 60 * 24 * 7}"
 redis:
   prefix:

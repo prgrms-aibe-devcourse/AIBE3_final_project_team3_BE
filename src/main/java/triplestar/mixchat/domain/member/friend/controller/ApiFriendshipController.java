@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PathVariable;
+import triplestar.mixchat.domain.member.friend.dto.FriendshipSendReq;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
@@ -48,8 +49,8 @@ public interface ApiFriendshipController {
     @SignInInRequireResponse
     CustomResponse<Long> sendFriendRequest(
             @Parameter(hidden = true) CustomUserDetails userDetails,
-            @Parameter(description = "친구 요청을 받을 사용자의 ID", required = true)
-            Long receiverId
+            @RequestBody(description = "로그인 정보", required = true)
+            FriendshipSendReq friendshipSendReq
     );
 
     // --- 2. 친구 요청 수락 (PATCH /accept) ---
