@@ -2,12 +2,14 @@ package triplestar.mixchat.domain.member.member.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.service.MemberService;
 import triplestar.mixchat.global.response.CustomResponse;
@@ -19,6 +21,15 @@ import triplestar.mixchat.global.security.CustomUserDetails;
 public class ApiV1MemberController implements ApiMemberController {
 
     private final MemberService memberService;
+
+    @Override
+    @GetMapping("/me")
+    public ApiResponse<MemberSummaryResp> getMyProfile(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        MemberSummaryResp memberSummary = memberService.getMemberSummary(customUserDetails.getId());
+        return ApiResponse.ok("내 정보를 성공적으로 조회했습니다.", memberSummary);
+    }
 
     @Override
     @PutMapping("/profile")
