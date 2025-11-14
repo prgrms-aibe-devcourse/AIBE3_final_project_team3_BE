@@ -1,5 +1,3 @@
-USE mysql_db;
-
 -- 일반 회원 1
 INSERT INTO members (
     email,

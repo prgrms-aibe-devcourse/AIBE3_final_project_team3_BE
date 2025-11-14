@@ -1,6 +1,5 @@
 package triplestar.mixchat.global.security;
 
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +17,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
@@ -39,6 +40,8 @@ public class SecurityConfig {
                                         "/api/*/auth/join", "/api/*/auth/sign-in", "api/*/auth/reissue").permitAll()
                                 // ADMIN 권한 필요
                                 .requestMatchers("/api/*/admin/**").hasRole("ADMIN")
+                                // 웹소켓 허용
+                                .requestMatchers("/ws-stomp/**").permitAll()
                                 // 나머지 모든 요청은 인증 필요
                                 .requestMatchers("/**").authenticated()
                 )

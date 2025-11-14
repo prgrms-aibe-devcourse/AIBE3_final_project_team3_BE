@@ -5,11 +5,18 @@ spring:
       - secret
       - s3
       - constant
+
   config:
     import: optional:file:.env.${spring.profiles.active}.properties
+
   jpa:
     hibernate:
       ddl-auto: create
+    defer-datasource-initialization: true   # ← 올바른 위치
+
+  sql:
+    init:
+      mode: always                          # ← 올바른 위치
 
   datasource:
     url: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
@@ -17,7 +24,10 @@ spring:
     password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  data:
+    mongodb:
+      uri: mongodb://root:qwer1234@localhost:27017/mongochat?authSource=admin
+
 swagger:
   redirect:
-    # "/"로 들어왔을 때 최종적으로 리다이렉트될 Swagger UI 경로
     path: /swagger-ui/index.html
