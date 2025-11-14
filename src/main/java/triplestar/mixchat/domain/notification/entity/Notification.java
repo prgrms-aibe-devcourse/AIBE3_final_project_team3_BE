@@ -27,6 +27,12 @@ public class Notification extends BaseEntity {
 
     private boolean isRead;
 
+    public Notification(Member receiver, NotificationType type, String content) {
+        this.receiver = receiver;
+        this.type = type;
+        this.content = content;
+    }
+
     public void read() {
         this.isRead = true;
     }
