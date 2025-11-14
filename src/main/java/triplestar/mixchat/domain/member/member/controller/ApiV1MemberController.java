@@ -3,6 +3,7 @@ package triplestar.mixchat.domain.member.member.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,10 +45,12 @@ public class ApiV1MemberController implements ApiMemberController {
 
     @GetMapping("{id}")
     public CustomResponse<MemberProfileResp> getMemberProfile(
-            @AuthenticationPrincipal CustomUserDetails customUserDetails
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @PathVariable Long id
     ) {
-        MemberProfileResp memberDetails = memberService.getMemberDetails(customUserDetails.getId(),
-                customUserDetails.getId());
+        Long signInId = customUserDetails != null ? customUserDetails.getId() : null;
+
+        MemberProfileResp memberDetails = memberService.getMemberDetails(signInId, id);
         return CustomResponse.ok("회원 정보 조회에 성공했습니다.", memberDetails);
     }
 }
