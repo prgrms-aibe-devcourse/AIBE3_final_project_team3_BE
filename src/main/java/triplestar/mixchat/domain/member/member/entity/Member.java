@@ -1,9 +1,19 @@
 package triplestar.mixchat.domain.member.member.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
+import java.time.LocalDateTime;
+import java.util.List;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
@@ -12,13 +22,10 @@ import triplestar.mixchat.domain.report.report.constant.ReportCategory;
 import triplestar.mixchat.global.converter.JsonListConverter;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
 @Entity
 @Getter
 @Table(name = "members")
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member extends BaseEntity {
 
     @Email
@@ -44,7 +51,6 @@ public class Member extends BaseEntity {
     private List<String> interests;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     private EnglishLevel englishLevel;
 
     @Column(nullable = false)
