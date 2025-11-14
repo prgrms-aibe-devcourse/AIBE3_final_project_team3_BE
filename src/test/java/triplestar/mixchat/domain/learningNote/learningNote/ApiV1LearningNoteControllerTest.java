@@ -235,4 +235,33 @@ class ApiV1LearningNoteControllerTest {
                 .andExpect(jsonPath("$.data[*].feedback[*].correction", hasItems("go", "walks", "days")))
                 .andExpect(jsonPath("$.data[*].feedback[*].extra", hasItems("삼인칭 단수 수정", "3인칭 단수", "복수형 수정")));
     }
+
+    @Test
+    @DisplayName("학습노트 목록 조회 실패 - 잘못된 태그 입력 시 400 반환")
+    @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void getLearningNotes_invalidTag_fail_noBody() throws Exception {
+        mockMvc.perform(get("/api/v1/learning/notes")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("memberId", memberId.toString())
+                        .param("tag", "WRONG_TAG") // 존재하지 않는 Enum
+                        .param("status", "ALL")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("학습노트 목록 조회 실패 - 필수 파라미터 누락 시 400 반환")
+    @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void getLearningNotes_missingParams_fail() throws Exception {
+        mockMvc.perform(get("/api/v1/learning/notes")
+                        .param("page", "0")
+                        .param("size", "10")
+                        // tag와 status 생략
+                        .param("memberId", memberId.toString())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+    }
 }
