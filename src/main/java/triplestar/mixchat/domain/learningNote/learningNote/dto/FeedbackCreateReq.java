@@ -1,6 +1,7 @@
 package triplestar.mixchat.domain.learningNote.learningNote.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import triplestar.mixchat.domain.translation.translation.constant.TranslationTagCode;
 
@@ -10,15 +11,15 @@ public record FeedbackCreateReq(
         @Schema(description = "피드백 태그", example = "Grammar")
         TranslationTagCode tag,
 
-        @NotNull
+        @NotBlank
         @Schema(description = "문제가 있었던 원본 구절", example = "goes")
         String problem,
 
-        @NotNull
+        @NotBlank
         @Schema(description = "수정 구절", example = "go")
         String correction,
 
-        @NotNull
+        @NotBlank
         @Schema(description = "부가 설명", example = "시제 수정")
         String extra
 ) {}

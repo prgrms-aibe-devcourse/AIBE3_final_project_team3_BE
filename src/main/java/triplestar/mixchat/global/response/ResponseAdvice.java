@@ -10,19 +10,19 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 @RestControllerAdvice
-public class ApiResponseAdvice implements ResponseBodyAdvice<Object> {
+public class ResponseAdvice implements ResponseBodyAdvice<Object> {
 
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
-        return ApiResponse.class.isAssignableFrom(returnType.getParameterType());
+        return CustomResponse.class.isAssignableFrom(returnType.getParameterType());
     }
 
     @Override
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
                                   Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                   ServerHttpRequest request, ServerHttpResponse response) {
-        ApiResponse apiResponse = (ApiResponse) body;
-        response.setStatusCode(HttpStatusCode.valueOf(apiResponse.statusCode()));
+        CustomResponse customResponse = (CustomResponse) body;
+        response.setStatusCode(HttpStatusCode.valueOf(customResponse.statusCode()));
         return body;
     }
 }

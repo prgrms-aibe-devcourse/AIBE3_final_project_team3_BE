@@ -1,6 +1,7 @@
 package triplestar.mixchat.domain.chat.chat.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -61,16 +62,16 @@ class ChatControllerTest {
     private CustomUserDetails mockUserDetails;
 
     private Member createMockMember(Long id, String email, String nickname) {
-        Member member = Member.builder()
-                .email(email)
-                .password(Password.encrypt("ValidPassword123", passwordEncoder))
-                .name(nickname)
-                .nickname(nickname)
-                .country(Country.SOUTH_KOREA)
-                .englishLevel(EnglishLevel.BEGINNER)
-                .interest("테스트")
-                .description("테스트 설명")
-                .build();
+        Member member = Member.createMember(
+                email,
+                Password.encrypt("ValidPassword123", passwordEncoder),
+                nickname,
+                nickname,
+                Country.SOUTH_KOREA,
+                EnglishLevel.BEGINNER,
+                List.of("테스트"),
+                "테스트 설명"
+        );
         ReflectionTestUtils.setField(member, "id", id);
         return member;
     }

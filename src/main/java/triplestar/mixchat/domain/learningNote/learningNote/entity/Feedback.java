@@ -42,10 +42,10 @@ public class Feedback extends BaseEntityNoModified {
     private boolean marked = false;
 
     private Feedback(LearningNote learningNote,
-                     TranslationTagCode tag,
-                     String problem,
-                     String correction,
-                     String extra) {
+                       TranslationTagCode tag,
+                       String problem,
+                       String correction,
+                       String extra) {
         if (learningNote == null) {
             throw new IllegalArgumentException("learningNote는 null일 수 없습니다.");
         }
@@ -79,7 +79,6 @@ public class Feedback extends BaseEntityNoModified {
     void modifyLearningNote(LearningNote learningNote) {
         this.learningNote = learningNote;
     }
-
 
     public void mark() {
         this.marked = true;

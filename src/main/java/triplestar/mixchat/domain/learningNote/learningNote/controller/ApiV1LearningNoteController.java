@@ -13,8 +13,8 @@ import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningStat
 import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteCreateReq;
 import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteListResp;
 import triplestar.mixchat.domain.learningNote.learningNote.service.LearningNoteService;
+import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.domain.translation.translation.constant.TranslationTagCode;
-import triplestar.mixchat.global.response.ApiResponse;
 
 @RestController
 @RequestMapping("/api/v1/learning/notes")
@@ -24,16 +24,16 @@ public class ApiV1LearningNoteController implements ApiLearningNoteController{
 
     @Override
     @PostMapping
-    public ApiResponse<Long> createLearningNote(
+    public CustomResponse<Long> createLearningNote(
             @RequestBody @Valid LearningNoteCreateReq req
     ) {
         Long learningNoteId = learningNoteService.createWithFeedbacks(req);
-        return ApiResponse.ok("학습노트가 저장되었습니다.", learningNoteId);
+        return CustomResponse.ok("학습노트가 저장되었습니다.", learningNoteId);
     }
 
     @Override
     @GetMapping
-    public ApiResponse<List<LearningNoteListResp>> getLearningNotes(
+    public CustomResponse<List<LearningNoteListResp>> getLearningNotes(
             int page,
             int size,
             Long memberId,
@@ -41,6 +41,6 @@ public class ApiV1LearningNoteController implements ApiLearningNoteController{
             LearningStatus status
     ) {
         List<LearningNoteListResp> result = learningNoteService.getLearningNotes(page, size, memberId, tag, status);
-        return ApiResponse.ok("학습노트 목록 조회 성공", result);
+        return CustomResponse.ok("학습노트 목록 조회 성공", result);
     }
 }
