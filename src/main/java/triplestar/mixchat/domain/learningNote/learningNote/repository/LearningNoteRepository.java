@@ -17,11 +17,11 @@ public interface LearningNoteRepository extends JpaRepository<LearningNote, Long
         join fetch n.member m
         where m.id = :memberId
           and f.tag = :tag
-          and (
-               :status = 'ALL'
-            or (:status = 'LEARNED' and f.marked = true)
-            or (:status = 'UNLEARNED' and f.marked = false)
-          )
+         and (
+                    :#{#status.name()} = 'ALL'
+                 or (:#{#status.name()} = 'LEARNED' and f.marked = true)
+                 or (:#{#status.name()} = 'UNLEARNED' and f.marked = false)
+               )
         order by n.createdAt desc
     """)
     List<LearningNote> findByMemberWithFilters(
