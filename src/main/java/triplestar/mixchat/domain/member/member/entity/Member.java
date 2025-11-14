@@ -169,4 +169,12 @@ public class Member extends BaseEntity {
         this.blockedAt = LocalDateTime.now();
         this.blockReason = category.name();
     }
+
+    public boolean isPremium() {
+        return this.membershipGrade == MembershipGrade.PREMIUM;
+    }
+
+    public void changeMembershipGrade(MembershipGrade grade) {
+        this.membershipGrade = grade;
+    }
 }
