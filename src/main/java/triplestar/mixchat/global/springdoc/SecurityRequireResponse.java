@@ -9,6 +9,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import triplestar.mixchat.global.response.CustomResponse;
 
 /**
  * 인증(Authentication)이 필요한 API 엔드포인트에 공통적으로 적용될 응답 스키마를 정의합니다.
@@ -21,7 +22,7 @@ import java.lang.annotation.Target;
                 responseCode = "403",
                 description = "접근 권한 없음 (FORBIDDEN) - 인증은 성공했으나 해당 리소스 접근 권한이 없음",
                 content = @Content(
-                        schema = @Schema(implementation = triplestar.mixchat.global.response.ApiResponse.class),
+                        schema = @Schema(implementation = CustomResponse.class),
                         examples = @ExampleObject(
                                 summary = "접근 권한 부족 예시",
                                 value = "{\"msg\": \"해당 리소스에 접근할 권한이 없습니다.\"}"

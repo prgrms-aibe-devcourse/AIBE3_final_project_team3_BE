@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
 import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.auth.dto.SignInResp;
-import triplestar.mixchat.domain.member.auth.dto.SigninReq;
+import triplestar.mixchat.domain.member.auth.dto.SignInReq;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
@@ -64,7 +64,7 @@ public class AuthService {
     /**
      * 로그인
      */
-    public SignInResp signIn(SigninReq req) {
+    public SignInResp signIn(SignInReq req) {
         Member member = memberRepository.findByEmail(req.email())
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 이메일입니다: " + req.email()));
 
