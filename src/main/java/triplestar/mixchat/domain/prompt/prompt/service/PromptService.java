@@ -47,7 +47,7 @@ public class PromptService {
         return new PromptDetailResp(saved);
     }
 
-    private Prompt getPromptOrThrow(Long id) {
+    private Prompt getPrompt(Long id) {
         return promptRepository.findById(id)
                 .orElseThrow(EntityNotFoundException::new);
     }
@@ -56,7 +56,7 @@ public class PromptService {
     public void update(Long memberId, Long id, PromptReq req) {
         Member member = getMember(memberId);
         checkPremium(member);
-        Prompt prompt = getPromptOrThrow(id);
+        Prompt prompt = getPrompt(id);
         if (prompt.isDefaultPrompt() || !prompt.getMember().getId().equals(member.getId())) {
             throw new AccessDeniedException("본인 프롬프트가 아닙니다.");
         }
@@ -67,7 +67,7 @@ public class PromptService {
     public void delete(Long memberId, Long id) {
         Member member = getMember(memberId);
         checkPremium(member);
-        Prompt prompt = getPromptOrThrow(id);
+        Prompt prompt = getPrompt(id);
         if (prompt.getMember() == null || !prompt.getMember().getId().equals(member.getId())) {
             throw new AccessDeniedException("본인 프롬프트가 아닙니다.");
         }
@@ -97,7 +97,7 @@ public class PromptService {
         if (member.getMembershipGrade() != MembershipGrade.PREMIUM) {
             throw new AccessDeniedException("프리미엄 등급이 아닙니다.");
         }
-        Prompt prompt = getPromptOrThrow(id);
+        Prompt prompt = getPrompt(id);
         if (prompt.getType() != PromptType.CUSTOM || prompt.getMember() == null || !prompt.getMember().getId().equals(member.getId())) {
             throw new AccessDeniedException("본인 프롬프트가 아닙니다.");
         }
