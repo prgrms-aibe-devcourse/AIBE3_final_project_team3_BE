@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev} # 배포시 dev만 prod로 변경
+    active: ${SPRING_PROFILES_ACTIVE:dev}
     include:
       - secret
       - s3
