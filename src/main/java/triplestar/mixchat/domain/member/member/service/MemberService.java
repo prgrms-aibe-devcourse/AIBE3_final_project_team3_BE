@@ -49,23 +49,11 @@ public class MemberService {
     }
 
     public MemberProfileResp getMemberDetails(Long signInId, Long memberId) {
-        // signInId가 null인 경우, 비회원이 조회하는 경우
+        // 비회원이 조회하는 경우
         // isFriend, isPendingRequest는 모두 false로 반환
         if (signInId == null) {
             Member member = findMemberById(memberId);
-            return new MemberProfileResp(
-                    member.getId(),
-                    member.getEmail(),
-                    member.getName(),
-                    member.getNickname(),
-                    member.getCountry(),
-                    member.getEnglishLevel(),
-                    member.getInterests(),
-                    member.getDescription(),
-                    member.getProfileImageUrl(),
-                    false,
-                    false
-            );
+            return MemberProfileResp.forAnonymousViewer(member);
         }
 
         // 회원이 조회하는 경우

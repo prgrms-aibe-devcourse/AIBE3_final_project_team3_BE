@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
+import triplestar.mixchat.domain.member.member.entity.Member;
 
 @Schema(description = "회원 프로필 상세 조회 응답 DTO")
 public record MemberProfileResp(
@@ -27,7 +28,7 @@ public record MemberProfileResp(
         String nickname,
 
         @Schema(description = "국가 (Full Name)", example = "Korea")
-        @NotBlank
+        @NotNull
         Country country,
 
         @Schema(description = "영어 실력 레벨", example = "BEGINNER")
@@ -54,4 +55,19 @@ public record MemberProfileResp(
         @NotNull
         Boolean isPendingRequest
 ) {
+        public static MemberProfileResp forAnonymousViewer(Member member) {
+                return new MemberProfileResp(
+                        member.getId(),
+                        member.getEmail(),
+                        member.getName(),
+                        member.getNickname(),
+                        member.getCountry(),
+                        member.getEnglishLevel(),
+                        member.getInterests(),
+                        member.getDescription(),
+                        member.getProfileImageUrl(),
+                        false,
+                        false
+                );
+        }
 }
