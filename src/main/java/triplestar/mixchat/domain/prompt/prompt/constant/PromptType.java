@@ -4,4 +4,3 @@ public enum PromptType {
     PRE_SCRIPTED,
     CUSTOM
 }
-
