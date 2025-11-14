@@ -55,7 +55,7 @@ class ApiV1FriendshipControllerTest {
         Long receiverId = member2.getId();
         ResultActions resultActions = mvc
                 .perform(
-                        post("/api/v1/member/friends")
+                        post("/api/v1/members/friends")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("%d".formatted(receiverId))
                 )
@@ -74,7 +74,7 @@ class ApiV1FriendshipControllerTest {
         Long receiverId = member1.getId();
         ResultActions resultActions = mvc
                 .perform(
-                        post("/api/v1/member/friends")
+                        post("/api/v1/members/friends")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("%d".formatted(receiverId))
                 )
@@ -94,7 +94,7 @@ class ApiV1FriendshipControllerTest {
         friendshipRequestService.sendRequest(member1.getId(), receiverId);
         ResultActions resultActions = mvc
                 .perform(
-                        post("/api/v1/member/friends")
+                        post("/api/v1/members/friends")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("%d".formatted(receiverId))
                 )
@@ -113,7 +113,7 @@ class ApiV1FriendshipControllerTest {
         friendshipRequestService.sendRequest(member2.getId(), member1.getId());
         ResultActions resultActions = mvc
                 .perform(
-                        post("/api/v1/member/friends")
+                        post("/api/v1/members/friends")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("%d".formatted(member2.getId()))
                 )
@@ -134,7 +134,7 @@ class ApiV1FriendshipControllerTest {
 
         ResultActions resultActions = mvc
                 .perform(
-                        patch("/api/v1/member/friends/{requestId}/accept", requestId)
+                        patch("/api/v1/members/friends/{requestId}/accept", requestId)
                 )
                 .andDo(print());
 
@@ -152,7 +152,7 @@ class ApiV1FriendshipControllerTest {
 
         ResultActions resultActions = mvc
                 .perform(
-                        patch("/api/v1/member/friends/{requestId}/reject", requestId)
+                        patch("/api/v1/members/friends/{requestId}/reject", requestId)
                 )
                 .andDo(print());
 
@@ -168,7 +168,7 @@ class ApiV1FriendshipControllerTest {
     void friend_process_not_found() throws Exception {
         ResultActions resultActions = mvc
                 .perform(
-                        patch("/api/v1/member/friends/{requestId}/reject", Long.MAX_VALUE)
+                        patch("/api/v1/members/friends/{requestId}/reject", Long.MAX_VALUE)
                 )
                 .andDo(print());
 
@@ -185,7 +185,7 @@ class ApiV1FriendshipControllerTest {
         Long requestId = friendshipRequestService.sendRequest(member1.getId(), member2.getId());
         ResultActions resultActions = mvc
                 .perform(
-                        patch("/api/v1/member/friends/{requestId}/reject", requestId)
+                        patch("/api/v1/members/friends/{requestId}/reject", requestId)
                 )
                 .andDo(print());
 
@@ -204,7 +204,7 @@ class ApiV1FriendshipControllerTest {
 
         ResultActions resultActions = mvc
                 .perform(
-                        delete("/api/v1/member/friends/{friendId}", member2.getId())
+                        delete("/api/v1/members/friends/{friendId}", member2.getId())
                 )
                 .andDo(print());
 
@@ -222,7 +222,7 @@ class ApiV1FriendshipControllerTest {
 
         ResultActions resultActions = mvc
                 .perform(
-                        delete("/api/v1/member/friends/{friendId}", member2.getId())
+                        delete("/api/v1/members/friends/{friendId}", member2.getId())
                 )
                 .andDo(print());
 

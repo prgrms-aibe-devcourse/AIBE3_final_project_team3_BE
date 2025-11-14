@@ -28,7 +28,6 @@ public class CustomUserDetails implements UserDetails {
     @Override
     @Deprecated
     public String getPassword() {
-        log.warn("getPassword () 호출됨 : JWT 기반 인증에서 임의로 호출되어서는 안 됩니다.");
         return "";
     }
 

@@ -8,13 +8,12 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.auth.dto.SigninReq;
+import triplestar.mixchat.domain.member.auth.dto.SignInReq;
 import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.auth.dto.SignInResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -110,7 +109,7 @@ class AuthServiceTest {
     void signIn_success() {
         joinDummy("test@test1.com");
 
-        SignInResp signInResp = authService.signIn(new SigninReq("test@test1.com", "user1234"));
+        SignInResp signInResp = authService.signIn(new SignInReq("test@test1.com", "user1234"));
         authJwtProvider.parseAccessToken(signInResp.accessToken());
         authJwtProvider.parseRefreshToken(signInResp.refreshToken());
     }
@@ -121,7 +120,7 @@ class AuthServiceTest {
         joinDummy("test@test1.com");
 
         Assertions.assertThatThrownBy(() -> {
-            authService.signIn(new SigninReq("undefined@test1.com", "user1234"));
+            authService.signIn(new SignInReq("undefined@test1.com", "user1234"));
         }).isInstanceOf(EntityNotFoundException.class);
     }
 
@@ -131,7 +130,7 @@ class AuthServiceTest {
         joinDummy("test@test1.com");
 
         Assertions.assertThatThrownBy(() -> {
-            authService.signIn(new SigninReq("test@test1.com", "user12345"));
+            authService.signIn(new SignInReq("test@test1.com", "user12345"));
         }).isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -139,7 +138,7 @@ class AuthServiceTest {
     @DisplayName("토큰 재발급 - 성공 로그인 결과로 나온 refresh token 으로 액세스 토큰 재발급")
     void reissue_success() {
         joinDummy("test@test1.com");
-        SignInResp signInResp = authService.signIn(new SigninReq("test@test1.com", "user1234"));
+        SignInResp signInResp = authService.signIn(new SignInReq("test@test1.com", "user1234"));
         String refreshToken = signInResp.refreshToken();
 
         authService.reissueAccessToken(refreshToken);

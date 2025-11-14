@@ -5,9 +5,10 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PathVariable;
-import triplestar.mixchat.global.response.ApiResponse;
+import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
 import triplestar.mixchat.global.springdoc.SecurityRequireResponse;
@@ -19,6 +20,7 @@ import triplestar.mixchat.global.springdoc.SuccessResponse;
 @CommonBadResponse
 // 모든 메소드에 200 공통 응답 추가
 @SuccessResponse
+@SecurityRequirement(name = "Authorization")
 public interface ApiFriendshipController {
 
     // --- 1. 친구 요청 전송 (POST) ---
@@ -27,9 +29,9 @@ public interface ApiFriendshipController {
             description = "특정 사용자에게 친구 요청을 보냅니다."
 //          아래와 같이 개별 성공 응답, 에러 응답 추가 가능
 //            responses = {
-//                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+//                    @ApiResponse(
 //                            responseCode = "404", description = "존재하지 않는 사용자 ID (MEMBER_NOT_FOUND)",
-//                            content = @Content(schema = @Schema(implementation = ApiResponse.class))
+//                            content = @Content(schema = @Schema(implementation = CustomResponse.class))
 //                    ),
 //            }
     )
@@ -44,7 +46,7 @@ public interface ApiFriendshipController {
     )
     // 401만 있음 -> 403까지 포함해야 할 경우 SecurityRequireResponse 사용
     @SignInInRequireResponse
-    ApiResponse<Long> sendFriendRequest(
+    CustomResponse<Long> sendFriendRequest(
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @Parameter(description = "친구 요청을 받을 사용자의 ID", required = true)
             Long receiverId
@@ -57,7 +59,7 @@ public interface ApiFriendshipController {
     )
     // 401, 403 포함
     @SecurityRequireResponse
-    ApiResponse<Void> acceptRequest(
+    CustomResponse<Void> acceptRequest(
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @Parameter(description = "처리할 친구 요청 ID", required = true)
             @PathVariable Long requestId
@@ -69,7 +71,7 @@ public interface ApiFriendshipController {
             description = "받은 친구 요청을 거절합니다."
     )
     @SecurityRequireResponse
-    ApiResponse<Void> rejectRequest(
+    CustomResponse<Void> rejectRequest(
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @Parameter(description = "처리할 친구 요청 ID", required = true)
             @PathVariable Long requestId
@@ -81,7 +83,7 @@ public interface ApiFriendshipController {
             summary = "친구 삭제",
             description = "기존 친구 관계를 해제합니다."
     )
-    ApiResponse<Void> deleteFriend(
+    CustomResponse<Void> deleteFriend(
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @Parameter(description = "삭제할 친구의 ID", required = true)
             @PathVariable Long friendId

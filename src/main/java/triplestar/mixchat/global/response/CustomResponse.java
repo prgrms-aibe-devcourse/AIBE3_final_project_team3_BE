@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.lang.NonNull;
 
 // API 응답 포맷
-public record ApiResponse<T>(
+public record CustomResponse<T>(
         @JsonIgnore int statusCode,
         @NonNull String msg,
         T data
@@ -17,20 +17,20 @@ public record ApiResponse<T>(
     );
 
     // 모든 생성 경로에서 검증
-    public ApiResponse {
+    public CustomResponse {
         validateStatusCode(statusCode);
     }
 
-    public ApiResponse(int statusCode, String msg) {
+    public CustomResponse(int statusCode, String msg) {
         this(statusCode, msg, null);
     }
 
-    public static <T> ApiResponse<T> ok(String msg, T data) {
-        return new ApiResponse<>(200, msg, data);
+    public static <T> CustomResponse<T> ok(String msg, T data) {
+        return new CustomResponse<>(200, msg, data);
     }
 
-    public static ApiResponse<Void> ok(String msg) {
-        return new ApiResponse<>(200, msg);
+    public static CustomResponse<Void> ok(String msg) {
+        return new CustomResponse<>(200, msg);
     }
 
     private void validateStatusCode(int statusCode) {
