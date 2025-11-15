@@ -1,7 +1,15 @@
 package triplestar.mixchat.domain.member.member.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,9 +20,6 @@ import triplestar.mixchat.domain.member.member.constant.Role;
 import triplestar.mixchat.domain.report.report.constant.ReportCategory;
 import triplestar.mixchat.global.converter.JsonListConverter;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Getter
