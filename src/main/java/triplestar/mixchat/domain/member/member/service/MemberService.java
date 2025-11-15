@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -20,6 +21,12 @@ public class MemberService {
     private final MemberRepository memberRepository;
 
     private final S3Uploader s3Uploader;
+
+    @Transactional(readOnly = true)
+    public MemberSummaryResp getMemberSummary(Long memberId) {
+        Member member = findMemberById(memberId);
+        return new MemberSummaryResp(member);
+    }
 
     public void updateInfo(Long memberId, MemberInfoModifyReq req) {
         Member member = findMemberById(memberId);

@@ -4,8 +4,8 @@ spring:
     username: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
   data:
-    mongodb:
-      uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/${MONGO_DB}
+#    mongodb:
+#      uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/${MONGO_DB}
     redis:
       host: ${REDIS_HOST:redis}
       port: ${REDIS_PORT:6379}
