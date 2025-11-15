@@ -58,9 +58,13 @@ public class StompHandler implements ChannelInterceptor {
                             userDetails, null, userDetails.getAuthorities()
                     );
                     accessor.setUser(authentication);
+                    System.out.println("STOMP CONNECT: User authenticated successfully. Member ID: " + memberId);
                 } catch (Exception e) {
+                    System.err.println("STOMP CONNECT: Invalid token or user not found. Error: " + e.getMessage());
                     throw new SecurityException("유효하지 않은 토큰입니다.", e);
                 }
+            } else {
+                System.out.println("STOMP CONNECT: No JWT token found in Authorization header.");
             }
         } else if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
             Principal principal = accessor.getUser();

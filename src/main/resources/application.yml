@@ -26,7 +26,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://root:qwer1234@localhost:27017/mongochat?authSource=admin
+      uri: mongodb://rootc:qwer1234@localhost:27017/mongochat?authSource=admin
 
 swagger:
   redirect:

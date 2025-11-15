@@ -24,8 +24,11 @@ public class ApiV1ChatSocketController {
 
     @MessageMapping("/chats/sendMessage")
     public void sendMessage(@Payload MessageReq messageReq, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Long senderId = userDetails.getId();
 
+        Long senderId = userDetails.getId();
+        System.out.println(senderId);
+        System.out.println(senderId);
+        System.out.println(senderId);
         MessageResp messageResp = chatMessageService.saveMessage(messageReq.roomId(), senderId, messageReq.content(), messageReq.messageType());
 
         messagingTemplate.convertAndSend("/topic/rooms/" + messageReq.roomId(), messageResp);
