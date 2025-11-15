@@ -45,7 +45,6 @@ public class Member extends BaseEntity {
     private List<String> interests;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     private EnglishLevel englishLevel;
 
     @Column(nullable = false)
@@ -76,7 +75,7 @@ public class Member extends BaseEntity {
     private String profileImageUrl;
 
     private Member(String email, Password password, String name, String nickname, Country country,
-                  EnglishLevel englishLevel, List<String> interests, String description, Role role) {
+                   EnglishLevel englishLevel, List<String> interests, String description, Role role) {
         validate(email, password, name, nickname, country, englishLevel, interests, description, role);
         this.email = email;
         this.password = password;
@@ -111,7 +110,7 @@ public class Member extends BaseEntity {
     }
 
     private void validateProfileInfo(String name, String nickname, Country country, EnglishLevel englishLevel,
-                                  List<String> interests, String description) {
+                                     List<String> interests, String description) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("이름은 공백일 수 없습니다.");
         }
@@ -139,7 +138,7 @@ public class Member extends BaseEntity {
     }
 
     public static Member createAdmin(String email, Password password, String name, String nickname, Country country,
-                                      EnglishLevel englishLevel, List<String> interests, String description) {
+                                     EnglishLevel englishLevel, List<String> interests, String description) {
         return new Member(email, password, name, nickname, country,
                 englishLevel, interests, description, Role.ROLE_ADMIN);
     }

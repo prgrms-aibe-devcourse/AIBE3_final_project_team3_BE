@@ -2,6 +2,7 @@ package triplestar.mixchat.global.websocket;
 
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.messaging.Message;
@@ -21,6 +22,7 @@ import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
 
 import java.security.Principal;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 // stompHandler는 웹소켓 메시지를 가로채는 인터셉터
@@ -58,13 +60,15 @@ public class StompHandler implements ChannelInterceptor {
                             userDetails, null, userDetails.getAuthorities()
                     );
                     accessor.setUser(authentication);
-                    System.out.println("STOMP CONNECT: User authenticated successfully. Member ID: " + memberId);
+
+                    log.info("STOMP CONNECT: 사용자 인증 성공. 회원 ID: {}", memberId);
+
                 } catch (Exception e) {
-                    System.err.println("STOMP CONNECT: Invalid token or user not found. Error: " + e.getMessage());
+                    log.error("STOMP CONNECT: 토큰이 유효하지 않거나 사용자를 찾을 수 없습니다. 오류: {}", e.getMessage(), e);
                     throw new SecurityException("유효하지 않은 토큰입니다.", e);
                 }
             } else {
-                System.out.println("STOMP CONNECT: No JWT token found in Authorization header.");
+                log.warn("STOMP CONNECT: Authorization 헤더에서 JWT 토큰을 찾을 수 없습니다.");
             }
         } else if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
             Principal principal = accessor.getUser();
