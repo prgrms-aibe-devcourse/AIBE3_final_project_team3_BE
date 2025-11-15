@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,6 +25,9 @@ public class NotificationService {
 
     private final MemberRepository memberRepository;
     private final NotificationRepository notificationRepository;
+
+    @Value("${notification.retention-days}")
+    private int retentionDays;
 
     private Notification findNotificationById(Long memberId, Long id) {
         Notification notification = notificationRepository.findById(id)
@@ -99,10 +103,8 @@ public class NotificationService {
         notificationRepository.deleteAllByReceiver(memberId);
     }
 
-    // TODO: 기준일수 주입받기
     private void deleteOldNotifications() {
-        int daysThreshold = 30;
-        LocalDateTime threshold = LocalDateTime.now().minusDays(daysThreshold);
+        LocalDateTime threshold = LocalDateTime.now().minusDays(retentionDays);
         notificationRepository.deleteOld(threshold);
     }
 

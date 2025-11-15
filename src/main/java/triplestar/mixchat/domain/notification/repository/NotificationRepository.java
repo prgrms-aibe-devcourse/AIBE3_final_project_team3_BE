@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.notification.entity.Notification;
 
 @Repository
@@ -16,25 +15,25 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     Page<Notification> findAllByReceiverId(Long receiverId, Pageable pageable);
 
     @Query("""
-                update Notification n
-                set n.isRead = true
-                where n.receiver.id = :receiverId
+                UPDATE Notification n
+                SET n.isRead = true
+                WHERE n.receiver.id = :receiverId
             """
     )
     @Modifying
     void markAllAsRead(Long receiverId);
 
     @Query("""
-                delete from Notification n
-                where n.receiver.id = :receiverId
+                DELETE FROM Notification n
+                WHERE n.receiver.id = :receiverId
             """
     )
     @Modifying
     void deleteAllByReceiver(Long receiverId);
 
     @Query("""
-                delete from Notification n
-                where n.createdAt < :threshold
+                DELETE FROM Notification n
+                WHERE n.createdAt < :threshold
             """
     )
     @Modifying
