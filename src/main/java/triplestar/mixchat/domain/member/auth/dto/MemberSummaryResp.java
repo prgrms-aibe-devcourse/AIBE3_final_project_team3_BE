@@ -32,7 +32,7 @@ public record MemberSummaryResp(
 
         @NotEmpty
         @Schema(description = "관심사 목록", example = "TRAVEL, FOOD")
-        List<String> interest,
+        List<String> interests,
 
         @NotBlank
         @Schema(description = "자기소개")
