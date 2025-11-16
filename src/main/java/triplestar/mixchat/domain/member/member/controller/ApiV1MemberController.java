@@ -43,6 +43,7 @@ public class ApiV1MemberController implements ApiMemberController {
         return CustomResponse.ok("프로필 이미지 업로드에 성공했습니다.");
     }
 
+    @Override
     @GetMapping("{id}")
     public CustomResponse<MemberProfileResp> getMemberProfile(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
