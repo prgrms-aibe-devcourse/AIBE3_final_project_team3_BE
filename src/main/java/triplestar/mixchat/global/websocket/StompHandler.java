@@ -3,8 +3,8 @@ package triplestar.mixchat.global.websocket;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.SignatureException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.messaging.Message;
@@ -28,7 +28,7 @@ import java.security.Principal;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
+// @RequiredArgsConstructor 제거
 // stompHandler는 웹소켓 메시지를 가로채는 인터셉터
 // order + 99를 통해 기본 인터셉터들보다는 늦게, 다른 커스텀보다는 빠르게 설정
 @Order(Ordered.HIGHEST_PRECEDENCE + 99)
@@ -37,6 +37,13 @@ public class StompHandler implements ChannelInterceptor {
     private final AuthJwtProvider authJwtProvider;
     private final MemberRepository memberRepository;
     private final ChatRoomService chatRoomService;
+
+    // 생성자를 직접 작성하고 @Lazy 어노테이션으로 순환 참조 해결
+    public StompHandler(AuthJwtProvider authJwtProvider, MemberRepository memberRepository, @Lazy ChatRoomService chatRoomService) {
+        this.authJwtProvider = authJwtProvider;
+        this.memberRepository = memberRepository;
+        this.chatRoomService = chatRoomService;
+    }
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
