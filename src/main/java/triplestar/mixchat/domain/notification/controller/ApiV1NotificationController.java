@@ -20,11 +20,12 @@ import triplestar.mixchat.global.security.CustomUserDetails;
 @RestController
 @RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
-public class ApiV1NotificationController {
+public class ApiV1NotificationController implements ApiNotificationController{
 
     private final NotificationService notificationService;
 
     // NOTE : 커서 페이지네이션은 추후에 필요하면 구현
+    @Override
     @GetMapping
     public CustomResponse<Page<NotificationResp>> getNotifications(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -34,6 +35,7 @@ public class ApiV1NotificationController {
         return CustomResponse.ok("알림 목록 조회 성공", notifications);
     }
 
+    @Override
     @PatchMapping("/read-all")
     public CustomResponse<Void> markAllAsRead(
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -42,6 +44,7 @@ public class ApiV1NotificationController {
         return CustomResponse.ok("모든 알림 읽음 처리 성공");
     }
 
+    @Override
     @PatchMapping("/read/{id}")
     public CustomResponse<Void> markAsRead(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -51,6 +54,7 @@ public class ApiV1NotificationController {
         return CustomResponse.ok("알림 읽음 처리 성공");
     }
 
+    @Override
     @DeleteMapping
     public CustomResponse<Void> deleteAllNotification(
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -59,6 +63,7 @@ public class ApiV1NotificationController {
         return CustomResponse.ok("모든 알림 삭제 성공");
     }
 
+    @Override
     @DeleteMapping("/{id}")
     public CustomResponse<Void> deleteNotification(
             @AuthenticationPrincipal CustomUserDetails userDetails,
