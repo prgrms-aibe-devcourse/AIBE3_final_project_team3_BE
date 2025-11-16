@@ -64,11 +64,9 @@ public class StompHandler implements ChannelInterceptor {
                     log.info("STOMP CONNECT: 사용자 인증 성공. 회원 ID: {}", memberId);
 
                 } catch (Exception e) {
-                    log.error("STOMP CONNECT: 토큰이 유효하지 않거나 사용자를 찾을 수 없습니다. 오류: {}", e.getMessage(), e);
                     throw new SecurityException("유효하지 않은 토큰입니다.", e);
                 }
             } else {
-                log.warn("STOMP CONNECT: Authorization 헤더에서 JWT 토큰을 찾을 수 없습니다.");
             }
         } else if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
             Principal principal = accessor.getUser();

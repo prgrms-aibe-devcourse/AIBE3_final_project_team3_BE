@@ -16,6 +16,7 @@ public class FindService {
 
     private final MemberRepository memberRepository;
 
+    // todo: 페이징을 통해 db에서 단위 별로 가져오기 필수
     public List<MemberSummaryResp> findAllMembers(Long currentUserId) {
         return memberRepository.findAllByIdNot(currentUserId).stream()
                 .map(MemberSummaryResp::new)

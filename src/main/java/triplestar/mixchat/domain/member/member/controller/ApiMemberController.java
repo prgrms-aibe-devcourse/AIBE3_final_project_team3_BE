@@ -36,12 +36,4 @@ public interface ApiMemberController {
             @Parameter(description = "업로드할 이미지 파일")
             MultipartFile multipartFile
     );
-
-    // --- 3. 내 정보 조회 (GET /me) ---
-    @Operation(summary = "내 정보 조회", description = "인증된 사용자의 프로필 정보를 조회합니다.")
-    @SignInInRequireResponse
-    CustomResponse<triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp> getMyProfile(
-            @Parameter(hidden = true)
-            CustomUserDetails customUserDetails
-    );
 }
