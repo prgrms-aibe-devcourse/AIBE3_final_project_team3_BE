@@ -34,7 +34,7 @@ public class ApiV1NotificationController {
         return CustomResponse.ok("알림 목록 조회 성공", notifications);
     }
 
-    @PatchMapping
+    @PatchMapping("/read-all")
     public CustomResponse<Void> markAllAsRead(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
@@ -42,7 +42,7 @@ public class ApiV1NotificationController {
         return CustomResponse.ok("모든 알림 읽음 처리 성공");
     }
 
-    @PatchMapping("/{id}/read")
+    @PatchMapping("/read/{id}")
     public CustomResponse<Void> markAsRead(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long id
