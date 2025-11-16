@@ -1,6 +1,5 @@
 package triplestar.mixchat.domain.notification.service;
 
-import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-import triplestar.mixchat.domain.notification.dto.NotificationReq;
+import triplestar.mixchat.domain.notification.event.NotificationEvent;
 import triplestar.mixchat.domain.notification.dto.NotificationResp;
 import triplestar.mixchat.domain.notification.entity.Notification;
 import triplestar.mixchat.domain.notification.repository.NotificationRepository;
@@ -44,24 +43,21 @@ public class NotificationService {
     /**
      * 알림 생성
      */
-    public NotificationResp createNotification(NotificationReq req) {
+    public NotificationResp createNotification(NotificationEvent req) {
         Member receiver = memberRepository.findById(req.receiverId())
                 .orElseThrow(() -> new EntityNotFoundException("해당 회원 ID 없음"));
 
-        Notification notification = new Notification(
-                receiver,
-                req.type(),
-                req.content()
-        );
+        Notification notification = Notification.create(receiver, req.type(), req.extraContent());
 
-        Notification savedNotification = notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
 
         return new NotificationResp(
-                savedNotification.getId(),
-                savedNotification.getReceiver().getId(),
-                savedNotification.getType(),
-                savedNotification.getContent(),
-                savedNotification.getCreatedAt()
+                saved.getId(),
+                saved.getReceiver().getId(),
+                saved.getReceiver().getNickname(),
+                saved.getType(),
+                saved.getCreatedAt(),
+                saved.getContent()
         );
     }
 
@@ -71,12 +67,14 @@ public class NotificationService {
     public Page<NotificationResp> getNotifications(Long receiverId, Pageable pageable) {
         Page<Notification> notifications = notificationRepository.findAllByReceiverId(receiverId, pageable);
 
+        // 이제 nickname조회로 N+1 고려해야함
         return notifications.map(notification -> new NotificationResp(
                 notification.getId(),
                 notification.getReceiver().getId(),
+                notification.getReceiver().getNickname(),
                 notification.getType(),
-                notification.getContent(),
-                notification.getCreatedAt()
+                notification.getCreatedAt(),
+                notification.getContent()
         ));
     }
 

@@ -1,6 +1,7 @@
 package triplestar.mixchat.domain.notification.entity;
 
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
@@ -21,16 +22,36 @@ public class Notification extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private Member receiver;
 
+    @Column(nullable = false)
     private NotificationType type;
 
     private String content;
 
+    @Column(nullable = false)
     private boolean isRead;
 
-    public Notification(Member receiver, NotificationType type, String content) {
+    private Notification(Member receiver, NotificationType type, String content) {
+        validate(receiver, type, content);
         this.receiver = receiver;
         this.type = type;
         this.content = content;
+    }
+
+    private void validate(Member receiver, NotificationType type, String content) {
+        if (receiver == null) {
+            throw new IllegalArgumentException("수신자는 null일 수 없습니다.");
+        }
+        if (type == null) {
+            throw new IllegalArgumentException("알림 유형은 null일 수 없습니다.");
+        }
+    }
+
+    public static Notification create(Member receiver, NotificationType type, String content) {
+        return new Notification(receiver, type, content);
+    }
+
+    public static Notification createWithoutContent(Member receiver, NotificationType type) {
+        return new Notification(receiver, type, null);
     }
 
     public void read() {

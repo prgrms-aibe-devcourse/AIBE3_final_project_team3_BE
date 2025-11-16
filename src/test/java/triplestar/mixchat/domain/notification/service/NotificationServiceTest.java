@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.notification.constant.NotificationType;
-import triplestar.mixchat.domain.notification.dto.NotificationReq;
+import triplestar.mixchat.domain.notification.event.NotificationEvent;
 import triplestar.mixchat.domain.notification.dto.NotificationResp;
 import triplestar.mixchat.domain.notification.entity.Notification;
 import triplestar.mixchat.domain.notification.repository.NotificationRepository;
@@ -52,17 +52,16 @@ class NotificationServiceTest {
     @Test
     @DisplayName("알림 생성 성공")
     void create_notification_success() {
-        NotificationReq req = new NotificationReq(
+        NotificationEvent event = NotificationEvent.createWithoutContent(
                 member2.getId(),
-                NotificationType.FRIEND_REQUEST,
-                NotificationType.FRIEND_REQUEST.formatContent(member1.getName())
+                member2.getNickname(),
+                NotificationType.FRIEND_REQUEST
         );
 
-        NotificationResp resp = notificationService.createNotification(req);
+        NotificationResp resp = notificationService.createNotification(event);
 
         assertThat(resp.id()).isNotNull();
         assertThat(resp.type()).isEqualTo(NotificationType.FRIEND_REQUEST);
-        assertThat(resp.content()).isEqualTo("user1님이 친구 요청을 보냈습니다.");
         assertThat(resp.receiverId()).isEqualTo(member2.getId());
         assertThat(resp.createdAt()).isNotNull();
     }
@@ -70,13 +69,13 @@ class NotificationServiceTest {
     @Test
     @DisplayName("알림 생성 실패 - 존재하지 않는 회원")
     void create_notification_fail() {
-        NotificationReq req = new NotificationReq(
+        NotificationEvent event = NotificationEvent.createWithoutContent(
                 Long.MAX_VALUE,
-                NotificationType.FRIEND_REQUEST,
-                NotificationType.FRIEND_REQUEST.formatContent(member1.getName())
+                "nickname",
+                NotificationType.FRIEND_REQUEST
         );
 
-        Assertions.assertThatThrownBy(() -> notificationService.createNotification(req))
+        Assertions.assertThatThrownBy(() -> notificationService.createNotification(event))
                 .isInstanceOf(EntityNotFoundException.class)
           .hasMessageContaining("해당 회원 ID 없음");
     }
@@ -85,12 +84,12 @@ class NotificationServiceTest {
     @DisplayName("알림 조회 성공")
     void get_notifications_success() {
         for (int i = 0; i < 5; i++) {
-            NotificationReq req = new NotificationReq(
+            NotificationEvent event = NotificationEvent.createWithoutContent(
                     member2.getId(),
-                    NotificationType.MESSAGE,
-                    NotificationType.MESSAGE.formatContent(member1.getName())
+                    member2.getNickname(),
+                    NotificationType.MESSAGE
             );
-            notificationService.createNotification(req);
+            notificationService.createNotification(event);
         }
 
         PageRequest pageRequest = PageRequest.of(0, 10);
@@ -100,7 +99,6 @@ class NotificationServiceTest {
         assertThat(notificationsPage.getContent()).allSatisfy(notificationResp -> {
             assertThat(notificationResp.receiverId()).isEqualTo(member2.getId());
             assertThat(notificationResp.type()).isEqualTo(NotificationType.MESSAGE);
-            assertThat(notificationResp.content()).isEqualTo("user1님이 메시지를 보냈습니다.");
         });
     }
 
@@ -116,12 +114,12 @@ class NotificationServiceTest {
     @Test
     @DisplayName("알림 읽음 처리 성공")
     void mark_as_read_success() {
-        NotificationReq req = new NotificationReq(
+        NotificationEvent event = NotificationEvent.createWithoutContent(
                 member2.getId(),
-                NotificationType.MESSAGE,
-                NotificationType.MESSAGE.formatContent(member1.getName())
+                member2.getNickname(),
+                NotificationType.MESSAGE
         );
-        NotificationResp resp = notificationService.createNotification(req);
+        NotificationResp resp = notificationService.createNotification(event);
 
         // 읽음 처리 전 상태 확인
         Notification before = notificationRepository.findById(resp.id())
@@ -147,12 +145,12 @@ class NotificationServiceTest {
     @DisplayName("모든 알림 읽음 처리 성공")
     void mark_all_as_read_success() {
         for (int i = 0; i < 3; i++) {
-            NotificationReq req = new NotificationReq(
+            NotificationEvent event = NotificationEvent.createWithoutContent(
                     member2.getId(),
-                    NotificationType.MESSAGE,
-                    NotificationType.MESSAGE.formatContent(member1.getName())
+                    member2.getNickname(),
+                    NotificationType.MESSAGE
             );
-            notificationService.createNotification(req);
+            notificationService.createNotification(event);
         }
 
         notificationService.markAllAsRead(member2.getId());
@@ -168,12 +166,12 @@ class NotificationServiceTest {
     @Test
     @DisplayName("알림 삭제 성공")
     void delete_notification_success() {
-        NotificationReq req = new NotificationReq(
+        NotificationEvent event = NotificationEvent.createWithoutContent(
                 member2.getId(),
-                NotificationType.CHAT_INVITATION,
-                NotificationType.CHAT_INVITATION.formatContent(member1.getName())
+                member2.getNickname(),
+                NotificationType.CHAT_INVITATION
         );
-        NotificationResp resp = notificationService.createNotification(req);
+        NotificationResp resp = notificationService.createNotification(event);
 
         // 삭제 전 존재 여부 확인
         notificationRepository.findById(resp.id())
@@ -197,12 +195,12 @@ class NotificationServiceTest {
     @DisplayName("모든 알림 삭제 성공")
     void delete_all_notifications_success() {
         for (int i = 0; i < 4; i++) {
-            NotificationReq req = new NotificationReq(
+            NotificationEvent event = NotificationEvent.createWithoutContent(
                     member2.getId(),
-                    NotificationType.SYSTEM_ALERT,
-                    NotificationType.SYSTEM_ALERT.formatContent("")
+                    member2.getNickname(),
+                    NotificationType.CHAT_INVITATION
             );
-            notificationService.createNotification(req);
+            notificationService.createNotification(event);
         }
 
         notificationService.deleteAllNotifications(member2.getId());

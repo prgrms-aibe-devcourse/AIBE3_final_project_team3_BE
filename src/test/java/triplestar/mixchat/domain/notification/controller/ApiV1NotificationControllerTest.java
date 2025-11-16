@@ -54,21 +54,18 @@ class ApiV1NotificationControllerTest {
     void setUp() {
         member1 = memberRepository.save(TestMemberFactory.createMember("user1"));
         member2 = memberRepository.save(TestMemberFactory.createMember("user2"));
-        notification1 = notificationRepository.save(new Notification(
+        notification1 = notificationRepository.save(Notification.createWithoutContent(
                 member1,
-                NotificationType.FRIEND_REQUEST,
-                NotificationType.FRIEND_REQUEST.formatContent(member2.getName())
+                NotificationType.FRIEND_REQUEST
         ));
-        notification2 = notificationRepository.save(new Notification(
+        notification2 = notificationRepository.save(Notification.createWithoutContent(
                 member1,
-                NotificationType.CHAT_INVITATION,
-                NotificationType.CHAT_INVITATION.formatContent(member2.getName())
+                NotificationType.CHAT_INVITATION
         ));
         // member2에게 보내진 알림 (member1로 로그인했을 때 조회되지 않아야 함)
-        notification3 = notificationRepository.save(new Notification(
+        notification3 = notificationRepository.save(Notification.createWithoutContent(
                 member2,
-                NotificationType.MESSAGE,
-                NotificationType.MESSAGE.formatContent(member1.getName())
+                NotificationType.MESSAGE
         ));
     }
 

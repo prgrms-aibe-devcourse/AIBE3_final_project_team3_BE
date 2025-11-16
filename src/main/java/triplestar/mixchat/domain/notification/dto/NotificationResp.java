@@ -6,8 +6,9 @@ import triplestar.mixchat.domain.notification.constant.NotificationType;
 public record NotificationResp(
         Long id,
         Long receiverId,
+        String nickname,
         NotificationType type,
-        String content,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String content
 ) {
 }
