@@ -176,14 +176,6 @@ class MemberServiceTest {
     }
 
     @Test
-    @DisplayName("회원 상세 조회 - 회원 조회 실패(존재하지 않는 회원)")
-    void get_member_details_member_not_found_fail() {
-        assertThatThrownBy(() -> memberService.getMemberDetails(member1.getId(), Long.MAX_VALUE))
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("존재하지 않는 회원입니다.");
-    }
-
-    @Test
     @DisplayName("회원 상세 조회 - 자기 자신 조회 성공")
     void get_member_details_self_success() {
         MemberProfileResp resp = memberService.getMemberDetails(member1.getId(), member1.getId());
@@ -191,4 +183,13 @@ class MemberServiceTest {
         assertThat(resp.isFriend()).isFalse();
         assertThat(resp.isPendingRequest()).isFalse();
     }
+
+    @Test
+    @DisplayName("회원 상세 조회 - 회원 조회 실패(존재하지 않는 회원)")
+    void get_member_details_member_not_found_fail() {
+        assertThatThrownBy(() -> memberService.getMemberDetails(member1.getId(), Long.MAX_VALUE))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("존재하지 않는 회원입니다.");
+    }
+
 }
