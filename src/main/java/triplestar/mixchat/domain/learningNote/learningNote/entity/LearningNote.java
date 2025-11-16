@@ -31,16 +31,13 @@ public class LearningNote extends BaseEntityNoModified {
     @Column(nullable = false)
     private String correctedContent;
 
-    @Column(name = "is_marked", nullable = false)
-    private boolean marked = false;
-
     @OneToMany(mappedBy = "learningNote", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Feedback> feedbacks = new ArrayList<>();
 
     private LearningNote(Member member,
                            String originalContent,
-                           String correctedContent,
-                           boolean marked) {
+                           String correctedContent
+                           ) {
         if (member == null) {
             throw new IllegalArgumentException("member는 null일 수 없습니다.");
         }
@@ -53,26 +50,17 @@ public class LearningNote extends BaseEntityNoModified {
         this.member = member;
         this.originalContent = originalContent;
         this.correctedContent = correctedContent;
-        this.marked = marked;
     }
 
     public static LearningNote create(Member member,
                                       String originalContent,
                                       String correctedContent) {
-        return new LearningNote(member, originalContent, correctedContent, false);
+        return new LearningNote(member, originalContent, correctedContent);
     }
 
     // 연관관계 편의 메서드
     public void addFeedback(Feedback feedback) {
         feedbacks.add(feedback);
         feedback.modifyLearningNote(this);
-    }
-
-    public void mark() {
-        this.marked = true;
-    }
-
-    public void unmark() {
-        this.marked = false;
     }
 }

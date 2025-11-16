@@ -38,6 +38,9 @@ public class Feedback extends BaseEntityNoModified {
     @Column(nullable = false)
     private String extra;
 
+    @Column(name = "is_marked", nullable = false)
+    private boolean marked = false;
+
     private Feedback(LearningNote learningNote,
                        TranslationTagCode tag,
                        String problem,
@@ -75,5 +78,13 @@ public class Feedback extends BaseEntityNoModified {
 
     void modifyLearningNote(LearningNote learningNote) {
         this.learningNote = learningNote;
+    }
+
+    public void mark() {
+        this.marked = true;
+    }
+
+    public void unmark() {
+        this.marked = false;
     }
 }
