@@ -33,7 +33,7 @@ public record MemberProfileResp(
 
         @Schema(description = "영어 실력 레벨", example = "BEGINNER")
         @NotNull
-        EnglishLevel englishMastery,
+        EnglishLevel englishLevel,
 
         @Schema(description = "관심사 목록", example = "[\"농구\", \"독서\"]")
         @NotEmpty
