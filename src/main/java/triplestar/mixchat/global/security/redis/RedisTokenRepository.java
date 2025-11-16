@@ -8,13 +8,13 @@ import org.springframework.stereotype.Repository;
 // Redis를 이용한 Refresh Token 저장소
 // Redis에 Member ID를 키로, Refresh Token을 값으로 저장
 @Repository
-public class redisTokenRepository {
+public class RedisTokenRepository {
 
     private final String prefix;
     private final int expirationSeconds;
     private final StringRedisTemplate redisTemplate;
 
-    public redisTokenRepository(
+    public RedisTokenRepository(
             @Value("${redis.prefix.refresh-token}")
             String prefix,
             @Value("${jwt.refresh-token-expiration-seconds}")

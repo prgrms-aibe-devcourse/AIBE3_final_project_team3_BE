@@ -17,7 +17,7 @@ import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.customException.UniqueConstraintException;
 import triplestar.mixchat.global.security.jwt.AccessTokenPayload;
 import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
-import triplestar.mixchat.global.security.redis.redisTokenRepository;
+import triplestar.mixchat.global.security.redis.RedisTokenRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthJwtProvider authJwtProvider;
-    private final redisTokenRepository redisTokenRepository;
+    private final RedisTokenRepository redisTokenRepository;
 
     @Qualifier("defaultProfileBaseURL")
     private final String defaultProfileBaseURL;

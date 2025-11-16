@@ -1,6 +1,7 @@
 package triplestar.mixchat.domain.member.member.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -30,7 +31,7 @@ import triplestar.mixchat.testutils.TestMemberFactory;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-@DisplayName("멤버 컨트롤러")
+@DisplayName("회원 - 정보 컨트롤러")
 class ApiV1MemberControllerTest {
 
     @Autowired
@@ -107,5 +108,56 @@ class ApiV1MemberControllerTest {
         assertThat(updatedMember.getProfileImageUrl())
                 .contains("/member/profile/")
                 .endsWith(".jpg");
+    }
+
+    @Test
+    @DisplayName("자신의 프로필 조회 성공")
+    @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void get_member_profile_success() throws Exception {
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/v1/members/{id}", member.getId())
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(ApiV1MemberController.class))
+                .andExpect(handler().methodName("getMemberProfile"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("다른 회원의 프로필 조회 성공")
+    @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void get_other_member_profile_success() throws Exception {
+        Member otherMember = memberRepository.save(TestMemberFactory.createMember("user2"));
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/v1/members/{id}", otherMember.getId())
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(ApiV1MemberController.class))
+                .andExpect(handler().methodName("getMemberProfile"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("비회원의 회원 프로필 조회 성공")
+    void get_member_profile_as_guest_success() throws Exception {
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/v1/members/{id}", member.getId())
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(ApiV1MemberController.class))
+                .andExpect(handler().methodName("getMemberProfile"))
+                .andExpect(status().isOk());
     }
 }

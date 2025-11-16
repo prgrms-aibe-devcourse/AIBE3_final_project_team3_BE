@@ -12,7 +12,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 @ActiveProfiles("test")
 @SpringBootTest
-@DisplayName("해시 비밀번호 테스트")
+@DisplayName("해시 비밀번호")
 class PasswordTest {
 
     @Autowired
