@@ -1,6 +1,6 @@
 package triplestar.mixchat.domain.learningNote.learningNote.constant;
 
-public enum LearningStatus {
+public enum LearningFilter {
     ALL,
     LEARNED,
     UNLEARNED

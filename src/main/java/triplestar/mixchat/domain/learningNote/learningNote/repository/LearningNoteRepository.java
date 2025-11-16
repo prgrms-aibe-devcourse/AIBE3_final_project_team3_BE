@@ -1,11 +1,10 @@
 package triplestar.mixchat.domain.learningNote.learningNote.repository;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningStatus;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
 import triplestar.mixchat.domain.translation.translation.constant.TranslationTagCode;
 
@@ -17,17 +16,13 @@ public interface LearningNoteRepository extends JpaRepository<LearningNote, Long
         join fetch n.member m
         where m.id = :memberId
           and f.tag = :tag
-         and (
-                    :#{#status.name()} = 'ALL'
-                 or (:#{#status.name()} = 'LEARNED' and f.marked = true)
-                 or (:#{#status.name()} = 'UNLEARNED' and f.marked = false)
-               )
+         and (:isMarked IS NULL OR f.marked = :isMarked)
         order by n.createdAt desc
     """)
-    List<LearningNote> findByMemberWithFilters(
+    Page<LearningNote> findByMemberWithFilters(
             @Param("memberId") Long memberId,
             @Param("tag") TranslationTagCode tag,
-            @Param("status") LearningStatus status,
+            @Param("isMarked") Boolean isMarked,
             Pageable pageable
     );
 }

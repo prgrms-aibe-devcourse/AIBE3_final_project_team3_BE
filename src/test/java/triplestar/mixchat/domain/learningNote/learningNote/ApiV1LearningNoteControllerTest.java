@@ -21,7 +21,7 @@ import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningStatus;
+import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningFilter;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.Feedback;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
@@ -182,16 +182,16 @@ class ApiV1LearningNoteControllerTest {
                         .param("size", "10")
                         .param("memberId", memberId.toString())
                         .param("tag", TranslationTagCode.GRAMMAR.toString())
-                        .param("status", LearningStatus.LEARNED.toString())
+                        .param("learningFilter", LearningFilter.LEARNED.toString())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.msg").value("학습노트 목록 조회 성공"))
                 // GRAMMAR 태그의 학습 완료 2개 확인
-                .andExpect(jsonPath("$.data[*].feedback[*].tag", hasItems("GRAMMAR")))
-                .andExpect(jsonPath("$.data[*].feedback[*].problem", hasItems("goes", "walk")))
-                .andExpect(jsonPath("$.data[*].feedback[*].correction", hasItems("go", "walks")))
-                .andExpect(jsonPath("$.data[*].feedback[*].extra", hasItems("삼인칭 단수 수정", "3인칭 단수")));
+                .andExpect(jsonPath("$.data.content[*].feedback[*].tag", hasItems("GRAMMAR")))
+                .andExpect(jsonPath("$.data.content[*].feedback[*].problem", hasItems("goes", "walk")))
+                .andExpect(jsonPath("$.data.content[*].feedback[*].correction", hasItems("go", "walks")))
+                .andExpect(jsonPath("$.data.content[*].feedback[*].extra", hasItems("삼인칭 단수 수정", "3인칭 단수")));
     }
 
     @Test
@@ -203,16 +203,16 @@ class ApiV1LearningNoteControllerTest {
                         .param("size", "10")
                         .param("memberId", memberId.toString())
                         .param("tag", TranslationTagCode.TRANSLATION.toString())
-                        .param("status", LearningStatus.UNLEARNED.toString())
+                        .param("learningFilter", LearningFilter.UNLEARNED.toString())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.msg").value("학습노트 목록 조회 성공"))
                 // TRANSLATION 태그의 미학습 3개 확인
-                .andExpect(jsonPath("$.data[*].feedback[*].tag", hasItems("TRANSLATION")))
-                .andExpect(jsonPath("$.data[*].feedback[*].problem", hasItems("학교", "사과를", "먹는다")))
-                .andExpect(jsonPath("$.data[*].feedback[*].correction", hasItems("school", "an apple", "eat")))
-                .andExpect(jsonPath("$.data[*].feedback[*].extra", hasItems("단어 번역", "직역 수정")));
+                .andExpect(jsonPath("$.data.content[*].feedback[*].tag", hasItems("TRANSLATION")))
+                .andExpect(jsonPath("$.data.content[*].feedback[*].problem", hasItems("학교", "사과를", "먹는다")))
+                .andExpect(jsonPath("$.data.content[*].feedback[*].correction", hasItems("school", "an apple", "eat")))
+                .andExpect(jsonPath("$.data.content[*].feedback[*].extra", hasItems("단어 번역", "직역 수정")));
     }
 
     @Test
@@ -224,16 +224,17 @@ class ApiV1LearningNoteControllerTest {
                         .param("size", "10")
                         .param("memberId", memberId.toString())
                         .param("tag", TranslationTagCode.GRAMMAR.toString())
-                        .param("status", LearningStatus.ALL.toString())
+                        .param("learningFilter", LearningFilter.ALL.toString())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.msg").value("학습노트 목록 조회 성공"))
                 // GRAMMAR 태그 전부 (fb1, fb3, fb4)
-                .andExpect(jsonPath("$.data[*].feedback[*].tag", hasItems("GRAMMAR")))
-                .andExpect(jsonPath("$.data[*].feedback[*].problem", hasItems("goes", "walk", "day")))
-                .andExpect(jsonPath("$.data[*].feedback[*].correction", hasItems("go", "walks", "days")))
-                .andExpect(jsonPath("$.data[*].feedback[*].extra", hasItems("삼인칭 단수 수정", "3인칭 단수", "복수형 수정")));
+                .andExpect(jsonPath("$.data.content[*].feedback[*].tag", hasItems("GRAMMAR")))
+                .andExpect(jsonPath("$.data.content[*].feedback[*].problem", hasItems("goes", "walk", "day")))
+                .andExpect(jsonPath("$.data.content[*].feedback[*].correction", hasItems("go", "walks", "days")))
+                .andExpect(jsonPath("$.data.content[*].feedback[*].extra", hasItems("삼인칭 단수 수정", "3인칭 단수", "복수형 수정")));
+
     }
 
     @Test
@@ -245,7 +246,7 @@ class ApiV1LearningNoteControllerTest {
                         .param("size", "10")
                         .param("memberId", memberId.toString())
                         .param("tag", "WRONG_TAG") // 존재하지 않는 Enum
-                        .param("status", "ALL")
+                        .param("filter", "ALL")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
@@ -258,7 +259,7 @@ class ApiV1LearningNoteControllerTest {
         mockMvc.perform(get("/api/v1/learning/notes")
                         .param("page", "0")
                         .param("size", "10")
-                        // tag와 status 생략
+                        // tag와 filter 생략
                         .param("memberId", memberId.toString())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())

@@ -1,11 +1,11 @@
 package triplestar.mixchat.domain.learningNote.learningNote.service;
 
-import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningStatus;
+import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningFilter;
 import triplestar.mixchat.domain.learningNote.learningNote.dto.FeedbackCreateReq;
 import triplestar.mixchat.domain.learningNote.learningNote.dto.FeedbackListResp;
 import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteCreateReq;
@@ -41,20 +41,25 @@ public class LearningNoteService {
     }
 
     @Transactional
-    public List<LearningNoteListResp> getLearningNotes(int page, int size, Long memberId, TranslationTagCode tag, LearningStatus status) {
-        PageRequest pageable = PageRequest.of(page, size);
+    public Page<LearningNoteListResp> getLearningNotes(Pageable  pageable, Long memberId, TranslationTagCode tag, LearningFilter learningFilter) {
 
-        List<LearningNote> notes = learningNoteRepository.findByMemberWithFilters(memberId, tag, status, pageable);
+        Boolean isMarked = switch (learningFilter) {
+            case LEARNED -> true;
+            case UNLEARNED -> false;
+            case ALL -> null;
+        };
 
-        return notes.stream()
-                .map(note -> new LearningNoteListResp(
+        Page<LearningNote> notes = learningNoteRepository.findByMemberWithFilters(memberId, tag, isMarked, pageable);
+
+        return notes.map(note ->
+                new LearningNoteListResp(
                         note.getOriginalContent(),
                         note.getCorrectedContent(),
                         note.getFeedbacks().stream()
                                 .map(FeedbackListResp::from)
                                 .toList()
-                ))
-                .toList();
+                )
+        );
     }
 
     public Member findMemberById(Long memberId) {
