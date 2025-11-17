@@ -18,11 +18,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
-import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.auth.dto.SignInResp;
 import triplestar.mixchat.domain.member.auth.dto.SignInReq;
+import triplestar.mixchat.domain.member.auth.dto.SignInResp;
 import triplestar.mixchat.domain.member.auth.service.AuthService;
+import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.testutils.TestHelperController;
 
 @ActiveProfiles("test")
@@ -103,7 +103,7 @@ class ApiV1AuthControllerTest {
 
         ResultActions resultActions = mvc
                 .perform(
-                        post("/api/v1/auth/sign-in")
+                        post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                         {
@@ -143,7 +143,7 @@ class ApiV1AuthControllerTest {
 
         ResultActions resultActions = mvc
                 .perform(
-                        post("/api/v1/auth/sign-in")
+                        post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                         {
@@ -169,7 +169,7 @@ class ApiV1AuthControllerTest {
 
         ResultActions resultActions = mvc
                 .perform(
-                        post("/api/v1/auth/sign-in")
+                        post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                         {
@@ -185,6 +185,24 @@ class ApiV1AuthControllerTest {
                 .andExpect(handler().methodName("signIn"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.msg").value("잘못된 요청입니다."));
+    }
+
+    @Test
+    @DisplayName("로그아웃 - 성공")
+    void signOut_success() throws Exception {
+        joinTestData();
+
+        ResultActions resultActions = mvc
+                .perform(
+                        post("/api/v1/auth/logout")
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(ApiV1AuthController.class))
+                .andExpect(handler().methodName("signOut"))
+                .andExpect(status().isOk());
     }
 
     @Test

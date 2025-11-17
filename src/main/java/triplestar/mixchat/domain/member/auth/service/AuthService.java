@@ -107,4 +107,12 @@ public class AuthService {
 
         return new SignInResp(accessToken, newRefreshToken);
     }
+
+    /**
+     * 로그아웃
+     */
+    public void signOut(String refreshToken) {
+        Long memberId = authJwtProvider.parseRefreshToken(refreshToken);
+        redisTokenRepository.delete(memberId);
+    }
 }
