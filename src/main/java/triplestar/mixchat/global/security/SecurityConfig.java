@@ -40,6 +40,8 @@ public class SecurityConfig {
                                         "/api/*/auth/join", "/api/*/auth/sign-in", "api/*/auth/reissue").permitAll()
                                 // ADMIN 권한 필요
                                 .requestMatchers("/api/*/admin/**").hasRole("ADMIN")
+                                // WEBSOCKET 요청 허용
+                                .requestMatchers("/ws-stomp/**").permitAll()
                                 // 나머지 모든 요청은 인증 필요
                                 .requestMatchers("/**").authenticated()
                 )

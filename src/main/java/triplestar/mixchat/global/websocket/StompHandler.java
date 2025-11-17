@@ -111,8 +111,12 @@ public class StompHandler implements ChannelInterceptor {
             return;
         }
 
-        // TODO: 채팅방 외 다른 구독 목적지가 있다면 여기에 추가 (ex 사용자별 알림)
-        // 예: if (destination.startsWith("/topic/user/" + userDetails.getId())) { ... }
+        // 사용자별 토픽 구독 권한 확인 (ex. 채팅방 목록 업데이트)
+        String userTopicPrefix = "/topic/user/" + userDetails.getId();
+        if (destination.startsWith(userTopicPrefix)) {
+            log.info("SUBSCRIBE (User Topic): memberId={} destination={}", userDetails.getId(), destination);
+            return;
+        }
 
         throw new AccessDeniedException("허용되지 않은 구독 목적지입니다: " + destination);
     }

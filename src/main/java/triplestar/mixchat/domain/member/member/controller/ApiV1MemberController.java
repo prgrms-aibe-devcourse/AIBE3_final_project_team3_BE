@@ -53,4 +53,13 @@ public class ApiV1MemberController implements ApiMemberController {
         memberService.uploadProfileImage(customUserDetails.getId(), multipartFile);
         return CustomResponse.ok("프로필 이미지 업로드에 성공했습니다.");
     }
+
+    @Override
+    @GetMapping("/me")
+    public CustomResponse<MemberSummaryResp> getMyProfile(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        MemberSummaryResp memberSummary = memberService.getMemberSummary(customUserDetails.getId());
+        return CustomResponse.ok("내 정보를 성공적으로 조회했습니다.", memberSummary);
+    }
 }
