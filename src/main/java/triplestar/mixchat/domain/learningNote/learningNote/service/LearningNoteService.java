@@ -1,5 +1,6 @@
 package triplestar.mixchat.domain.learningNote.learningNote.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,7 @@ import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteCreat
 import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteListResp;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.Feedback;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
+import triplestar.mixchat.domain.learningNote.learningNote.repository.FeedbackRepository;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
@@ -22,6 +24,7 @@ import triplestar.mixchat.domain.translation.translation.constant.TranslationTag
 public class LearningNoteService {
     private final LearningNoteRepository learningNoteRepository;
     private final MemberRepository memberRepository;
+    private final FeedbackRepository feedbackRepository;
 
     @Transactional
     public Long createWithFeedbacks(LearningNoteCreateReq req) {
@@ -60,6 +63,15 @@ public class LearningNoteService {
                                 .toList()
                 )
         );
+    }
+
+    @Transactional
+    public void updateFeedbackMark(Long feedbackId, boolean marked) {
+        Feedback feedback = feedbackRepository.findById(feedbackId)
+                .orElseThrow(() -> new EntityNotFoundException("피드백을 찾을 수 없습니다."));
+
+        if (marked) feedback.mark();
+        else feedback.unmark();
     }
 
     public Member findMemberById(Long memberId) {

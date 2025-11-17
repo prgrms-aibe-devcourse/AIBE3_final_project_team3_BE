@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningFilter;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.Feedback;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
+import triplestar.mixchat.domain.learningNote.learningNote.repository.FeedbackRepository;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
@@ -34,7 +35,7 @@ import triplestar.mixchat.testutils.TestMemberFactory;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-@DisplayName("학습노트 생성 API 테스트")
+@DisplayName("학습노트 API 테스트")
 class ApiV1LearningNoteControllerTest {
 
     @Autowired
@@ -43,6 +44,8 @@ class ApiV1LearningNoteControllerTest {
     private MemberRepository memberRepository;
     @Autowired
     private LearningNoteRepository learningNoteRepository;
+    @Autowired
+    private FeedbackRepository feedbackRepository;
 
     private Member testMember;
     private Long memberId;

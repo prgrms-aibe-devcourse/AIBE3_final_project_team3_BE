@@ -8,8 +8,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningFilter;
+import triplestar.mixchat.domain.learningNote.learningNote.dto.FeedbackMarkUpdateReq;
 import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteCreateReq;
 import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteListResp;
 import triplestar.mixchat.domain.translation.translation.constant.TranslationTagCode;
@@ -47,5 +49,13 @@ public interface ApiLearningNoteController {
             @Parameter(description = "학습 상태", example = "LEARNED")
             @RequestParam
             LearningFilter learningFilter
+    );
+
+    // --- 3. 피드백 상태 변경 (PATCH) ---
+    @Operation(summary = "피드백 학습 상태 변경", description = "특정 피드백의 학습 완료 여부를 변경합니다.")
+    @SignInInRequireResponse
+    CustomResponse<Void> updateFeedbackMark(
+            @Parameter(description = "피드백 ID", example = "1") @PathVariable Long feedbackId,
+            @RequestBody @Valid FeedbackMarkUpdateReq req
     );
 }
