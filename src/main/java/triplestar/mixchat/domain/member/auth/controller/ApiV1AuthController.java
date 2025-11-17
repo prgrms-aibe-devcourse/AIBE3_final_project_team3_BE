@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
 import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
-import triplestar.mixchat.domain.member.auth.dto.SignInResp;
-import triplestar.mixchat.domain.member.auth.dto.SignInReq;
+import triplestar.mixchat.domain.member.auth.dto.LogInResp;
+import triplestar.mixchat.domain.member.auth.dto.LogInReq;
 import triplestar.mixchat.domain.member.auth.service.AuthService;
 import triplestar.mixchat.domain.member.auth.util.CookieHelper;
 import triplestar.mixchat.global.response.CustomResponse;
@@ -36,11 +36,11 @@ public class ApiV1AuthController implements ApiAuthController {
 
     @Override
     @PostMapping("/login")
-    public CustomResponse<String> signIn(
-            @RequestBody @Valid SignInReq signInReq,
+    public CustomResponse<String> login(
+            @RequestBody @Valid LogInReq logInReq,
             HttpServletResponse httpServletResponse
     ) {
-        SignInResp resp = authService.signIn(signInReq);
+        LogInResp resp = authService.login(logInReq);
 
         Cookie cookie = cookieHelper.generateRefreshTokenCookie(resp.refreshToken());
         httpServletResponse.addCookie(cookie);
@@ -53,7 +53,7 @@ public class ApiV1AuthController implements ApiAuthController {
     public CustomResponse<String> reissue(HttpServletRequest httpServletRequest,
                                           HttpServletResponse httpServletResponse) {
         String refreshToken = cookieHelper.findRefreshTokenCookie(httpServletRequest);
-        SignInResp resp = authService.reissueAccessToken(refreshToken);
+        LogInResp resp = authService.reissueAccessToken(refreshToken);
 
         Cookie cookie = cookieHelper.generateRefreshTokenCookie(resp.refreshToken());
         httpServletResponse.addCookie(cookie);
@@ -63,13 +63,13 @@ public class ApiV1AuthController implements ApiAuthController {
 
     @Override
     @PostMapping("/logout")
-    public CustomResponse<Void> signOut(
+    public CustomResponse<Void> logout(
             HttpServletRequest request,
             HttpServletResponse response
     ) {
         String refreshToken = cookieHelper.findRefreshTokenCookie(request);
 
-        authService.signOut(refreshToken);
+        authService.logout(refreshToken);
         response.addCookie(cookieHelper.generateExpiredRefreshToken());
 
         return CustomResponse.ok("로그아웃 되었습니다.");

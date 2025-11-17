@@ -10,7 +10,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import jakarta.servlet.http.Cookie;
 import java.util.List;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,11 +22,10 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.auth.dto.SignInReq;
-import triplestar.mixchat.domain.member.auth.dto.SignInResp;
+import triplestar.mixchat.domain.member.auth.dto.LogInReq;
+import triplestar.mixchat.domain.member.auth.dto.LogInResp;
 import triplestar.mixchat.domain.member.auth.service.AuthService;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
-import triplestar.mixchat.global.security.redis.RedisTokenRepository;
 import triplestar.mixchat.testutils.RedisTestContainer;
 import triplestar.mixchat.testutils.TestHelperController;
 
@@ -105,7 +103,7 @@ class ApiV1AuthControllerTest extends RedisTestContainer {
 
     @Test
     @DisplayName("로그인 응답 - 성공")
-    void signIn() throws Exception {
+    void login() throws Exception {
         joinTestData();
 
         ResultActions resultActions = mvc
@@ -130,7 +128,7 @@ class ApiV1AuthControllerTest extends RedisTestContainer {
         resultActions
                 //실행처 확인
                 .andExpect(handler().handlerType(ApiV1AuthController.class))
-                .andExpect(handler().methodName("signIn"))
+                .andExpect(handler().methodName("login"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.msg").value("로그인에 성공했습니다."));
     }
@@ -151,7 +149,7 @@ class ApiV1AuthControllerTest extends RedisTestContainer {
 
     @Test
     @DisplayName("로그인 응답 - 실패(아이디 없음)")
-    void signIn_Email_Fail() throws Exception {
+    void login_Email_Fail() throws Exception {
         joinTestData();
 
         ResultActions resultActions = mvc
@@ -170,14 +168,14 @@ class ApiV1AuthControllerTest extends RedisTestContainer {
         resultActions
                 //실행처 확인
                 .andExpect(handler().handlerType(ApiV1AuthController.class))
-                .andExpect(handler().methodName("signIn"))
+                .andExpect(handler().methodName("login"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.msg").value("존재하지 않는 엔티티에 접근했습니다."));
     }
 
     @Test
     @DisplayName("로그인 응답 - 실패(비밀번호 불일치)")
-    void signIn_Password_Fail() throws Exception {
+    void login_Password_Fail() throws Exception {
         joinTestData();
 
         ResultActions resultActions = mvc
@@ -195,14 +193,14 @@ class ApiV1AuthControllerTest extends RedisTestContainer {
 
         resultActions
                 .andExpect(handler().handlerType(ApiV1AuthController.class))
-                .andExpect(handler().methodName("signIn"))
+                .andExpect(handler().methodName("login"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.msg").value("잘못된 요청입니다."));
     }
 
     @Test
     @DisplayName("로그아웃 - 성공")
-    void signOut_success() throws Exception {
+    void logout_success() throws Exception {
         // 1. 회원가입
         joinTestData();
 
@@ -252,8 +250,8 @@ class ApiV1AuthControllerTest extends RedisTestContainer {
     void accessToken_filter_success() throws Exception {
         joinTestData();
 
-        SignInResp signInResp = authService.signIn(new SignInReq("test@example.com", "test1234"));
-        String accessToken = signInResp.accessToken();
+        LogInResp logInResp = authService.login(new LogInReq("test@example.com", "test1234"));
+        String accessToken = logInResp.accessToken();
 
         ResultActions resultActions = mvc
                 .perform(
@@ -273,8 +271,8 @@ class ApiV1AuthControllerTest extends RedisTestContainer {
     void accessToken_filter_counterfeit_fail() throws Exception {
         joinTestData();
 
-        SignInResp signInResp = authService.signIn(new SignInReq("test@example.com", "test1234"));
-        String accessToken = signInResp.accessToken();
+        LogInResp logInResp = authService.login(new LogInReq("test@example.com", "test1234"));
+        String accessToken = logInResp.accessToken();
 
         ResultActions resultActions = mvc
                 .perform(

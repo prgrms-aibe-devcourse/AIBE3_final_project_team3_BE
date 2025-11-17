@@ -10,10 +10,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
 import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
-import triplestar.mixchat.domain.member.auth.dto.SignInReq;
+import triplestar.mixchat.domain.member.auth.dto.LogInReq;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
-import triplestar.mixchat.global.springdoc.SignInInRequireResponse;
 import triplestar.mixchat.global.springdoc.SuccessResponse;
 
 @Tag(name = "ApiV1AuthController", description = "API 인증/인가 컨트롤러")
@@ -37,9 +36,9 @@ public interface ApiAuthController {
                     )
             }
     )
-    CustomResponse<String> signIn(
+    CustomResponse<String> login(
             @RequestBody(description = "로그인 정보", required = true)
-            SignInReq signInReq,
+            LogInReq logInReq,
             HttpServletResponse httpServletResponse
     );
 
@@ -55,5 +54,5 @@ public interface ApiAuthController {
             summary = "로그아웃",
             description = "Refresh Token을 무효화하고 클라이언트 쿠키를 만료시킵니다."
     )
-    CustomResponse<Void> signOut(HttpServletRequest request, HttpServletResponse response);
+    CustomResponse<Void> logout(HttpServletRequest request, HttpServletResponse response);
 }
