@@ -61,6 +61,7 @@ public class ApiV1AuthController implements ApiAuthController {
         return CustomResponse.ok("액세스 토큰이 재발급되었습니다.", resp.accessToken());
     }
 
+    @Override
     @PostMapping("/logout")
     public CustomResponse<Void> signOut(
             HttpServletRequest request,

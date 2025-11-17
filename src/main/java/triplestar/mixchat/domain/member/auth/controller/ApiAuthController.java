@@ -48,6 +48,12 @@ public interface ApiAuthController {
             summary = "토큰 재발급",
             description = "만료된 액세스 토큰을 리프레시 토큰을 통해 재발급합니다."
     )
-    @SignInInRequireResponse
     CustomResponse<String> reissue(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse);
+
+    // --- 4. 로그아웃 (POST /logout) ---
+    @Operation(
+            summary = "로그아웃",
+            description = "Refresh Token을 무효화하고 클라이언트 쿠키를 만료시킵니다."
+    )
+    CustomResponse<Void> signOut(HttpServletRequest request, HttpServletResponse response);
 }
