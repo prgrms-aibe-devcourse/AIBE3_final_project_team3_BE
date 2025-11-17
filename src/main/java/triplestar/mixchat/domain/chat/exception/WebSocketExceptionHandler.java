@@ -8,6 +8,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import triplestar.mixchat.global.customException.ServiceException;
 
+// todo: 추후 작동 확인 필요
 @Slf4j
 @RestControllerAdvice
 public class WebSocketExceptionHandler {

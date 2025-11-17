@@ -37,4 +37,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
             """
     )
     Optional<MemberProfileResp> findByIdWithFriendInfo(Long signInId, Long memberId);
+
+    List<Member> findAllByIdIsNot(Long id);
 }
