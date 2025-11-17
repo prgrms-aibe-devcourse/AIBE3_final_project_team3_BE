@@ -108,7 +108,7 @@ class MemberServiceTest {
         assertThat(resp.name()).isEqualTo(member1.getName());
         assertThat(resp.nickname()).isEqualTo(member1.getNickname());
         assertThat(resp.country()).isEqualTo(member1.getCountry());
-        assertThat(resp.englishMastery()).isEqualTo(member1.getEnglishLevel());
+        assertThat(resp.englishLevel()).isEqualTo(member1.getEnglishLevel());
         assertThat(resp.interests()).isEqualTo(member1.getInterests());
         assertThat(resp.description()).isEqualTo(member1.getDescription());
         assertThat(resp.profileImageUrl()).isEqualTo(member1.getProfileImageUrl());
