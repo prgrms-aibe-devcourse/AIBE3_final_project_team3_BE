@@ -67,4 +67,3 @@ public interface ApiMemberController {
             CustomUserDetails userDetails
     );
 }
-}
