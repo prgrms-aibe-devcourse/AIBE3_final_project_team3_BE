@@ -84,8 +84,8 @@ public class ChatRoomService {
 
                     ChatRoomResp roomDto = ChatRoomResp.from(savedRoom);
 
-                    messagingTemplate.convertAndSend("/topic/user/" + member1.getId() + "/rooms", roomDto);
-                    messagingTemplate.convertAndSend("/topic/user/" + member2.getId() + "/rooms", roomDto);
+                    messagingTemplate.convertAndSendToUser(member1.getEmail(), "/topic/rooms", roomDto);
+                    messagingTemplate.convertAndSendToUser(member2.getEmail(), "/topic/rooms", roomDto);
 
                     return savedRoom;
                 });
@@ -113,7 +113,7 @@ public class ChatRoomService {
 
         ChatRoomResp roomDto = ChatRoomResp.from(savedRoom);
         members.forEach(member -> {
-            messagingTemplate.convertAndSend("/topic/user/" + member.getId() + "/rooms", roomDto);
+            messagingTemplate.convertAndSendToUser(member.getEmail(), "/topic/rooms", roomDto);
         });
 
         return roomDto;

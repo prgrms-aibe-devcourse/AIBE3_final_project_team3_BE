@@ -1,8 +1,6 @@
 package triplestar.mixchat.global.websocket;
 
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.security.SignatureException;
+import java.security.Principal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.Ordered;
@@ -14,8 +12,10 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import triplestar.mixchat.domain.chat.chat.service.ChatRoomService;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -23,8 +23,6 @@ import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.security.CustomUserDetails;
 import triplestar.mixchat.global.security.jwt.AccessTokenPayload;
 import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
-
-import java.security.Principal;
 
 @Slf4j
 @Component
@@ -58,10 +56,17 @@ public class StompHandler implements ChannelInterceptor {
         switch (command) {
             case CONNECT -> handleConnect(accessor);
             case SUBSCRIBE -> handleSubscribe(accessor);
+            case SEND -> handleSend(accessor);
             case DISCONNECT -> log.info("STOMP DISCONNECT: sessionId={}", accessor.getSessionId());
             default -> { /* NO-OP */ }
         }
         return message;
+    }
+
+    private void handleSend(StompHeaderAccessor accessor) {
+        Authentication authentication = requireAuth(accessor);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        log.debug("STOMP SEND: Authenticated user {} for destination {}", authentication.getName(), accessor.getDestination());
     }
 
     private void handleConnect(StompHeaderAccessor accessor) {
@@ -71,27 +76,18 @@ public class StompHandler implements ChannelInterceptor {
             throw new AccessDeniedException("인증 토큰이 필요합니다.");
         }
 
-        try {
-            AccessTokenPayload payload = authJwtProvider.parseAccessToken(token);
-            Long memberId = payload.memberId();
+        AccessTokenPayload payload = authJwtProvider.parseAccessToken(token);
+        Long memberId = payload.memberId();
 
-            Member member = memberRepository.findById(memberId)
-                    .orElseThrow(() -> new AccessDeniedException("사용자 정보를 찾을 수 없습니다. ID: " + memberId));
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new AccessDeniedException("사용자 정보를 찾을 수 없습니다. ID: " + memberId));
 
-            CustomUserDetails userDetails = new CustomUserDetails(member.getId(), member.getRole());
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities());
-            accessor.setUser(authentication);
+        CustomUserDetails userDetails = new CustomUserDetails(member.getId(), member.getRole());
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+        accessor.setUser(authentication);
 
-            log.info("STOMP CONNECT (Authenticated): memberId={}, sessionId={}", memberId, accessor.getSessionId());
-        } catch (ExpiredJwtException e) {
-            throw new AccessDeniedException("만료된 토큰입니다.", e);
-        } catch (SignatureException | MalformedJwtException e) {
-            throw new AccessDeniedException("유효하지 않은 형식의 토큰입니다.", e);
-        } catch (Exception e) {
-            log.error("STOMP CONNECT: 예상치 못한 인증 오류 발생", e);
-            throw new AccessDeniedException("인증 처리 중 오류가 발생했습니다.", e);
-        }
+        log.info("STOMP CONNECT (Authenticated): memberId={}, sessionId={}", memberId, accessor.getSessionId());
     }
 
     private void handleSubscribe(StompHeaderAccessor accessor) {
@@ -100,7 +96,7 @@ public class StompHandler implements ChannelInterceptor {
 
         String destination = accessor.getDestination();
         if (destination == null || destination.isBlank()) {
-            throw new AccessDeniedException("구독 목적지가 없습니다.");
+            throw new IllegalArgumentException("구독 목적지가 없습니다.");
         }
 
         // 채팅방 구독 권한 확인
@@ -111,10 +107,10 @@ public class StompHandler implements ChannelInterceptor {
             return;
         }
 
-        // 사용자별 토픽 구독 권한 확인 (ex. 채팅방 목록 업데이트)
-        String userTopicPrefix = "/topic/user/" + userDetails.getId();
-        if (destination.startsWith(userTopicPrefix)) {
-            log.info("SUBSCRIBE (User Topic): memberId={} destination={}", userDetails.getId(), destination);
+        // 사용자별 목적지 구독 확인 (표준 방식)
+        // /user/ 로 시작하는 모든 구독은 스프링이 현재 사용자의 세션에만 연결해주므로 안전함.
+        if (destination.startsWith("/user/")) {
+            log.info("SUBSCRIBE (User Destination): memberId={} destination={}", userDetails.getId(), destination);
             return;
         }
 
@@ -126,7 +122,7 @@ public class StompHandler implements ChannelInterceptor {
         if (principal instanceof Authentication auth && auth.isAuthenticated()) {
             return auth;
         }
-        throw new AccessDeniedException("인증된 사용자만 이 작업을 수행할 수 있습니다.");
+        throw new BadCredentialsException("인증된 사용자만 이 작업을 수행할 수 있습니다.");
     }
 
     private String resolveToken(StompHeaderAccessor accessor) {

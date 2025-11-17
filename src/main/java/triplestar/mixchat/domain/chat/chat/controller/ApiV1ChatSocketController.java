@@ -41,16 +41,5 @@ public class ApiV1ChatSocketController {
         log.debug("Message sent to room {}: {}", messageReq.roomId(), messageResp.content());
     }
 
-    // WebSocket 컨트롤러 내에서 발생하는 예외 처리
-    @MessageExceptionHandler
-    @SendToUser("/topic/errors") // 에러는 해당 사용자에게만 전송
-    public String handleException(Exception ex) {
-        log.error("WebSocket Error: {}", ex.getMessage(), ex);
-
-        if (ex instanceof AccessDeniedException) {
-            return "접근 권한이 없습니다.";
-        }
-        // 그 외 예외에 대한 공통 처리
-        return "메시지 처리 중 오류가 발생했습니다.";
-    }
+    
 }
