@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.chat.find.service.FindService;
 import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
+import triplestar.mixchat.domain.member.member.dto.MemberProfileResp;
 import triplestar.mixchat.domain.member.member.service.MemberService;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
@@ -61,5 +63,16 @@ public class ApiV1MemberController implements ApiMemberController {
     ) {
         MemberSummaryResp memberSummary = memberService.getMemberSummary(customUserDetails.getId());
         return CustomResponse.ok("내 정보를 성공적으로 조회했습니다.", memberSummary);
+      
+    @Override
+    @GetMapping("{id}")
+    public CustomResponse<MemberProfileResp> getMemberProfile(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @PathVariable Long id
+    ) {
+        Long signInId = customUserDetails != null ? customUserDetails.getId() : null;
+
+        MemberProfileResp memberDetails = memberService.getMemberDetails(signInId, id);
+        return CustomResponse.ok("회원 정보 조회에 성공했습니다.", memberDetails);
     }
 }
