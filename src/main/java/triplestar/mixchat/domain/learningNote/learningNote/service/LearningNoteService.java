@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningFilter;
@@ -27,8 +28,8 @@ public class LearningNoteService {
     private final FeedbackRepository feedbackRepository;
 
     @Transactional
-    public Long createWithFeedbacks(LearningNoteCreateReq req) {
-        Member member = findMemberById(req.memberId());
+    public Long createWithFeedbacks(LearningNoteCreateReq req, Long memberId) {
+        Member member = findMemberById(memberId);
         LearningNote note = LearningNote.create(
                 member,
                 req.originalContent(),
@@ -45,7 +46,6 @@ public class LearningNoteService {
 
     @Transactional
     public Page<LearningNoteListResp> getLearningNotes(Pageable  pageable, Long memberId, TranslationTagCode tag, LearningFilter learningFilter) {
-
         Boolean isMarked = switch (learningFilter) {
             case LEARNED -> true;
             case UNLEARNED -> false;
@@ -66,12 +66,19 @@ public class LearningNoteService {
     }
 
     @Transactional
-    public void updateFeedbackMark(Long feedbackId, boolean marked) {
+    public void updateFeedbackMark(Long feedbackId, Long memberId, boolean marked) {
         Feedback feedback = feedbackRepository.findById(feedbackId)
-                .orElseThrow(() -> new EntityNotFoundException("피드백을 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 피드백입니다."));
 
-        if (marked) feedback.mark();
-        else feedback.unmark();
+        if (!feedback.getLearningNote().getMember().getId().equals(memberId)) {
+            throw new AccessDeniedException("본인 피드백만 수정할 수 있습니다.");
+        }
+
+        if (marked){
+            feedback.mark();
+        } else{
+            feedback.unmark();
+        }
     }
 
     public Member findMemberById(Long memberId) {
