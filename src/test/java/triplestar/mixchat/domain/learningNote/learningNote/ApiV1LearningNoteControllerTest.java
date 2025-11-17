@@ -3,6 +3,7 @@ package triplestar.mixchat.domain.learningNote.learningNote;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -49,7 +50,8 @@ class ApiV1LearningNoteControllerTest {
 
     private Member testMember;
     private Long memberId;
-
+    private Long fb1Id;
+    private Long fb2Id;
     @BeforeEach
     void setUp() {
         testMember = memberRepository.save(TestMemberFactory.createMember("testUser1"));
@@ -81,6 +83,8 @@ class ApiV1LearningNoteControllerTest {
         note3.addFeedback(fb5);
         note3.addFeedback(fb6);
         learningNoteRepository.saveAll(List.of(note1, note2, note3));
+        fb1Id = fb1.getId();
+        fb2Id = fb2.getId();
     }
 
     @Test
@@ -267,5 +271,62 @@ class ApiV1LearningNoteControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("성공 - 피드백 상태를 학습 완료로 변경한다 (marked=true)")
+    @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService",
+            setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void updateFeedbackMark_success_toLearned() throws Exception {
+        String requestJson = """
+                { "marked": true }
+                """;
+
+        mockMvc.perform(patch("/api/v1/learning/notes/feedbacks/{feedbackId}/mark", fb2Id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.msg").value("피드백 학습 상태가 변경되었습니다."));
+
+        Feedback updated = feedbackRepository.findById(fb2Id).orElseThrow();
+        assertThat(updated.isMarked()).isTrue();
+    }
+
+    @Test
+    @DisplayName("성공 - 피드백 상태를 학습 미완료로 변경한다 (marked=false)")
+    @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService",
+            setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void updateFeedbackMark_success_toUnlearned() throws Exception {
+        String requestJson = """
+                { "marked": false }
+                """;
+
+        mockMvc.perform(patch("/api/v1/learning/notes/feedbacks/{feedbackId}/mark", fb1Id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.msg").value("피드백 학습 상태가 변경되었습니다."));
+
+        Feedback updated = feedbackRepository.findById(fb1Id).orElseThrow();
+        assertThat(updated.isMarked()).isFalse();
+    }
+
+    @Test
+    @DisplayName("실패 - 존재하지 않는 피드백 ID로 요청하면 404 반환")
+    @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService",
+            setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void updateFeedbackMark_fail_notFound() throws Exception {
+        String requestJson = """
+                { "marked": true }
+                """;
+
+        mockMvc.perform(patch("/api/v1/learning/notes/feedbacks/{feedbackId}/mark", 99999L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.msg").value("존재하지 않는 엔티티에 접근했습니다."));
     }
 }
