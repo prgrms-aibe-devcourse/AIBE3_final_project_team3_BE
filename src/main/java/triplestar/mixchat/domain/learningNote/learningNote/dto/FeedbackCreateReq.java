@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import triplestar.mixchat.domain.translation.translation.constant.TranslationTagCode;
 
 @Schema(description = "개별 피드백 항목")
-public record FeedbackItemReq(
+public record FeedbackCreateReq(
         @NotNull
         @Schema(description = "피드백 태그", example = "Grammar")
         TranslationTagCode tag,
