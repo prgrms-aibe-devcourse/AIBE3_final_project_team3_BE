@@ -1,11 +1,18 @@
 package triplestar.mixchat.domain.learningNote.learningNote.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.RequestParam;
+import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningFilter;
 import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteCreateReq;
+import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteListResp;
+import triplestar.mixchat.domain.translation.translation.constant.TranslationTagCode;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
 import triplestar.mixchat.global.springdoc.SignInInRequireResponse;
@@ -23,5 +30,22 @@ public interface ApiLearningNoteController {
     CustomResponse<Long> createLearningNote(
             @RequestBody(description = "학습노트 생성 데이터", required = true)
             @Valid LearningNoteCreateReq req
+    );
+
+    // --- 2. 학습노트 목록 조회 (GET ) ---
+    @Operation(summary = "학습노트 목록 조회", description = "태그와 학습 상태를 기준으로 회원의 학습노트를 조회합니다.")
+    @SignInInRequireResponse
+    CustomResponse<Page<LearningNoteListResp>> getLearningNotes(
+            @Parameter(description = "페이지 정보")
+            Pageable pageable,
+            @Parameter(description = "회원 ID", example = "1")
+            @RequestParam
+            Long memberId,
+            @Parameter(description = "번역 태그", example = "TRANSLATION")
+            @RequestParam
+            TranslationTagCode tag,
+            @Parameter(description = "학습 상태", example = "LEARNED")
+            @RequestParam
+            LearningFilter learningFilter
     );
 }

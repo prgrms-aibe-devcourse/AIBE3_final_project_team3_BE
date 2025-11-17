@@ -57,7 +57,11 @@ class ApiV1FriendshipControllerTest {
                 .perform(
                         post("/api/v1/members/friends")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content("%d".formatted(receiverId))
+                                .content("""
+                                        {
+                                            "receiverId": %d
+                                        }
+                                        """.formatted(receiverId))
                 )
                 .andDo(print());
 
@@ -76,7 +80,11 @@ class ApiV1FriendshipControllerTest {
                 .perform(
                         post("/api/v1/members/friends")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content("%d".formatted(receiverId))
+                                .content("""
+                                        {
+                                            "receiverId": %d
+                                        }
+                                        """.formatted(receiverId))
                 )
                 .andDo(print());
 

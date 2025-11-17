@@ -133,7 +133,6 @@ CREATE TABLE IF NOT EXISTS `learning_notes` (
                                                 `original_content`  VARCHAR(100)         NOT NULL,
                                                 `corrected_content` VARCHAR(100)         NOT NULL,
                                                 `created_at`    DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-                                                `is_marked`         BOOLEAN      NOT NULL DEFAULT FALSE,
 
                                                 PRIMARY KEY (`id`),
                                                 KEY `idx_learning_notes_member_id` (`member_id`),
@@ -152,6 +151,8 @@ CREATE TABLE IF NOT EXISTS `feedbacks` (
                                            `problem`          VARCHAR(100)         NOT NULL,
                                            `correction`       VARCHAR(100)         NOT NULL,
                                            `extra`            VARCHAR(100)         NOT NULL,
+                                           `is_marked`         BOOLEAN      NOT NULL DEFAULT FALSE,
+
 
                                            PRIMARY KEY (`id`),
                                            KEY `idx_learning_feedbacks_learning_note_id` (`learning_note_id`),
