@@ -1,5 +1,6 @@
 package triplestar.mixchat.domain.member.auth.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -7,7 +8,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import jakarta.servlet.http.Cookie;
 import java.util.List;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,19 +21,23 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
 import triplestar.mixchat.domain.member.auth.dto.SignInReq;
 import triplestar.mixchat.domain.member.auth.dto.SignInResp;
 import triplestar.mixchat.domain.member.auth.service.AuthService;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
+import triplestar.mixchat.global.security.redis.RedisTokenRepository;
+import triplestar.mixchat.testutils.RedisTestContainer;
 import triplestar.mixchat.testutils.TestHelperController;
 
 @ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@Testcontainers
 @DisplayName("회원 - 인증 컨트롤러")
-class ApiV1AuthControllerTest {
+class ApiV1AuthControllerTest extends RedisTestContainer {
 
     @Autowired
     private MockMvc mvc;
@@ -114,6 +121,12 @@ class ApiV1AuthControllerTest {
                 )
                 .andDo(print());
 
+        String refreshToken = resultActions.andReturn()
+                .getResponse()
+                .getCookie("RefreshToken").getValue();
+
+        assertThat(refreshToken).isNotNull();
+
         resultActions
                 //실행처 확인
                 .andExpect(handler().handlerType(ApiV1AuthController.class))
@@ -190,19 +203,48 @@ class ApiV1AuthControllerTest {
     @Test
     @DisplayName("로그아웃 - 성공")
     void signOut_success() throws Exception {
+        // 1. 회원가입
         joinTestData();
 
-        ResultActions resultActions = mvc
+        // 2. 로그인 (쿠키 받기)
+        ResultActions loginResult = mvc
+                .perform(
+                        post("/api/v1/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                            "email": "test@example.com",
+                                            "password": "test1234"
+                                        }
+                                        """)
+                )
+                .andExpect(status().isOk());
+
+        // 3. 쿠키 추출
+        Cookie refreshTokenCookie = loginResult.andReturn()
+                .getResponse()
+                .getCookie("RefreshToken");
+
+        // 4. 로그아웃
+        ResultActions logoutResult = mvc
                 .perform(
                         post("/api/v1/auth/logout")
-                                .contentType(MediaType.APPLICATION_JSON)
+                                .cookie(refreshTokenCookie)
                 )
                 .andDo(print());
 
-        resultActions
-                .andExpect(handler().handlerType(ApiV1AuthController.class))
-                .andExpect(handler().methodName("signOut"))
-                .andExpect(status().isOk());
+        // 5. 검증
+        logoutResult
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.msg").value("로그아웃 되었습니다."));
+
+        // 6. 쿠키 만료 확인
+        Cookie expiredCookie = logoutResult.andReturn()
+                .getResponse()
+                .getCookie("RefreshToken");
+
+        assertThat(expiredCookie).isNotNull();
+        assertThat(expiredCookie.getMaxAge()).isEqualTo(0);
     }
 
     @Test
