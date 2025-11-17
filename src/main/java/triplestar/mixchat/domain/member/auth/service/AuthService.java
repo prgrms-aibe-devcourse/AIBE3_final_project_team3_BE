@@ -32,6 +32,9 @@ public class AuthService {
     @Qualifier("defaultProfileBaseURL")
     private final String defaultProfileBaseURL;
 
+    @Qualifier("defaultProfileBaseURL")
+    private final String defaultProfileBaseURL;
+
     /**
      * 회원가입
      */
