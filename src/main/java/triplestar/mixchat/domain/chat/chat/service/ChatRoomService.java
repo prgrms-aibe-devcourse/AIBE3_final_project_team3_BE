@@ -82,13 +82,15 @@ public class ChatRoomService {
 
                     ChatRoom savedRoom = chatRoomRepository.save(newRoom);
 
-                    ChatRoomResp roomDto = ChatRoomResp.from(savedRoom);
+                    ChatRoomResp roomDto = ChatRoomResp.from(savedRoom); // roomDto 생성
 
+                    // 웹소켓 메시지 발송 (DTO 사용)
                     messagingTemplate.convertAndSendToUser(member1.getId().toString(), "/topic/rooms", roomDto);
                     messagingTemplate.convertAndSendToUser(member2.getId().toString(), "/topic/rooms", roomDto);
 
-                    return savedRoom;
+                    return savedRoom; // <-- orElseGet 람다는 ChatRoom 엔티티를 반환해야 함
                 });
+        // 메서드의 최종 반환은 ChatRoom 엔티티를 DTO로 변환하여 반환
         return ChatRoomResp.from(room);
     }
 
