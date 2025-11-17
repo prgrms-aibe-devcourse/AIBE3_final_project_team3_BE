@@ -10,7 +10,7 @@ import java.util.List;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 
 @Schema(description = "사용자의 회원가입 요청 정보")
-public record   MemberJoinReq(
+public record MemberJoinReq(
 
         @Schema(description = "사용자 이메일 주소", example = "user@example.com")
         @NotBlank
