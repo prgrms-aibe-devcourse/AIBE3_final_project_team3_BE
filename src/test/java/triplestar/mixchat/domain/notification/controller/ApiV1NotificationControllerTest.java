@@ -70,7 +70,7 @@ class ApiV1NotificationControllerTest {
         );
     }
 
-//    @Test
+    @Test
     @DisplayName("알람목록 성공")
     @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void notifications_success() throws Exception {
@@ -91,9 +91,9 @@ class ApiV1NotificationControllerTest {
 
                 // 최신순 DESC 정렬 검증 (notification2가 먼저)
                 .andExpect(jsonPath("$.data.content[0].type").value(notification2.getType().name()))
-                .andExpect(jsonPath("$.data.content[0].content").value(notification2.getContent()))
+                .andExpect(jsonPath("$.data.content[0].receiverId").value(member1.getId()))
                 .andExpect(jsonPath("$.data.content[1].type").value(notification1.getType().name()))
-                .andExpect(jsonPath("$.data.content[1].content").value(notification1.getContent()));
+                .andExpect(jsonPath("$.data.content[1].receiverId").value(member1.getId()));
     }
 
     @Test
