@@ -37,6 +37,8 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/", "/swagger-ui/**","/v3/api-docs/**",
                                         "/api/*/auth/join", "/api/*/auth/sign-in", "api/*/auth/reissue").permitAll()
+                                // 회원 프로필 조회는 인증 불필요
+                                .requestMatchers(HttpMethod.GET, "/api/v1/members/*").permitAll()
                                 // ADMIN 권한 필요
                                 .requestMatchers("/api/*/admin/**").hasRole("ADMIN")
                                 // 나머지 모든 요청은 인증 필요

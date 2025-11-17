@@ -8,3 +8,5 @@ cookie:
   domain: ${DOMAIN_NAME:mixchat.shop}
 member:
   default-image-name: "default-profile.webp"
+notification:
+  retention-days: 30
