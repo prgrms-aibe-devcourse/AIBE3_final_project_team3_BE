@@ -24,7 +24,7 @@ import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
 
 @RestController
-@RequestMapping("/api/v1/learningNotes")
+@RequestMapping("/api/v1/learning-notes")
 @RequiredArgsConstructor
 public class ApiV1LearningNoteController implements ApiLearningNoteController{
     private final LearningNoteService learningNoteService;

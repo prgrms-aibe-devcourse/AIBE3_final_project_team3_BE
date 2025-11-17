@@ -105,7 +105,7 @@ class ApiV1LearningNoteControllerTest {
             """;
 
         mockMvc.perform(
-                        post("/api/v1/learningNotes")
+                        post("/api/v1/learning-notes")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(requestJson)
                 )
@@ -150,7 +150,7 @@ class ApiV1LearningNoteControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/api/v1/learningNotes")
+        mockMvc.perform(post("/api/v1/learning-notes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidJson))
                 .andDo(print())
@@ -172,7 +172,7 @@ class ApiV1LearningNoteControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/api/v1/learningNotes")
+        mockMvc.perform(post("/api/v1/learning-notes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andDo(print())
@@ -183,7 +183,7 @@ class ApiV1LearningNoteControllerTest {
     @DisplayName("학습노트 목록 조회 성공 - GRAMMAR 태그 + LEARNED 상태 (2개 결과)")
     @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void getLearningNotes_grammar_learned_success() throws Exception {
-        mockMvc.perform(get("/api/v1/learningNotes")
+        mockMvc.perform(get("/api/v1/learning-notes")
                         .param("page", "0")
                         .param("size", "10")
                         .param("tag", TranslationTagCode.GRAMMAR.toString())
@@ -203,7 +203,7 @@ class ApiV1LearningNoteControllerTest {
     @DisplayName("학습노트 목록 조회 성공 - TRANSLATION 태그 + UNLEARNED 상태 (3개 결과)")
     @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void getLearningNotes_translation_unlearned_success() throws Exception {
-        mockMvc.perform(get("/api/v1/learningNotes")
+        mockMvc.perform(get("/api/v1/learning-notes")
                         .param("page", "0")
                         .param("size", "10")
                         .param("tag", TranslationTagCode.TRANSLATION.toString())
@@ -223,7 +223,7 @@ class ApiV1LearningNoteControllerTest {
     @DisplayName("학습노트 목록 조회 성공 - GRAMMAR 태그 + ALL 상태 (3개 결과)")
     @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void getLearningNotes_grammar_all_success() throws Exception {
-        mockMvc.perform(get("/api/v1/learningNotes")
+        mockMvc.perform(get("/api/v1/learning-notes")
                         .param("page", "0")
                         .param("size", "10")
                         .param("tag", TranslationTagCode.GRAMMAR.toString())
@@ -244,7 +244,7 @@ class ApiV1LearningNoteControllerTest {
     @DisplayName("학습노트 목록 조회 실패 - 잘못된 태그 입력 시 400 반환")
     @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void getLearningNotes_invalidTag_fail_noBody() throws Exception {
-        mockMvc.perform(get("/api/v1/learningNotes")
+        mockMvc.perform(get("/api/v1/learning-notes")
                         .param("page", "0")
                         .param("size", "10")
                         .param("tag", "WRONG_TAG") // 존재하지 않는 Enum
@@ -258,7 +258,7 @@ class ApiV1LearningNoteControllerTest {
     @DisplayName("학습노트 목록 조회 실패 - 필수 파라미터 누락 시 400 반환")
     @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void getLearningNotes_missingParams_fail() throws Exception {
-        mockMvc.perform(get("/api/v1/learningNotes")
+        mockMvc.perform(get("/api/v1/learning-notes")
                         .param("page", "0")
                         .param("size", "10")
                         // tag와 filter 생략
@@ -275,7 +275,7 @@ class ApiV1LearningNoteControllerTest {
                 { "marked": true }
                 """;
 
-        mockMvc.perform(patch("/api/v1/learningNotes/feedbacks/{feedbackId}/mark/learned", fb2Id)
+        mockMvc.perform(patch("/api/v1/learning-notes/feedbacks/{feedbackId}/mark/learned", fb2Id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andDo(print())
@@ -294,7 +294,7 @@ class ApiV1LearningNoteControllerTest {
                 { "marked": false }
                 """;
 
-        mockMvc.perform(patch("/api/v1/learningNotes/feedbacks/{feedbackId}/mark/unlearned", fb1Id)
+        mockMvc.perform(patch("/api/v1/learning-notes/feedbacks/{feedbackId}/mark/unlearned", fb1Id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andDo(print())
@@ -313,7 +313,7 @@ class ApiV1LearningNoteControllerTest {
                 { "marked": true }
                 """;
 
-        mockMvc.perform(patch("/api/v1/learningNotes/feedbacks/{feedbackId}/mark/learned", 999L)
+        mockMvc.perform(patch("/api/v1/learning-notes/feedbacks/{feedbackId}/mark/learned", 999L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andDo(print())
