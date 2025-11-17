@@ -24,7 +24,7 @@ import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
 
 @RestController
-@RequestMapping("/api/v1/learningeotes")
+@RequestMapping("/api/v1/learningNotes")
 @RequiredArgsConstructor
 public class ApiV1LearningNoteController implements ApiLearningNoteController{
     private final LearningNoteService learningNoteService;
@@ -58,7 +58,7 @@ public class ApiV1LearningNoteController implements ApiLearningNoteController{
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         learningNoteService.updateFeedbackMark(feedbackId, user.getId(), true);
-        return CustomResponse.ok("피드백 학습 상태가 변경되었습니다.");
+        return CustomResponse.ok("피드백이 학습 완료로 변경되었습니다.");
     }
 
     @Override
