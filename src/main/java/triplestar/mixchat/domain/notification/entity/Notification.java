@@ -7,6 +7,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -22,6 +23,9 @@ public class Notification extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private Member receiver;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Member sender;
+
     @Column(nullable = false)
     private NotificationType type;
 
@@ -30,28 +34,22 @@ public class Notification extends BaseEntity {
     @Column(nullable = false)
     private boolean isRead;
 
-    private Notification(Member receiver, NotificationType type, String content) {
-        validate(receiver, type, content);
+    @Builder
+    private Notification(Member receiver, Member sender, NotificationType type, String content) {
+        validate(receiver, type);
         this.receiver = receiver;
+        this.sender = sender;
         this.type = type;
         this.content = content;
     }
 
-    private void validate(Member receiver, NotificationType type, String content) {
+    private void validate(Member receiver, NotificationType type) {
         if (receiver == null) {
             throw new IllegalArgumentException("수신자는 null일 수 없습니다.");
         }
         if (type == null) {
             throw new IllegalArgumentException("알림 유형은 null일 수 없습니다.");
         }
-    }
-
-    public static Notification create(Member receiver, NotificationType type, String content) {
-        return new Notification(receiver, type, content);
-    }
-
-    public static Notification createWithoutContent(Member receiver, NotificationType type) {
-        return new Notification(receiver, type, null);
     }
 
     public void read() {

@@ -1,14 +1,28 @@
 package triplestar.mixchat.domain.notification.event;
 
+import org.springframework.lang.Nullable;
 import triplestar.mixchat.domain.notification.constant.NotificationType;
 
 public record NotificationEvent(
     Long receiverId,
-    String nickname,
+    @Nullable Long senderId,
     NotificationType type,
-    String extraContent
+    @Nullable String extraContent
 ) {
-    public static NotificationEvent createWithoutContent(Long receiverId, String nickname, NotificationType type) {
-        return new NotificationEvent(receiverId, nickname, type, null);
+    public NotificationEvent {
+        validate(receiverId, type);
+    }
+
+    private void validate(Long receiverId, NotificationType type) {
+        if (receiverId == null) {
+            throw new IllegalArgumentException("receiverId는 null일 수 없습니다.");
+        }
+        if (type == null) {
+            throw new IllegalArgumentException("type은 null일 수 없습니다.");
+        }
+    }
+
+    public NotificationEvent(Long receiverId, Long senderId, NotificationType type) {
+        this(receiverId, senderId, type, null);
     }
 }

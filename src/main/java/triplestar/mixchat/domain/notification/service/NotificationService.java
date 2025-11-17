@@ -18,7 +18,7 @@ import triplestar.mixchat.domain.notification.entity.Notification;
 import triplestar.mixchat.domain.notification.repository.NotificationRepository;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class NotificationService {
 
@@ -43,19 +43,32 @@ public class NotificationService {
     /**
      * 알림 생성
      */
-    public NotificationResp createNotification(NotificationEvent req) {
-        Member receiver = memberRepository.findById(req.receiverId())
+    @Transactional
+    public NotificationResp createNotification(NotificationEvent event) {
+        Member receiver = memberRepository.findById(event.receiverId())
                 .orElseThrow(() -> new EntityNotFoundException("해당 회원 ID 없음"));
 
-        Notification notification = Notification.create(receiver, req.type(), req.extraContent());
+        Member sender = null;
+        if (event.senderId() != null) {
+            sender = memberRepository.findById(event.senderId())
+                    .orElseThrow(() -> new EntityNotFoundException("해당 회원 ID 없음"));
+        }
+
+        Notification notification = Notification.builder()
+                .receiver(receiver)
+                .sender(sender)
+                .type(event.type())
+                .content(event.extraContent()).build();
 
         Notification saved = notificationRepository.save(notification);
 
         return new NotificationResp(
                 saved.getId(),
                 saved.getReceiver().getId(),
-                saved.getReceiver().getNickname(),
+                saved.getSender() == null ? null : saved.getSender().getId(),
+                saved.getSender() == null ? null : saved.getSender().getNickname(),
                 saved.getType(),
+                saved.isRead(),
                 saved.getCreatedAt(),
                 saved.getContent()
         );
@@ -65,26 +78,18 @@ public class NotificationService {
      * 알림 조회(페이징)
      */
     public Page<NotificationResp> getNotifications(Long receiverId, Pageable pageable) {
-        Page<Notification> notifications = notificationRepository.findAllByReceiverId(receiverId, pageable);
-
-        // 이제 nickname조회로 N+1 고려해야함
-        return notifications.map(notification -> new NotificationResp(
-                notification.getId(),
-                notification.getReceiver().getId(),
-                notification.getReceiver().getNickname(),
-                notification.getType(),
-                notification.getCreatedAt(),
-                notification.getContent()
-        ));
+        return notificationRepository.findAllByReceiverId(receiverId, pageable);
     }
 
     /**
-     * 읽음 처리
+     * 수정(읽음 처리)
      */
+    @Transactional
     public void markAsRead(Long memberId, Long id) {
         findNotificationById(memberId, id).read();
     }
 
+    @Transactional
     public void markAllAsRead(Long memberId) {
         notificationRepository.markAllAsRead(memberId);
     }
@@ -92,22 +97,25 @@ public class NotificationService {
     /**
      * 삭제
      */
+    @Transactional
     public void deleteNotification(Long memberId, Long id) {
         Notification notification = findNotificationById(memberId, id);
         notificationRepository.delete(notification);
     }
 
+    @Transactional
     public void deleteAllNotifications(Long memberId) {
         notificationRepository.deleteAllByReceiver(memberId);
+    }
+
+    // 매일 새벽 3시에 실행
+    @Scheduled(cron = "0 0 3 * * ?")
+    public void scheduledDeleteOldNotifications() {
+        deleteOldNotifications();
     }
 
     private void deleteOldNotifications() {
         LocalDateTime threshold = LocalDateTime.now().minusDays(retentionDays);
         notificationRepository.deleteOld(threshold);
-    }
-
-    @Scheduled(cron = "0 0 3 * * ?") // 매일 새벽 3시에 실행
-    public void scheduledDeleteOldNotifications() {
-        deleteOldNotifications();
     }
 }

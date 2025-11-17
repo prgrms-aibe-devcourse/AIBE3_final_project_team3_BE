@@ -52,9 +52,9 @@ class NotificationServiceTest {
     @Test
     @DisplayName("알림 생성 성공")
     void create_notification_success() {
-        NotificationEvent event = NotificationEvent.createWithoutContent(
+        NotificationEvent event = new NotificationEvent(
                 member2.getId(),
-                member2.getNickname(),
+                member1.getId(),
                 NotificationType.FRIEND_REQUEST
         );
 
@@ -67,13 +67,27 @@ class NotificationServiceTest {
     }
 
     @Test
+    @DisplayName("알림 생성 성공 - 발신자는 없어도 됨")
+    void create_notification_success_anonymous() {
+        NotificationEvent event = new NotificationEvent(
+                member2.getId(),
+                null,
+                NotificationType.SYSTEM_ALERT
+        );
+
+        notificationService.createNotification(event);
+    }
+
+
+    @Test
     @DisplayName("알림 생성 실패 - 존재하지 않는 회원")
     void create_notification_fail() {
-        NotificationEvent event = NotificationEvent.createWithoutContent(
+        NotificationEvent event = new NotificationEvent(
                 Long.MAX_VALUE,
-                "nickname",
+                member1.getId(),
                 NotificationType.FRIEND_REQUEST
         );
+
 
         Assertions.assertThatThrownBy(() -> notificationService.createNotification(event))
                 .isInstanceOf(EntityNotFoundException.class)
@@ -81,12 +95,26 @@ class NotificationServiceTest {
     }
 
     @Test
+    @DisplayName("알림 생성 실패 - 존재하지 않는 발신자")
+    void create_notification_sender_fail() {
+        NotificationEvent event = new NotificationEvent(
+                member1.getId(),
+                Long.MAX_VALUE,
+                NotificationType.FRIEND_REQUEST
+        );
+
+        Assertions.assertThatThrownBy(() -> notificationService.createNotification(event))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("해당 회원 ID 없음");
+    }
+
+    @Test
     @DisplayName("알림 조회 성공")
     void get_notifications_success() {
         for (int i = 0; i < 5; i++) {
-            NotificationEvent event = NotificationEvent.createWithoutContent(
+            NotificationEvent event = new NotificationEvent(
                     member2.getId(),
-                    member2.getNickname(),
+                    member1.getId(),
                     NotificationType.MESSAGE
             );
             notificationService.createNotification(event);
@@ -114,9 +142,9 @@ class NotificationServiceTest {
     @Test
     @DisplayName("알림 읽음 처리 성공")
     void mark_as_read_success() {
-        NotificationEvent event = NotificationEvent.createWithoutContent(
+        NotificationEvent event = new NotificationEvent(
                 member2.getId(),
-                member2.getNickname(),
+                member1.getId(),
                 NotificationType.MESSAGE
         );
         NotificationResp resp = notificationService.createNotification(event);
@@ -145,9 +173,9 @@ class NotificationServiceTest {
     @DisplayName("모든 알림 읽음 처리 성공")
     void mark_all_as_read_success() {
         for (int i = 0; i < 3; i++) {
-            NotificationEvent event = NotificationEvent.createWithoutContent(
+            NotificationEvent event = new NotificationEvent(
                     member2.getId(),
-                    member2.getNickname(),
+                    member1.getId(),
                     NotificationType.MESSAGE
             );
             notificationService.createNotification(event);
@@ -166,10 +194,10 @@ class NotificationServiceTest {
     @Test
     @DisplayName("알림 삭제 성공")
     void delete_notification_success() {
-        NotificationEvent event = NotificationEvent.createWithoutContent(
+        NotificationEvent event = new NotificationEvent(
                 member2.getId(),
-                member2.getNickname(),
-                NotificationType.CHAT_INVITATION
+                member1.getId(),
+                NotificationType.MESSAGE
         );
         NotificationResp resp = notificationService.createNotification(event);
 
@@ -195,9 +223,9 @@ class NotificationServiceTest {
     @DisplayName("모든 알림 삭제 성공")
     void delete_all_notifications_success() {
         for (int i = 0; i < 4; i++) {
-            NotificationEvent event = NotificationEvent.createWithoutContent(
+            NotificationEvent event = new NotificationEvent(
                     member2.getId(),
-                    member2.getNickname(),
+                    member1.getId(),
                     NotificationType.CHAT_INVITATION
             );
             notificationService.createNotification(event);
