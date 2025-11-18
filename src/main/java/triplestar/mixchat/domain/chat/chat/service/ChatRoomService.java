@@ -14,6 +14,7 @@ import triplestar.mixchat.domain.chat.chat.repository.ChatMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.global.cache.ChatAuthCacheService;
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -29,9 +30,10 @@ public class ChatRoomService {
     private final MemberRepository memberRepository;
     private final ChatMemberRepository chatMemberRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatAuthCacheService chatAuthCacheService; // 캐시 서비스 주입
 
     // 구독 가능한 채팅방 패턴
-    private static final Pattern ROOM_DESTINATION_PATTERN = Pattern.compile("^/topic/rooms/(\\d+)$");
+    private static final Pattern ROOM_DESTINATION_PATTERN = Pattern.compile("^/topic/rooms/(\\d+)$\u0022);
 
 
     //== 인가(Authorization) 관련 메서드 ==//
@@ -46,17 +48,28 @@ public class ChatRoomService {
         return null;
     }
 
-    // 사용자가 해당 채팅방의 멤버인지 확인
+    // 사용자가 해당 채팅방의 멤버인지 확인 (캐시 적용)
     @Transactional(readOnly = true)
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
         if (roomId == null || memberId == null) {
             throw new AccessDeniedException("사용자 또는 채팅방 정보가 유효하지 않습니다.");
         }
+
+        // 1. 캐시에서 먼저 확인
+        if (chatAuthCacheService.isMember(roomId, memberId)) {
+            return; // 캐시에 존재하면 DB 조회 없이 바로 통과
+        }
+
+        // 2. 캐시에 없으면 DB 조회 (Cache Miss)
         boolean isMember = chatMemberRepository.existsByMemberIdAndChatRoomId(memberId, roomId);
         if (!isMember) {
             log.warn("인가 거부: 사용자(ID:{})가 채팅방(ID:{})의 멤버가 아닙니다.", memberId, roomId);
             throw new AccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
         }
+
+        // 3. DB에 존재하면, 그 결과를 캐시에 저장 (다음 조회를 위해)
+        log.debug("DB check passed for user {} in room {}. Caching the result.", memberId, roomId);
+        chatAuthCacheService.addMember(roomId, memberId);
     }
 
 
@@ -128,6 +141,8 @@ public class ChatRoomService {
                 .map(ChatRoomResp::from)
                 .collect(Collectors.toList());
     }
+
+
 
     public ChatRoom getRoom(Long id) {
         return chatRoomRepository.findById(id).orElseThrow(() -> new RuntimeException("채팅방 없음"));
