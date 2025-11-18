@@ -15,7 +15,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import triplestar.mixchat.domain.chat.chat.service.ChatRoomService;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -64,8 +63,9 @@ public class StompHandler implements ChannelInterceptor {
     }
 
     private void handleSend(StompHeaderAccessor accessor) {
+        log.info("==========> !!STOMP SEND command is being handled!! <==========");
         Authentication authentication = requireAuth(accessor);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        // SecurityContextHolder.getContext().setAuthentication(authentication); // @MessageMapping에 @PreAuthorize("hasRole('ADMIN')")등 고급 보안 기능 추가 고려
         log.debug("STOMP SEND: Authenticated user {} for destination {}", authentication.getName(), accessor.getDestination());
     }
 
