@@ -67,6 +67,10 @@ public class ApiV1AuthController implements ApiAuthController {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
+        if (request.getCookies() == null) {
+            return CustomResponse.ok("로그아웃 되었습니다.");
+        }
+
         String refreshToken = cookieHelper.findRefreshTokenCookie(request);
 
         authService.logout(refreshToken);

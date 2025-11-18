@@ -16,7 +16,6 @@ public class CookieHelper {
     @Value("${cookie.domain}")
     private String cookieDomain;
 
-
     public Cookie generateRefreshTokenCookie(String refreshToken) {
         Cookie cookie = new Cookie("RefreshToken", refreshToken);
 
@@ -30,10 +29,9 @@ public class CookieHelper {
         return cookie;
     }
 
-
     public String findRefreshTokenCookie(HttpServletRequest httpServletRequest) {
         Cookie[] cookies = httpServletRequest.getCookies();
-        if (cookies == null || cookies.length == 0) {
+        if (cookies == null) {
             throw new BadCredentialsException("리프레시 토큰이 존재하지 않습니다.");
         }
 
