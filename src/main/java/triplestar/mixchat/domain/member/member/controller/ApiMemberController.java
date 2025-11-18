@@ -4,9 +4,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
+import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.dto.MemberProfileResp;
 import triplestar.mixchat.global.response.CustomResponse;
@@ -39,7 +39,7 @@ public interface ApiMemberController {
             @Parameter(description = "업로드할 이미지 파일")
             MultipartFile multipartFile
     );
-
+  
     // --- 3. 회원 상세 프로필 조회 (GET /{id}) ---
     @Operation(
             summary = "회원 상세 프로필 조회",
@@ -50,5 +50,20 @@ public interface ApiMemberController {
             CustomUserDetails customUserDetails, // 토큰이 있다면 인증 정보를 주입
             @Parameter(description = "조회 대상 회원의 ID", example = "10")
             Long id
+    );
+
+    // --- 4. 내 정보 조회 (GET /me) ---
+    @Operation(summary = "내 정보 조회", description = "인증된 사용자의 프로필 정보를 조회합니다.")
+    @SignInInRequireResponse
+    CustomResponse<MemberProfileResp> getMyProfile( // 반환 타입을 MemberProfileResp로 통일
+            @Parameter(hidden = true)
+            CustomUserDetails customUserDetails
+    );
+
+    // --- 5. 모든 회원 목록 조회 (GET /) ---
+    @Operation(summary = "모든 회원 목록 조회", description = "채팅 상대로 추가할 수 있는 모든 회원 목록을 조회합니다. 자기 자신은 목록에서 제외됩니다.")
+    CustomResponse<List<MemberSummaryResp>> findAllMembers(
+            @Parameter(hidden = true)
+            CustomUserDetails userDetails
     );
 }

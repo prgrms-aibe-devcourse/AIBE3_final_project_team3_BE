@@ -3,6 +3,7 @@ package triplestar.mixchat.domain.learningNote.learningNote;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -24,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningFilter;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.Feedback;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
+import triplestar.mixchat.domain.learningNote.learningNote.repository.FeedbackRepository;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
@@ -34,7 +36,7 @@ import triplestar.mixchat.testutils.TestMemberFactory;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-@DisplayName("학습노트 생성 API 테스트")
+@DisplayName("학습노트 API 테스트")
 class ApiV1LearningNoteControllerTest {
 
     @Autowired
@@ -43,14 +45,19 @@ class ApiV1LearningNoteControllerTest {
     private MemberRepository memberRepository;
     @Autowired
     private LearningNoteRepository learningNoteRepository;
+    @Autowired
+    private FeedbackRepository feedbackRepository;
 
     private Member testMember;
-    private Long memberId;
-
+    private Member anotherMember;
+    private Long fb1Id;
+    private Long fb2Id;
     @BeforeEach
     void setUp() {
         testMember = memberRepository.save(TestMemberFactory.createMember("testUser1"));
-        memberId = testMember.getId();
+
+        anotherMember = memberRepository.save(TestMemberFactory.createMember("anotherUser"));
+
         // 학습노트 #1 (GRAMMAR + TRANSLATION 혼합)
         LearningNote note1 = LearningNote.create(testMember, "I goes to 학교.", "I go to school.");
         Feedback fb1 = Feedback.create(note1, TranslationTagCode.GRAMMAR, "goes", "go", "삼인칭 단수 수정");
@@ -78,6 +85,8 @@ class ApiV1LearningNoteControllerTest {
         note3.addFeedback(fb5);
         note3.addFeedback(fb6);
         learningNoteRepository.saveAll(List.of(note1, note2, note3));
+        fb1Id = fb1.getId();
+        fb2Id = fb2.getId();
     }
 
     @Test
@@ -86,7 +95,6 @@ class ApiV1LearningNoteControllerTest {
     void createLearningNote_success() throws Exception {
         String requestJson = """
             {
-              "memberId": %d,
               "originalContent": "I goes to 학교 every day.",
               "correctedContent": "I go to school every day.",
               "feedback": [
@@ -94,10 +102,10 @@ class ApiV1LearningNoteControllerTest {
                 {"tag": "TRANSLATION", "problem": "학교", "correction": "school", "extra": "단어 번역"}
               ]
             }
-            """.formatted(testMember.getId());
+            """;
 
         mockMvc.perform(
-                        post("/api/v1/learning/notes")
+                        post("/api/v1/learning-notes")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(requestJson)
                 )
@@ -135,15 +143,14 @@ class ApiV1LearningNoteControllerTest {
     void createLearningNote_missingField_fail() throws Exception {
         String invalidJson = """
             {
-              "memberId": %d,
               "correctedContent": "I go to school every day.",
               "feedback": [
                 {"tag": "GRAMMAR", "problem": "goes", "correction": "go", "extra": "시제 수정"}
               ]
             }
-            """.formatted(testMember.getId());
+            """;
 
-        mockMvc.perform(post("/api/v1/learning/notes")
+        mockMvc.perform(post("/api/v1/learning-notes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidJson))
                 .andDo(print())
@@ -157,7 +164,6 @@ class ApiV1LearningNoteControllerTest {
     void createLearningNote_unauthenticated_fail() throws Exception {
         String requestJson = """
             {
-              "memberId": 999,
               "originalContent": "I goes to 학교 every day.",
               "correctedContent": "I go to school every day.",
               "feedback": [
@@ -166,7 +172,7 @@ class ApiV1LearningNoteControllerTest {
             }
             """;
 
-        mockMvc.perform(post("/api/v1/learning/notes")
+        mockMvc.perform(post("/api/v1/learning-notes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andDo(print())
@@ -177,10 +183,9 @@ class ApiV1LearningNoteControllerTest {
     @DisplayName("학습노트 목록 조회 성공 - GRAMMAR 태그 + LEARNED 상태 (2개 결과)")
     @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void getLearningNotes_grammar_learned_success() throws Exception {
-        mockMvc.perform(get("/api/v1/learning/notes")
+        mockMvc.perform(get("/api/v1/learning-notes")
                         .param("page", "0")
                         .param("size", "10")
-                        .param("memberId", memberId.toString())
                         .param("tag", TranslationTagCode.GRAMMAR.toString())
                         .param("learningFilter", LearningFilter.LEARNED.toString())
                         .contentType(MediaType.APPLICATION_JSON))
@@ -198,10 +203,9 @@ class ApiV1LearningNoteControllerTest {
     @DisplayName("학습노트 목록 조회 성공 - TRANSLATION 태그 + UNLEARNED 상태 (3개 결과)")
     @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void getLearningNotes_translation_unlearned_success() throws Exception {
-        mockMvc.perform(get("/api/v1/learning/notes")
+        mockMvc.perform(get("/api/v1/learning-notes")
                         .param("page", "0")
                         .param("size", "10")
-                        .param("memberId", memberId.toString())
                         .param("tag", TranslationTagCode.TRANSLATION.toString())
                         .param("learningFilter", LearningFilter.UNLEARNED.toString())
                         .contentType(MediaType.APPLICATION_JSON))
@@ -219,10 +223,9 @@ class ApiV1LearningNoteControllerTest {
     @DisplayName("학습노트 목록 조회 성공 - GRAMMAR 태그 + ALL 상태 (3개 결과)")
     @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void getLearningNotes_grammar_all_success() throws Exception {
-        mockMvc.perform(get("/api/v1/learning/notes")
+        mockMvc.perform(get("/api/v1/learning-notes")
                         .param("page", "0")
                         .param("size", "10")
-                        .param("memberId", memberId.toString())
                         .param("tag", TranslationTagCode.GRAMMAR.toString())
                         .param("learningFilter", LearningFilter.ALL.toString())
                         .contentType(MediaType.APPLICATION_JSON))
@@ -241,10 +244,9 @@ class ApiV1LearningNoteControllerTest {
     @DisplayName("학습노트 목록 조회 실패 - 잘못된 태그 입력 시 400 반환")
     @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void getLearningNotes_invalidTag_fail_noBody() throws Exception {
-        mockMvc.perform(get("/api/v1/learning/notes")
+        mockMvc.perform(get("/api/v1/learning-notes")
                         .param("page", "0")
                         .param("size", "10")
-                        .param("memberId", memberId.toString())
                         .param("tag", "WRONG_TAG") // 존재하지 않는 Enum
                         .param("filter", "ALL")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -256,13 +258,66 @@ class ApiV1LearningNoteControllerTest {
     @DisplayName("학습노트 목록 조회 실패 - 필수 파라미터 누락 시 400 반환")
     @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void getLearningNotes_missingParams_fail() throws Exception {
-        mockMvc.perform(get("/api/v1/learning/notes")
+        mockMvc.perform(get("/api/v1/learning-notes")
                         .param("page", "0")
                         .param("size", "10")
                         // tag와 filter 생략
-                        .param("memberId", memberId.toString())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("성공 - 피드백 상태를 학습 완료로 변경한다 (marked=true)")
+    @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void updateFeedbackMark_success_toLearned() throws Exception {
+        String requestJson = """
+                { "marked": true }
+                """;
+
+        mockMvc.perform(patch("/api/v1/learning-notes/feedbacks/{feedbackId}/mark/learned", fb2Id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.msg").value("피드백이 학습 완료로 변경되었습니다."));
+
+        Feedback updated = feedbackRepository.findById(fb2Id).orElseThrow();
+        assertThat(updated.isMarked()).isTrue();
+    }
+
+    @Test
+    @DisplayName("성공 - 피드백 상태를 학습 미완료로 변경한다 (marked=false)")
+    @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void updateFeedbackMark_success_toUnlearned() throws Exception {
+        String requestJson = """
+                { "marked": false }
+                """;
+
+        mockMvc.perform(patch("/api/v1/learning-notes/feedbacks/{feedbackId}/mark/unlearned", fb1Id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.msg").value("피드백이 학습 미완료로 변경되었습니다."));
+
+        Feedback updated = feedbackRepository.findById(fb1Id).orElseThrow();
+        assertThat(updated.isMarked()).isFalse();
+    }
+
+    @Test
+    @DisplayName("실패 - 존재하지 않는 피드백 ID로 요청 시 404 반환")
+    @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void updateFeedbackMark_fail_notFound() throws Exception {
+        String requestJson = """
+                { "marked": true }
+                """;
+
+        mockMvc.perform(patch("/api/v1/learning-notes/feedbacks/{feedbackId}/mark/learned", 999L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.msg").value("존재하지 않는 엔티티에 접근했습니다."));
     }
 }

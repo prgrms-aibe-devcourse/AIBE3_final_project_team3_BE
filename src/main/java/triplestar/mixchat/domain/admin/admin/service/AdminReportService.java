@@ -1,23 +1,24 @@
-package triplestar.mixchat.domain.report.report.service;
+package triplestar.mixchat.domain.admin.admin.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.admin.admin.dto.ReportAdminListResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.report.report.constant.ReportStatus;
-import triplestar.mixchat.domain.report.report.dto.ReportAdminListResp;
 import triplestar.mixchat.domain.report.report.entity.Report;
 import triplestar.mixchat.domain.report.report.repository.ReportRepository;
 
 @Service
 @RequiredArgsConstructor
-public class ReportAdminService {
+public class AdminReportService {
     private final ReportRepository reportRepository;
     private final MemberRepository memberRepository;
 
+    // -- 신고 관련 --
     @Transactional
     public Report updateReportStatus(Long reportId, ReportStatus newStatus) {
 
