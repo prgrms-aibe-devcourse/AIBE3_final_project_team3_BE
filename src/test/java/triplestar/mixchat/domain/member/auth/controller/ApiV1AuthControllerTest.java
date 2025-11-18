@@ -21,9 +21,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
 import triplestar.mixchat.domain.member.auth.dto.LogInReq;
 import triplestar.mixchat.domain.member.auth.dto.LogInResp;
+import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
 import triplestar.mixchat.domain.member.auth.service.AuthService;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.testutils.RedisTestContainer;
@@ -243,6 +243,21 @@ class ApiV1AuthControllerTest extends RedisTestContainer {
 
         assertThat(expiredCookie).isNotNull();
         assertThat(expiredCookie.getMaxAge()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("로그아웃 - 토큰 없어도 성공")
+    void logout_success_no_token() throws Exception {
+        ResultActions resultActions = mvc
+                .perform(
+                        post("/api/v1/auth/logout")
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print());
+
+        resultActions.andExpect(handler().handlerType(ApiV1AuthController.class))
+                .andExpect(handler().methodName("logout"))
+                .andExpect(status().isOk());
     }
 
     @Test
