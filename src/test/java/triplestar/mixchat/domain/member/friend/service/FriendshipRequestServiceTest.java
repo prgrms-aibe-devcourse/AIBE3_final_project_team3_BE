@@ -19,7 +19,7 @@ import triplestar.mixchat.testutils.TestMemberFactory;
 
 @Transactional
 @ActiveProfiles("test")
-@DisplayName("친구 요청/처리 테스트")
+@DisplayName("친구 요청/처리 서비스")
 @SpringBootTest
 class FriendshipRequestServiceTest {
 

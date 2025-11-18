@@ -4,16 +4,20 @@ package triplestar.mixchat.domain.chat.chat.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatRoom;
+import triplestar.mixchat.domain.chat.chat.repository.ChatMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,7 +27,38 @@ public class ChatRoomService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final MemberRepository memberRepository;
+    private final ChatMemberRepository chatMemberRepository;
     private final SimpMessagingTemplate messagingTemplate;
+
+    // 구독 가능한 채팅방 패턴
+    private static final Pattern ROOM_DESTINATION_PATTERN = Pattern.compile("^/topic/rooms/(\\d+)$");
+
+
+    //== 인가(Authorization) 관련 메서드 ==//
+
+    // STOMP destination 경로에서 채팅방 ID(Long)를 추출
+    public Long getRoomIdFromDestination(String destination) {
+        if (destination == null) return null;
+        Matcher matcher = ROOM_DESTINATION_PATTERN.matcher(destination);
+        if (matcher.matches()) {
+            return Long.parseLong(matcher.group(1));
+        }
+        return null;
+    }
+
+    // 사용자가 해당 채팅방의 멤버인지 확인
+    @Transactional(readOnly = true)
+    public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
+        if (roomId == null || memberId == null) {
+            throw new AccessDeniedException("사용자 또는 채팅방 정보가 유효하지 않습니다.");
+        }
+        boolean isMember = chatMemberRepository.existsByMemberIdAndChatRoomId(memberId, roomId);
+        if (!isMember) {
+            log.warn("인가 거부: 사용자(ID:{})가 채팅방(ID:{})의 멤버가 아닙니다.", memberId, roomId);
+            throw new AccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
+        }
+    }
+
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
@@ -49,8 +84,8 @@ public class ChatRoomService {
 
                     ChatRoomResp roomDto = ChatRoomResp.from(savedRoom);
 
-                    messagingTemplate.convertAndSend("/topic/user/" + member1.getId() + "/rooms", roomDto);
-                    messagingTemplate.convertAndSend("/topic/user/" + member2.getId() + "/rooms", roomDto);
+                    messagingTemplate.convertAndSendToUser(member1.getId().toString(), "/topic/rooms", roomDto);
+                    messagingTemplate.convertAndSendToUser(member2.getId().toString(), "/topic/rooms", roomDto);
 
                     return savedRoom;
                 });
@@ -78,7 +113,7 @@ public class ChatRoomService {
 
         ChatRoomResp roomDto = ChatRoomResp.from(savedRoom);
         members.forEach(member -> {
-            messagingTemplate.convertAndSend("/topic/user/" + member.getId() + "/rooms", roomDto);
+            messagingTemplate.convertAndSendToUser(member.getId().toString(), "/topic/rooms", roomDto);
         });
 
         return roomDto;

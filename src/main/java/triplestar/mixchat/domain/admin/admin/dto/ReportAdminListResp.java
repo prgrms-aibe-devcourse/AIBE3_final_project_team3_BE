@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.report.report.dto;
+package triplestar.mixchat.domain.admin.admin.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
