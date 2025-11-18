@@ -9,7 +9,7 @@ import triplestar.mixchat.domain.report.report.constant.ReportStatus;
 import triplestar.mixchat.domain.report.report.entity.Report;
 
 @Schema(description = "관리자용 신고 목록 응답")
-public record ReportAdminListResp(
+public record AdminReportListResp(
         @NotNull
         @Schema(description = "신고 ID", example = "1")
         Long id,
@@ -38,8 +38,8 @@ public record ReportAdminListResp(
         @Schema(description = "신고 생성일시", example = "2025-11-12T15:30:00")
         LocalDateTime createdAt
 ) {
-    public static ReportAdminListResp from(Report report) {
-        return new ReportAdminListResp(
+    public static AdminReportListResp from(Report report) {
+        return new AdminReportListResp(
                 report.getId(),
                 report.getTargetMemberId(),
                 report.getReportedMsgContent(),

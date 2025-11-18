@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import triplestar.mixchat.domain.admin.admin.dto.ReportAdminListResp;
+import triplestar.mixchat.domain.admin.admin.dto.AdminReportListResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.report.report.constant.ReportStatus;
@@ -38,9 +38,9 @@ public class AdminReportService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ReportAdminListResp> getReports(int page, int size) {
+    public Page<AdminReportListResp> getReports(int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
         return reportRepository.findAll(pageable)
-                .map(ReportAdminListResp::from);
+                .map(AdminReportListResp::from);
     }
 }
