@@ -66,7 +66,7 @@ class ApiV1NotificationControllerTest {
         // member2에게 보내진 알림 (member1로 로그인했을 때 조회되지 않아야 함)
         notification3 = notificationRepository.save(Notification.builder()
                 .receiver(member2)
-                .type(NotificationType.MESSAGE).build()
+                .type(NotificationType.CHAT_MESSAGE).build()
         );
     }
 

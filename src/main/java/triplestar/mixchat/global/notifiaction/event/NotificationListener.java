@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.notification.event;
+package triplestar.mixchat.global.notifiaction.event;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,7 @@ public class NotificationListener {
         // DB에 알림 저장
         NotificationResp notification = notificationService.createNotification(event);
 
-        String destination = "/topic/notifications/";
+        String destination = "/queue/notifications/";
 
         try {
             // 개인 사용자에게 웹소켓 알림 전송

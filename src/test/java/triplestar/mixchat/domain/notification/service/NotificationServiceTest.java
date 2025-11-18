@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.notification.constant.NotificationType;
-import triplestar.mixchat.domain.notification.event.NotificationEvent;
+import triplestar.mixchat.global.notifiaction.event.NotificationEvent;
 import triplestar.mixchat.domain.notification.dto.NotificationResp;
 import triplestar.mixchat.domain.notification.entity.Notification;
 import triplestar.mixchat.domain.notification.repository.NotificationRepository;
@@ -115,7 +115,7 @@ class NotificationServiceTest {
             NotificationEvent event = new NotificationEvent(
                     member2.getId(),
                     member1.getId(),
-                    NotificationType.MESSAGE
+                    NotificationType.CHAT_MESSAGE
             );
             notificationService.createNotification(event);
         }
@@ -126,7 +126,7 @@ class NotificationServiceTest {
         assertThat(notificationsPage.getTotalElements()).isEqualTo(5);
         assertThat(notificationsPage.getContent()).allSatisfy(notificationResp -> {
             assertThat(notificationResp.receiverId()).isEqualTo(member2.getId());
-            assertThat(notificationResp.type()).isEqualTo(NotificationType.MESSAGE);
+            assertThat(notificationResp.type()).isEqualTo(NotificationType.CHAT_MESSAGE);
         });
     }
 
@@ -145,7 +145,7 @@ class NotificationServiceTest {
         NotificationEvent event = new NotificationEvent(
                 member2.getId(),
                 member1.getId(),
-                NotificationType.MESSAGE
+                NotificationType.CHAT_MESSAGE
         );
         NotificationResp resp = notificationService.createNotification(event);
 
@@ -176,7 +176,7 @@ class NotificationServiceTest {
             NotificationEvent event = new NotificationEvent(
                     member2.getId(),
                     member1.getId(),
-                    NotificationType.MESSAGE
+                    NotificationType.CHAT_MESSAGE
             );
             notificationService.createNotification(event);
         }
@@ -197,7 +197,7 @@ class NotificationServiceTest {
         NotificationEvent event = new NotificationEvent(
                 member2.getId(),
                 member1.getId(),
-                NotificationType.MESSAGE
+                NotificationType.CHAT_MESSAGE
         );
         NotificationResp resp = notificationService.createNotification(event);
 

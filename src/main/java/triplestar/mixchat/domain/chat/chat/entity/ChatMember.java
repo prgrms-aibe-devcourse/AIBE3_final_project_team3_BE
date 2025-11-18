@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import triplestar.mixchat.domain.chat.chat.constant.ChatNotificationSetting;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
@@ -29,6 +30,8 @@ public class ChatMember extends BaseEntity {
 
     private LocalDateTime lastReadAt;
 
+    private ChatNotificationSetting chatNotificationSetting;
+
     public ChatMember(Member member, ChatRoom chatRoom, UserType userType) {
         if (member == null) {
             throw new IllegalArgumentException("member는 null일 수 없습니다.");
@@ -49,5 +52,9 @@ public class ChatMember extends BaseEntity {
 
     public enum UserType {
         ROOM_MEMBER, ROOM_OWNER
+    }
+
+    public boolean isNotificationSettingAlways() {
+        return this.chatNotificationSetting == ChatNotificationSetting.ALWAYS;
     }
 }
