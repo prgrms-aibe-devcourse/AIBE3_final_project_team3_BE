@@ -1,6 +1,5 @@
 package triplestar.mixchat.global.security;
 
-
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -37,7 +36,8 @@ public class SecurityConfig {
                                 // 인증 불필요
                                 .requestMatchers(
                                         "/", "/swagger-ui/**","/v3/api-docs/**",
-                                        "/api/*/auth/join", "/api/*/auth/sign-in", "api/*/auth/reissue").permitAll()
+                                        "/api/*/auth/join", "/api/*/auth/login",
+                                        "api/*/auth/reissue", "api/*/auth/logout").permitAll()
                                 // 회원 프로필 조회는 인증 불필요
                                 .requestMatchers(HttpMethod.GET, "/api/v1/members/*").permitAll()
                                 // ADMIN 권한 필요
@@ -50,7 +50,7 @@ public class SecurityConfig {
                 // JWT 인증 필터 적용
                 .addFilterBefore(JwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(handling -> handling
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
 
                 // REST API는 사용하지 않는 Security 기본 기능 비활성화

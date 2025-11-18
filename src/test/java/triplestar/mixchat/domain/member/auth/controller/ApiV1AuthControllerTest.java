@@ -1,5 +1,6 @@
 package triplestar.mixchat.domain.member.auth.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -7,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import jakarta.servlet.http.Cookie;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,19 +20,22 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
-import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import triplestar.mixchat.domain.member.auth.dto.LogInReq;
+import triplestar.mixchat.domain.member.auth.dto.LogInResp;
 import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.auth.dto.SignInResp;
-import triplestar.mixchat.domain.member.auth.dto.SignInReq;
 import triplestar.mixchat.domain.member.auth.service.AuthService;
+import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
+import triplestar.mixchat.testutils.RedisTestContainer;
 import triplestar.mixchat.testutils.TestHelperController;
 
 @ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@Testcontainers
 @DisplayName("회원 - 인증 컨트롤러")
-class ApiV1AuthControllerTest {
+class ApiV1AuthControllerTest extends RedisTestContainer {
 
     @Autowired
     private MockMvc mvc;
@@ -98,12 +103,12 @@ class ApiV1AuthControllerTest {
 
     @Test
     @DisplayName("로그인 응답 - 성공")
-    void signIn() throws Exception {
+    void login() throws Exception {
         joinTestData();
 
         ResultActions resultActions = mvc
                 .perform(
-                        post("/api/v1/auth/sign-in")
+                        post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                         {
@@ -114,10 +119,16 @@ class ApiV1AuthControllerTest {
                 )
                 .andDo(print());
 
+        String refreshToken = resultActions.andReturn()
+                .getResponse()
+                .getCookie("RefreshToken").getValue();
+
+        assertThat(refreshToken).isNotNull();
+
         resultActions
                 //실행처 확인
                 .andExpect(handler().handlerType(ApiV1AuthController.class))
-                .andExpect(handler().methodName("signIn"))
+                .andExpect(handler().methodName("login"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.msg").value("로그인에 성공했습니다."));
     }
@@ -138,12 +149,12 @@ class ApiV1AuthControllerTest {
 
     @Test
     @DisplayName("로그인 응답 - 실패(아이디 없음)")
-    void signIn_Email_Fail() throws Exception {
+    void login_Email_Fail() throws Exception {
         joinTestData();
 
         ResultActions resultActions = mvc
                 .perform(
-                        post("/api/v1/auth/sign-in")
+                        post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                         {
@@ -157,19 +168,19 @@ class ApiV1AuthControllerTest {
         resultActions
                 //실행처 확인
                 .andExpect(handler().handlerType(ApiV1AuthController.class))
-                .andExpect(handler().methodName("signIn"))
+                .andExpect(handler().methodName("login"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.msg").value("존재하지 않는 엔티티에 접근했습니다."));
     }
 
     @Test
     @DisplayName("로그인 응답 - 실패(비밀번호 불일치)")
-    void signIn_Password_Fail() throws Exception {
+    void login_Password_Fail() throws Exception {
         joinTestData();
 
         ResultActions resultActions = mvc
                 .perform(
-                        post("/api/v1/auth/sign-in")
+                        post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                         {
@@ -182,9 +193,71 @@ class ApiV1AuthControllerTest {
 
         resultActions
                 .andExpect(handler().handlerType(ApiV1AuthController.class))
-                .andExpect(handler().methodName("signIn"))
+                .andExpect(handler().methodName("login"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.msg").value("잘못된 요청입니다."));
+    }
+
+    @Test
+    @DisplayName("로그아웃 - 성공")
+    void logout_success() throws Exception {
+        // 1. 회원가입
+        joinTestData();
+
+        // 2. 로그인 (쿠키 받기)
+        ResultActions loginResult = mvc
+                .perform(
+                        post("/api/v1/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                            "email": "test@example.com",
+                                            "password": "test1234"
+                                        }
+                                        """)
+                )
+                .andExpect(status().isOk());
+
+        // 3. 쿠키 추출
+        Cookie refreshTokenCookie = loginResult.andReturn()
+                .getResponse()
+                .getCookie("RefreshToken");
+
+        // 4. 로그아웃
+        ResultActions logoutResult = mvc
+                .perform(
+                        post("/api/v1/auth/logout")
+                                .cookie(refreshTokenCookie)
+                )
+                .andDo(print());
+
+        // 5. 검증
+        logoutResult
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.msg").value("로그아웃 되었습니다."));
+
+        // 6. 쿠키 만료 확인
+        Cookie expiredCookie = logoutResult.andReturn()
+                .getResponse()
+                .getCookie("RefreshToken");
+
+        assertThat(expiredCookie).isNotNull();
+        assertThat(expiredCookie.getMaxAge()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("로그아웃 - 토큰 없어도 성공")
+    void logout_success_no_token() throws Exception {
+        ResultActions resultActions = mvc
+                .perform(
+                        post("/api/v1/auth/logout")
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print());
+
+        resultActions.andExpect(handler().handlerType(ApiV1AuthController.class))
+                .andExpect(handler().methodName("logout"))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -192,8 +265,8 @@ class ApiV1AuthControllerTest {
     void accessToken_filter_success() throws Exception {
         joinTestData();
 
-        SignInResp signInResp = authService.signIn(new SignInReq("test@example.com", "test1234"));
-        String accessToken = signInResp.accessToken();
+        LogInResp logInResp = authService.login(new LogInReq("test@example.com", "test1234"));
+        String accessToken = logInResp.accessToken();
 
         ResultActions resultActions = mvc
                 .perform(
@@ -213,8 +286,8 @@ class ApiV1AuthControllerTest {
     void accessToken_filter_counterfeit_fail() throws Exception {
         joinTestData();
 
-        SignInResp signInResp = authService.signIn(new SignInReq("test@example.com", "test1234"));
-        String accessToken = signInResp.accessToken();
+        LogInResp logInResp = authService.login(new LogInReq("test@example.com", "test1234"));
+        String accessToken = logInResp.accessToken();
 
         ResultActions resultActions = mvc
                 .perform(

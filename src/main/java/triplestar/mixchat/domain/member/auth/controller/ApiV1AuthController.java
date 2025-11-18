@@ -4,19 +4,17 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
 import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
-import triplestar.mixchat.domain.member.auth.dto.SignInResp;
-import triplestar.mixchat.domain.member.auth.dto.SignInReq;
+import triplestar.mixchat.domain.member.auth.dto.LogInResp;
+import triplestar.mixchat.domain.member.auth.dto.LogInReq;
 import triplestar.mixchat.domain.member.auth.service.AuthService;
+import triplestar.mixchat.domain.member.auth.util.CookieHelper;
 import triplestar.mixchat.global.response.CustomResponse;
 
 @RestController
@@ -25,12 +23,7 @@ import triplestar.mixchat.global.response.CustomResponse;
 public class ApiV1AuthController implements ApiAuthController {
 
     private final AuthService authService;
-
-    @Value("${jwt.refresh-token-expiration-seconds}")
-    private int refreshTokenExpireSeconds;
-
-    @Value("${cookie.domain}")
-    private String cookieDomain;
+    private final CookieHelper cookieHelper;
 
     @Override
     @PostMapping("/join")
@@ -42,54 +35,47 @@ public class ApiV1AuthController implements ApiAuthController {
     }
 
     @Override
-    @PostMapping("/sign-in")
-    public CustomResponse<String> signIn(
-            @RequestBody @Valid SignInReq signInReq,
+    @PostMapping("/login")
+    public CustomResponse<String> login(
+            @RequestBody @Valid LogInReq logInReq,
             HttpServletResponse httpServletResponse
     ) {
-        SignInResp resp = authService.signIn(signInReq);
+        LogInResp resp = authService.login(logInReq);
 
-        Cookie cookie = generateRefreshTokenCookie(resp.refreshToken());
+        Cookie cookie = cookieHelper.generateRefreshTokenCookie(resp.refreshToken());
         httpServletResponse.addCookie(cookie);
 
         return CustomResponse.ok("로그인에 성공했습니다.", resp.accessToken());
-    }
-
-    private Cookie generateRefreshTokenCookie(String refreshToken) {
-        Cookie cookie = new Cookie("RefreshToken", refreshToken);
-
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setDomain(cookieDomain);
-        cookie.setSecure(true);
-        cookie.setAttribute("SameSite", "strict");
-        cookie.setMaxAge(refreshTokenExpireSeconds);
-
-        return cookie;
     }
 
     @Override
     @PostMapping("/reissue")
     public CustomResponse<String> reissue(HttpServletRequest httpServletRequest,
                                           HttpServletResponse httpServletResponse) {
-        String refreshToken = findRefreshTokenCookie(httpServletRequest);
-        SignInResp resp = authService.reissueAccessToken(refreshToken);
+        String refreshToken = cookieHelper.findRefreshTokenCookie(httpServletRequest);
+        LogInResp resp = authService.reissueAccessToken(refreshToken);
 
-        Cookie cookie = generateRefreshTokenCookie(resp.refreshToken());
+        Cookie cookie = cookieHelper.generateRefreshTokenCookie(resp.refreshToken());
         httpServletResponse.addCookie(cookie);
 
         return CustomResponse.ok("액세스 토큰이 재발급되었습니다.", resp.accessToken());
     }
 
-    private String findRefreshTokenCookie(HttpServletRequest httpServletRequest) {
-        Cookie[] cookies = httpServletRequest.getCookies();
-        if (cookies == null || cookies.length == 0) {
-            throw new BadCredentialsException("리프레시 토큰이 존재하지 않습니다.");
+    @Override
+    @PostMapping("/logout")
+    public CustomResponse<Void> logout(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+        if (request.getCookies() == null) {
+            return CustomResponse.ok("로그아웃 되었습니다.");
         }
 
-        return Arrays.stream(cookies).filter(cookie -> cookie.getName().equals("RefreshToken"))
-                .findFirst()
-                .orElseThrow(() -> new BadCredentialsException("리프레시 토큰이 존재하지 않습니다."))
-                .getValue();
+        String refreshToken = cookieHelper.findRefreshTokenCookie(request);
+
+        authService.logout(refreshToken);
+        response.addCookie(cookieHelper.generateExpiredRefreshToken());
+
+        return CustomResponse.ok("로그아웃 되었습니다.");
     }
 }
