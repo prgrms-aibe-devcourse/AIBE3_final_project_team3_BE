@@ -1,6 +1,5 @@
 package triplestar.mixchat.global.security;
 
-
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -51,7 +50,7 @@ public class SecurityConfig {
                 // JWT 인증 필터 적용
                 .addFilterBefore(JwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(handling -> handling
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
 
                 // REST API는 사용하지 않는 Security 기본 기능 비활성화
