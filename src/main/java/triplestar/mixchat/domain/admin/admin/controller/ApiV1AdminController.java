@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import triplestar.mixchat.domain.admin.admin.dto.AdminReportListResp;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateReq;
-import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameListResp;
+import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameNoteListResp;
 import triplestar.mixchat.domain.admin.admin.service.AdminReportService;
 import triplestar.mixchat.domain.admin.admin.service.AdminSentenceGameService;
 import triplestar.mixchat.domain.report.report.dto.ReportStatusUpdateReq;
@@ -51,7 +51,7 @@ public class ApiV1AdminController implements  ApiAdminController {
 
     @Override
     @PostMapping("/sentence-game")
-    public CustomResponse<Long> createMiniGame(
+    public CustomResponse<Long> createSentenceGame(
             @RequestBody @Valid AdminSentenceGameCreateReq req
     ) {
         Long sentenceId = adminSentenceGameService.createSentenceGame(req);
@@ -59,9 +59,11 @@ public class ApiV1AdminController implements  ApiAdminController {
     }
 
     @Override
-    @GetMapping("/sentence-game")
-    public CustomResponse<List<AdminSentenceGameListResp>> getMiniGameList() {
-        List<AdminSentenceGameListResp> resp = adminSentenceGameService.getList();
-        return CustomResponse.ok("미니게임 목록 조회 성공", resp);
+    @GetMapping("/sentence-game/notes")
+    public CustomResponse<List<AdminSentenceGameNoteListResp>> getSentenceGameNoteList() {
+        List<AdminSentenceGameNoteListResp> resp =
+                adminSentenceGameService.getSentenceGameNoteList();
+
+        return CustomResponse.ok("미니게임 등록용 학습노트 목록 조회 성공", resp);
     }
 }

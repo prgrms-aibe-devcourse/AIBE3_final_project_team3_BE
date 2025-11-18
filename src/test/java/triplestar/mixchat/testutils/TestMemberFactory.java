@@ -24,4 +24,17 @@ public class TestMemberFactory {
                 "테스트 회원입니다."
         );
     }
+
+    public static Member createAdmin(String username) {
+        return Member.createAdmin(
+                username + "@example.com",
+                Password.encrypt("user1234", passwordEncoder),
+                username,
+                username,
+                Country.CANADA,
+                EnglishLevel.INTERMEDIATE,
+                List.of("음악"),
+                "테스트 관리자입니다."
+        );
+    }
 }

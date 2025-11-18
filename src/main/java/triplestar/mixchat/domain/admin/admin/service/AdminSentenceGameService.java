@@ -1,12 +1,13 @@
 package triplestar.mixchat.domain.admin.admin.service;
 
-import com.sun.jdi.request.DuplicateRequestException;
+
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateReq;
-import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameListResp;
+import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameNoteListResp;
+import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
 import triplestar.mixchat.domain.miniGame.sentenceGame.entity.SentenceGame;
 import triplestar.mixchat.domain.miniGame.sentenceGame.repository.SentenceGameRepository;
 
@@ -15,6 +16,8 @@ import triplestar.mixchat.domain.miniGame.sentenceGame.repository.SentenceGameRe
 public class AdminSentenceGameService {
 
     private final SentenceGameRepository sentenceGameRepository;
+
+    private final LearningNoteRepository learningNoteRepository;
 
     @Transactional
     public Long createSentenceGame(AdminSentenceGameCreateReq request) {
@@ -25,7 +28,7 @@ public class AdminSentenceGameService {
         );
 
         if (duplicated) {
-            throw new DuplicateRequestException("이미 등록된 문장입니다.");
+            throw new IllegalArgumentException("이미 등록된 문장입니다.");
         }
 
         SentenceGame game = SentenceGame.createSentenceGame(
@@ -36,10 +39,11 @@ public class AdminSentenceGameService {
         return sentenceGameRepository.save(game).getId();
     }
 
-    @Transactional
-    public List<AdminSentenceGameListResp> getList() {
-        return sentenceGameRepository.findAll().stream()
-                .map(AdminSentenceGameListResp::from)
+    @Transactional(readOnly = true)
+    public List<AdminSentenceGameNoteListResp> getSentenceGameNoteList() {
+
+        return learningNoteRepository.findAll().stream()
+                .map(AdminSentenceGameNoteListResp::from)
                 .toList();
     }
 }
