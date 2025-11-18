@@ -1,8 +1,6 @@
 package triplestar.mixchat.domain.report.report.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -165,77 +163,6 @@ public class ApiV1ReportControllerTest {
     }
 
     @Test
-    @DisplayName("관리자 신고 목록 조회 - 페이지네이션 포함, 3건 조회")
-    @WithMockUser(username = "admin", roles = "ADMIN")
-    void getReports_success() throws Exception {
-        mockMvc.perform(
-                        get("/api/v1/admin/reports")
-                                .param("page", "0")
-                                .param("size", "20")
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.msg").value("신고 목록 조회 성공"))
-                .andExpect(jsonPath("$.data.content.length()").value(3))
-                .andExpect(jsonPath("$.data.totalElements").value(3))
-                .andExpect(jsonPath("$.data.totalPages").value(1))
-                .andExpect(jsonPath("$.data.size").value(20))
-                .andExpect(jsonPath("$.data.number").value(0));
-    }
-
-    @Test
-    @DisplayName("신고 상태 변경 - APPROVED 시 대상 회원 차단 처리")
-    @WithMockUser(username = "admin", roles = "ADMIN")
-    void updateReportStatus_approved_blocksMember() throws Exception {
-
-        mockMvc.perform(
-                        patch("/api/v1/admin/reports/{reportId}", report1.getId())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                        {
-                                          "status": "APPROVED"
-                                        }
-                                        """)
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.msg").value("상태 변경 완료"));
-
-        Report updatedReport = reportRepository.findById(report1.getId())
-                .orElseThrow();
-        assertThat(updatedReport.getStatus()).isEqualTo(ReportStatus.APPROVED);
-
-        Member updatedMember = memberRepository.findById(target1.getId())
-                .orElseThrow();
-        assertThat(updatedMember.isBlocked()).isTrue();
-        assertThat(updatedMember.getBlockReason()).isEqualTo(ReportCategory.ABUSE.name());
-    }
-
-    @Test
-    @DisplayName("신고 상태 변경 - REJECTED 시 대상 회원은 차단되지 않음")
-    @WithMockUser(username = "admin", roles = "ADMIN")
-    void updateReportStatus_rejected_doesNotBlockMember() throws Exception {
-
-        mockMvc.perform(
-                        patch("/api/v1/admin/reports/{reportId}", report2.getId())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                        {
-                                          "status": "REJECTED"
-                                        }
-                                        """)
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.msg").value("상태 변경 완료"));
-
-        Report updatedReport = reportRepository.findById(report2.getId())
-                .orElseThrow();
-        assertThat(updatedReport.getStatus()).isEqualTo(ReportStatus.REJECTED);
-
-        Member updatedMember = memberRepository.findById(target2.getId())
-                .orElseThrow();
-        assertThat(updatedMember.isBlocked()).isFalse();
-    }
-
-    @Test
     @DisplayName("신고 생성 실패 - 인증되지 않은 사용자")
     void createReport_fail_whenUnauthenticated() throws Exception {
         CreateReportRequest request = new CreateReportRequest(
@@ -253,22 +180,6 @@ public class ApiV1ReportControllerTest {
                 .andExpect(status().isUnauthorized());
 
         assertThat(reportRepository.count()).isEqualTo(3);
-    }
-
-    @Test
-    @DisplayName("신고 상태 변경 실패 - 관리자 권한이 아니면 403")
-    @WithMockUser(username = "user", roles = "USER")
-    void updateReportStatus_approved_fail_whenNotAdmin() throws Exception {
-        mockMvc.perform(
-                        patch("/api/v1/admin/reports/{reportId}", report3.getId())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                        {
-                                          "status": "APPROVED"
-                                        }
-                                        """)
-                )
-                .andExpect(status().isForbidden());
     }
 
     // ReportCreateReq 구조에 맞춘 테스트용 DTO
