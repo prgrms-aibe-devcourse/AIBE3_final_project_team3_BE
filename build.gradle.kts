@@ -48,6 +48,13 @@ dependencies {
     // Minio
     implementation("io.minio:minio:8.5.3")
 
+    // Testcontainers BOM
+    testImplementation(platform("org.testcontainers:testcontainers-bom:1.19.8"))
+
+    // Testcontainers
+    testImplementation("org.testcontainers:testcontainers")
+    testImplementation("org.testcontainers:junit-jupiter")
+
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

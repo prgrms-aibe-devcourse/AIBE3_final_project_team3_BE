@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
 import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
-import triplestar.mixchat.domain.member.auth.dto.SignInResp;
-import triplestar.mixchat.domain.member.auth.dto.SignInReq;
+import triplestar.mixchat.domain.member.auth.dto.LogInResp;
+import triplestar.mixchat.domain.member.auth.dto.LogInReq;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
@@ -64,7 +64,7 @@ public class AuthService {
     /**
      * 로그인
      */
-    public SignInResp signIn(SignInReq req) {
+    public LogInResp login(LogInReq req) {
         Member member = memberRepository.findByEmail(req.email())
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 이메일입니다: " + req.email()));
 
@@ -79,13 +79,13 @@ public class AuthService {
 
         redisTokenRepository.save(member.getId(), refreshToken);
 
-        return new SignInResp(accessToken, refreshToken);
+        return new LogInResp(accessToken, refreshToken);
     }
 
     /**
      * 액세스 토큰 재발급
      */
-    public SignInResp reissueAccessToken(String reqRefreshToken) {
+    public LogInResp reissueAccessToken(String reqRefreshToken) {
         Long memberId = authJwtProvider.parseRefreshToken(reqRefreshToken);
 
         // Redis에 저장된 리프레시 토큰과 비교
@@ -105,6 +105,14 @@ public class AuthService {
         String accessToken = authJwtProvider.generateAccessToken(
                 new AccessTokenPayload(member.getId(), member.getRole()));
 
-        return new SignInResp(accessToken, newRefreshToken);
+        return new LogInResp(accessToken, newRefreshToken);
+    }
+
+    /**
+     * 로그아웃
+     */
+    public void logout(String refreshToken) {
+        Long memberId = authJwtProvider.parseRefreshToken(refreshToken);
+        redisTokenRepository.delete(memberId);
     }
 }

@@ -51,6 +51,7 @@ public class Member extends BaseEntity {
     private List<String> interests;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private EnglishLevel englishLevel;
 
     @Column(nullable = false)
