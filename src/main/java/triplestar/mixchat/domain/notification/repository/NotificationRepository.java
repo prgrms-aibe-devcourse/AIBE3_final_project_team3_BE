@@ -26,7 +26,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
                 )
                 FROM Notification n
                 JOIN n.receiver r
-                JOIN n.sender s
+                LEFT JOIN n.sender s
                 WHERE r.id = :receiverId
             """)
     Page<NotificationResp> findAllByReceiverId(Long receiverId, Pageable pageable);
