@@ -13,13 +13,13 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import triplestar.mixchat.domain.translation.translation.constant.TranslationTagCode;
-import triplestar.mixchat.global.jpa.entity.BaseEntityNoModified;
+import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
 @Entity
 @Table(name = "feedbacks")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Feedback extends BaseEntityNoModified {
+public class Feedback extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "learning_note_id", nullable = false)
