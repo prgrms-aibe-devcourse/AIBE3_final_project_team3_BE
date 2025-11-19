@@ -2,10 +2,10 @@ package triplestar.mixchat.domain.admin.admin.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import triplestar.mixchat.domain.admin.admin.dto.ReportAdminListResp;
+import triplestar.mixchat.domain.admin.admin.dto.AdminReportListResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.report.report.constant.ReportStatus;
@@ -38,9 +38,10 @@ public class AdminReportService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ReportAdminListResp> getReports(int page, int size) {
-        PageRequest pageable = PageRequest.of(page, size);
-        return reportRepository.findAll(pageable)
-                .map(ReportAdminListResp::from);
+    public Page<AdminReportListResp> getReports(Pageable pageable) {
+
+        Page<Report> reports = reportRepository.findAll(pageable);
+
+        return reports.map(AdminReportListResp::from);
     }
 }

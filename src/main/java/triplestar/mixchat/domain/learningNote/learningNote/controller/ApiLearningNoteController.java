@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningFilter;
 import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteCreateReq;
-import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteListResp;
+import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteResp;
 import triplestar.mixchat.domain.translation.translation.constant.TranslationTagCode;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
@@ -41,7 +41,7 @@ public interface ApiLearningNoteController {
     // --- 2. 학습노트 목록 조회 (GET ) ---
     @Operation(summary = "학습노트 목록 조회", description = "태그와 학습 상태를 기준으로 회원의 학습노트를 조회합니다.")
     @SignInInRequireResponse
-    CustomResponse<Page<LearningNoteListResp>> getLearningNotes(
+    CustomResponse<Page<LearningNoteResp>> getLearningNotes(
             @Parameter(description = "페이지 정보")
             Pageable pageable,
             @Parameter(description = "번역 태그", example = "TRANSLATION")

@@ -21,7 +21,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
@@ -49,7 +48,6 @@ import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
 @AutoConfigureMockMvc // 임시로 추가 mongoAutoConfiguration 문제를 해결하지 못함
 @DisplayName("채팅 컨트롤러 단위 테스트")
 class ChatControllerTest {
-
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
 

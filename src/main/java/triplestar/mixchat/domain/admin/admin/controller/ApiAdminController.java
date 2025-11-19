@@ -7,8 +7,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.web.bind.annotation.RequestParam;
-import triplestar.mixchat.domain.admin.admin.dto.ReportAdminListResp;
+import org.springframework.data.domain.Pageable;
+import triplestar.mixchat.domain.admin.admin.dto.AdminReportListResp;
+import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateReq;
+import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateResp;
+import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameNoteResp;
 import triplestar.mixchat.domain.report.report.dto.ReportStatusUpdateReq;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
@@ -34,11 +37,23 @@ public interface ApiAdminController {
     // --- 2. 신고 목록 조회 (GET /reports) ---
     @Operation(summary = "신고 목록 조회", description = "관리자가 전체 신고 목록을 조회합니다.")
     @SecurityRequireResponse
-    CustomResponse<Page<ReportAdminListResp>> getReports(
-            @RequestParam(defaultValue = "0") int page,
-
-            @RequestParam(defaultValue = "20") int size
+    CustomResponse<Page<AdminReportListResp>> getReports(
+            @Parameter(description = "페이지 정보")
+            Pageable pageable
     );
 
-    // --- 3.
+    // --- 3. 문장 등록 (POST /sentence-game) ---
+    @Operation(summary = "미니게임 문장 등록", description = "관리자가 미니게임에 문장을 등록합니다.")
+    @SecurityRequireResponse
+    CustomResponse<AdminSentenceGameCreateResp> createSentenceGame(
+            @Valid AdminSentenceGameCreateReq req
+    );
+
+    // --- 4. 학습노트 조회 (GET /sentence-game) ---
+    @Operation(summary = "문장 등록을 위한 학습노트 조회", description = "관리자가 문장 등록을 위한 학습노트 목록을 조회합니다.")
+    @SecurityRequireResponse
+    CustomResponse<Page<AdminSentenceGameNoteResp>> getSentenceGameNoteList(
+            @Parameter(description = "페이지 정보")
+            Pageable pageable
+    );
 }

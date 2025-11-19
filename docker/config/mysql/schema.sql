@@ -95,7 +95,6 @@ CREATE TABLE IF NOT EXISTS `reports` (
 CREATE TABLE IF NOT EXISTS `sentence_games` (
                                                 `id`             BIGINT       NOT NULL AUTO_INCREMENT,
                                                 `created_at`     DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-                                                `modified_at`    DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
 
                                                 `original_content`  TEXT         NOT NULL,
                                                 `corrected_content` TEXT         NOT NULL,

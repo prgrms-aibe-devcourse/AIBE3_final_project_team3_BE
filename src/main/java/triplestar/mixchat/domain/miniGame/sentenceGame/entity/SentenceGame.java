@@ -2,15 +2,17 @@ package triplestar.mixchat.domain.miniGame.sentenceGame.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import triplestar.mixchat.domain.translation.translation.constant.TranslationTagCode;
-import triplestar.mixchat.global.jpa.entity.BaseEntity;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import triplestar.mixchat.global.jpa.entity.BaseEntityNoModified;
 
 @Entity
 @Table(name = "sentence_games")
-public class SentenceGame extends BaseEntity {
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class SentenceGame extends BaseEntityNoModified {
 
     @Column(name = "original_content", nullable = false)
     private String originalContent;      // 수정 전 문장
@@ -18,7 +20,28 @@ public class SentenceGame extends BaseEntity {
     @Column(name = "corrected_content", nullable = false)
         private String correctedContent;     // 수정 후 문장
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "code", nullable = false)
-    private TranslationTagCode code;
+    private SentenceGame(
+            String originalContent,
+            String correctedContent
+    ) {
+        if (originalContent == null || originalContent.isBlank()) {
+            throw new IllegalArgumentException("originalContent는 비어 있을 수 없습니다.");
+        }
+        if (correctedContent == null || correctedContent.isBlank()) {
+            throw new IllegalArgumentException("correctedContent 비어 있을 수 없습니다.");
+        }
+
+        this.originalContent = originalContent;
+        this.correctedContent = correctedContent;
+    }
+
+    public static SentenceGame createSentenceGame(
+            String originalContent,
+            String correctedContent
+    ) {
+        return new SentenceGame(
+                originalContent,
+                correctedContent
+        );
+    }
 }
