@@ -39,21 +39,21 @@ public class ChatMessageService {
         MessageResp resp = MessageResp.from(savedMessage, sender.getNickname());
 
         // 알림 이벤트
-        List<ChatMember> roomMembers = chatMemberRepository.findByChatRoomId(roomId, sender);
-
-        for (ChatMember receiver : roomMembers) {
-            if (receiver.isNotificationSettingAlways()) {
-                eventPublisher.publishEvent(
-                        new NotificationEvent(
-                                receiver.getMember().getId(),
-                                senderId,
-                                NotificationType.CHAT_MESSAGE,
-                                savedMessage.getContent()
-                        )
-                );
-            }
-            // TODO : Mention Only 알림 처리
-        }
+//        List<ChatMember> roomMembers = chatMemberRepository.findByChatRoomId(roomId, sender);
+//
+//        for (ChatMember receiver : roomMembers) {
+//            if (receiver.isNotificationSettingAlways()) {
+//                eventPublisher.publishEvent(
+//                        new NotificationEvent(
+//                                receiver.getMember().getId(),
+//                                senderId,
+//                                NotificationType.CHAT_MESSAGE,
+//                                savedMessage.getContent()
+//                        )
+//                );
+//            }
+//            // TODO : Mention Only 알림 처리
+//        }
         return resp;
         // 3. 응답 생성
         return MessageResp.from(savedMessage, senderNickname);

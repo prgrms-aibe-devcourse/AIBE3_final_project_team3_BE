@@ -54,11 +54,7 @@ public class NotificationService {
                     .orElseThrow(() -> new EntityNotFoundException("해당 회원 ID 없음"));
         }
 
-        Notification notification = Notification.builder()
-                .receiver(receiver)
-                .sender(sender)
-                .type(event.type())
-                .content(event.extraContent()).build();
+        Notification notification = Notification.withSenderAndContent(receiver, sender, event.type(), event.extraContent());
 
         Notification saved = notificationRepository.save(notification);
 
