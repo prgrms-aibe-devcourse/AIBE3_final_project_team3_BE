@@ -23,8 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import triplestar.mixchat.domain.member.auth.dto.LogInReq;
 import triplestar.mixchat.domain.member.auth.dto.LogInResp;
-import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
+import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
 import triplestar.mixchat.domain.member.auth.service.AuthService;
+import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.testutils.RedisTestContainer;
 import triplestar.mixchat.testutils.TestHelperController;
@@ -134,12 +135,12 @@ class ApiV1AuthControllerTest extends RedisTestContainer {
     }
 
     private void joinTestData() {
-        authService.join(new MemberJoinReq(
+        authService.join(new SignUpReq(
                 "test@example.com",
                 "test1234",
                 "test1234",
                 "홍길동",
-                "KR",
+                Country.KR,
                 "믹스마스터",
                 EnglishLevel.INTERMEDIATE,
                 List.of("요리, 여행, 음악"),

@@ -18,7 +18,7 @@ public class TestMemberFactory {
                 Password.encrypt("user1234", passwordEncoder),
                 username,
                 username,
-                Country.CANADA,
+                Country.CA,
                 EnglishLevel.INTERMEDIATE,
                 List.of("음악"),
                 "테스트 회원입니다."
@@ -31,7 +31,7 @@ public class TestMemberFactory {
                 Password.encrypt("user1234", passwordEncoder),
                 username,
                 username,
-                Country.CANADA,
+                Country.CA,
                 EnglishLevel.INTERMEDIATE,
                 List.of("음악"),
                 "테스트 관리자입니다."

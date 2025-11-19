@@ -67,21 +67,21 @@ public class ApiV1ReportControllerTest {
                 Member.createMember(
                         "user@example.com", Password.encrypt("ValidPassword123", passwordEncoder),
                         "일반유저", "일반유저",
-                        Country.SOUTH_KOREA, EnglishLevel.INTERMEDIATE, List.of("테스트"), "신고하는 유저"
+                        Country.KR, EnglishLevel.INTERMEDIATE, List.of("테스트"), "신고하는 유저"
                 )
         );
         admin = memberRepository.save(
                 Member.createAdmin(
                         "admin@example.com", Password.encrypt("ValidPassword123", passwordEncoder),
                         "관리자", "admin",
-                        Country.SOUTH_KOREA, EnglishLevel.INTERMEDIATE, List.of("관리"), "관리자 유저"
+                        Country.KR, EnglishLevel.INTERMEDIATE, List.of("관리"), "관리자 유저"
                 )
         );
         target1 = memberRepository.save(
                 Member.createMember(
                         "target1@example.com", Password.encrypt("Password1!", passwordEncoder),
                         "신고대상1", "target1",
-                        Country.SOUTH_KOREA, EnglishLevel.BEGINNER, List.of("travel"), "신고 대상 유저1"
+                        Country.KR, EnglishLevel.BEGINNER, List.of("travel"), "신고 대상 유저1"
                 )
         );
 
@@ -89,7 +89,7 @@ public class ApiV1ReportControllerTest {
                 Member.createMember(
                         "target2@example.com", Password.encrypt("Password2!", passwordEncoder),
                         "신고대상2", "target2",
-                        Country.SOUTH_KOREA, EnglishLevel.BEGINNER, List.of("travel"), "신고 대상 유저2"
+                        Country.KR, EnglishLevel.BEGINNER, List.of("travel"), "신고 대상 유저2"
                 )
         );
 
@@ -97,7 +97,7 @@ public class ApiV1ReportControllerTest {
                 Member.createMember(
                         "target3@example.com", Password.encrypt("Password3!", passwordEncoder),
                         "신고대상3", "target3",
-                        Country.SOUTH_KOREA, EnglishLevel.BEGINNER, List.of("travel"), "신고 대상 유저3"
+                        Country.KR, EnglishLevel.BEGINNER, List.of("travel"), "신고 대상 유저3"
                 )
         );
 

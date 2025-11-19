@@ -33,6 +33,7 @@ public class MemberService {
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다."));
     }
 
+    @Transactional
     public void updateInfo(Long memberId, MemberInfoModifyReq req) {
         Member member = findMemberById(memberId);
 

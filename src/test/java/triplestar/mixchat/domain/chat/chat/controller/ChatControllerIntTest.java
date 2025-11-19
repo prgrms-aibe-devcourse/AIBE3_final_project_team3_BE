@@ -69,11 +69,11 @@ class ChatControllerIntTest {
         // TestFactoryMember도 활용 가능합니다.
         user1 = memberRepository.save(Member.createMember(
                 "user1@example.com", Password.encrypt("ValidPassword123", passwordEncoder),
-                "유저1", "유저1", Country.SOUTH_KOREA, EnglishLevel.BEGINNER,
+                "유저1", "유저1", Country.KR, EnglishLevel.BEGINNER,
                 List.of("테스트"), "테스트 유저 1"));
         user2 = memberRepository.save(Member.createMember(
                 "user2@example.com", Password.encrypt("ValidPassword123", passwordEncoder),
-                "유저2", "유저2", Country.UNITED_STATES, EnglishLevel.INTERMEDIATE,
+                "유저2", "유저2", Country.UK, EnglishLevel.INTERMEDIATE,
                 List.of("테스트"), "테스트 유저 2"));
     }
 
