@@ -1,12 +1,14 @@
 package triplestar.mixchat.domain.admin.admin.service;
 
 
-import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateReq;
-import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameNoteListResp;
+import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameNoteResp;
+import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
 import triplestar.mixchat.domain.miniGame.sentenceGame.entity.SentenceGame;
 import triplestar.mixchat.domain.miniGame.sentenceGame.repository.SentenceGameRepository;
@@ -14,9 +16,7 @@ import triplestar.mixchat.domain.miniGame.sentenceGame.repository.SentenceGameRe
 @Service
 @RequiredArgsConstructor
 public class AdminSentenceGameService {
-
     private final SentenceGameRepository sentenceGameRepository;
-
     private final LearningNoteRepository learningNoteRepository;
 
     @Transactional
@@ -35,15 +35,14 @@ public class AdminSentenceGameService {
                 request.originalContent(),
                 request.correctedContent()
         );
-
         return sentenceGameRepository.save(game).getId();
     }
 
     @Transactional(readOnly = true)
-    public List<AdminSentenceGameNoteListResp> getSentenceGameNoteList() {
+    public Page<AdminSentenceGameNoteResp> getSentenceGameNoteList(Pageable pageable) {
 
-        return learningNoteRepository.findAll().stream()
-                .map(AdminSentenceGameNoteListResp::from)
-                .toList();
+        Page<LearningNote> notes = learningNoteRepository.findAll(pageable);
+
+        return notes.map(AdminSentenceGameNoteResp::from);
     }
 }

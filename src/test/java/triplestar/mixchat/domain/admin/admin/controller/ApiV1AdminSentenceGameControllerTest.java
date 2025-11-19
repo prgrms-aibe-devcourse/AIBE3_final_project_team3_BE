@@ -43,7 +43,7 @@ class ApiV1AdminSentenceGameControllerTest {
     MockMvc mockMvc;
 
     @Autowired
-    private MemberRepository memberRepository;
+    MemberRepository memberRepository;
 
     @Autowired
     LearningNoteRepository learningNoteRepository;
@@ -81,13 +81,12 @@ class ApiV1AdminSentenceGameControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.msg").value("미니게임 문장이 등록되었습니다."))
-                .andExpect(jsonPath("$.data").isNumber())
+                .andExpect(jsonPath("$.data.sentenceGameId").isNumber())
                 .andReturn();
 
         String responseBody = result.getResponse().getContentAsString();
-
-        Number rawId = JsonPath.read(responseBody, "$.data");
-        Long generatedId = rawId.longValue();
+        Integer idInt = JsonPath.read(responseBody, "$.data.sentenceGameId");
+        Long generatedId = idInt.longValue();
 
         assertThat(generatedId).isNotNull();
 
@@ -161,11 +160,11 @@ class ApiV1AdminSentenceGameControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.msg").value("미니게임 등록용 학습노트 목록 조회 성공"))
-                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.content").isArray())
                 .andReturn();
 
         String json = result.getResponse().getContentAsString();
-        List<Map<String, Object>> list = JsonPath.read(json, "$.data");
+        List<Map<String, Object>> list = JsonPath.read(json, "$.data.content");
 
         assertThat(list.size()).isEqualTo(2);
 

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 @Schema(description = "학습노트 목록 응답 데이터")
-public record LearningNoteListResp(
+public record LearningNoteResp(
         @NotNull
         @Schema(description = "원본 문장", example = "I goes to school yesterday.")
         String originalContent,

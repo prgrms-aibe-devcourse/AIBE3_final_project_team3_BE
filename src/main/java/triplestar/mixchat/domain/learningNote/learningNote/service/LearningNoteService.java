@@ -11,7 +11,7 @@ import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningFilt
 import triplestar.mixchat.domain.learningNote.learningNote.dto.FeedbackCreateReq;
 import triplestar.mixchat.domain.learningNote.learningNote.dto.FeedbackListResp;
 import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteCreateReq;
-import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteListResp;
+import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteResp;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.Feedback;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.FeedbackRepository;
@@ -45,7 +45,7 @@ public class LearningNoteService {
     }
 
     @Transactional
-    public Page<LearningNoteListResp> getLearningNotes(Pageable  pageable, Long memberId, TranslationTagCode tag, LearningFilter learningFilter) {
+    public Page<LearningNoteResp> getLearningNotes(Pageable  pageable, Long memberId, TranslationTagCode tag, LearningFilter learningFilter) {
         Boolean isMarked = switch (learningFilter) {
             case LEARNED -> true;
             case UNLEARNED -> false;
@@ -55,7 +55,7 @@ public class LearningNoteService {
         Page<LearningNote> notes = learningNoteRepository.findByMemberWithFilters(memberId, tag, isMarked, pageable);
 
         return notes.map(note ->
-                new LearningNoteListResp(
+                new LearningNoteResp(
                         note.getOriginalContent(),
                         note.getCorrectedContent(),
                         note.getFeedbacks().stream()
