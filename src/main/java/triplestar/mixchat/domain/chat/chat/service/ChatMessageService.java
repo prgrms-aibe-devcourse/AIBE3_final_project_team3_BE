@@ -11,7 +11,6 @@ import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
-import triplestar.mixchat.domain.chat.chat.repository.ChatRoomRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.notification.constant.NotificationType;
@@ -24,7 +23,6 @@ public class ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final MemberRepository memberRepository;
     private final ChatRoomService chatRoomService; // 검증 로직을 위해 주입
-    private final ChatRoomRepository chatRoomRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -50,7 +48,7 @@ public class ChatMessageService {
                         )
                 );
             }
-            // TODO : Mention Only 알림 처리
+            // TODO : Mention 기능 지원하게 되면 Mention Only 알림 처리
         }
         // 4. 응답 생성
         return MessageResp.from(savedMessage, senderNickname);
