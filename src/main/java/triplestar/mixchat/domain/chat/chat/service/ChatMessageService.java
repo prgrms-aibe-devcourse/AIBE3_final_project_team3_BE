@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import triplestar.mixchat.domain.notification.constant.NotificationType;
-import triplestar.mixchat.global.notifiaction.event.NotificationEvent;
+import triplestar.mixchat.global.notifiaction.NotificationEvent;
 
 @Service
 @RequiredArgsConstructor

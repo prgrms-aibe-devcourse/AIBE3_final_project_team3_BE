@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-import triplestar.mixchat.global.notifiaction.event.NotificationEvent;
+import triplestar.mixchat.global.notifiaction.NotificationEvent;
 import triplestar.mixchat.domain.notification.dto.NotificationResp;
 import triplestar.mixchat.domain.notification.entity.Notification;
 import triplestar.mixchat.domain.notification.repository.NotificationRepository;

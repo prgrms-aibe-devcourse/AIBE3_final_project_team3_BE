@@ -11,7 +11,7 @@ import triplestar.mixchat.domain.member.friend.repository.FriendshipRequestRepos
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.notification.constant.NotificationType;
-import triplestar.mixchat.global.notifiaction.event.NotificationEvent;
+import triplestar.mixchat.global.notifiaction.NotificationEvent;
 
 @Service
 @Transactional

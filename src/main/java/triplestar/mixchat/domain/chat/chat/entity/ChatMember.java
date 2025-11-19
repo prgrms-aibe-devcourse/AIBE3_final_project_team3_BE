@@ -46,6 +46,8 @@ public class ChatMember extends BaseEntity {
         this.member = member;
         this.chatRoom = chatRoom;
         this.userType = userType;
+        // 기본 알림 설정은 ALWAYS로 설정
+        this.chatNotificationSetting = ChatNotificationSetting.ALWAYS;
         
         //lastReadAt은 채팅 읽은 사람 수 기능 구현시 추가 예정
     }
@@ -56,5 +58,13 @@ public class ChatMember extends BaseEntity {
 
     public boolean isNotificationSettingAlways() {
         return this.chatNotificationSetting == ChatNotificationSetting.ALWAYS;
+    }
+
+    public void turnOffNotifications() {
+        this.chatNotificationSetting = ChatNotificationSetting.NONE;
+    }
+
+    public void turnOnNotifications() {
+        this.chatNotificationSetting = ChatNotificationSetting.ALWAYS;
     }
 }

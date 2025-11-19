@@ -18,6 +18,11 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long
     boolean existsByChatRoom_IdAndMember_Id(Long chatRoomId, Long memberId);
     boolean existsByMemberIdAndChatRoomId(Long memberId, Long chatRoomId);
 
-    @Query("SELECT cm FROM ChatMember cm WHERE cm.chatRoom.id = :roomId AND cm.member <> :sender")
+    @Query("""
+            SELECT cm FROM ChatMember cm 
+            WHERE cm.chatRoom.id = :roomId 
+            AND cm.member <> :sender
+            """
+    )
     List<ChatMember> findByChatRoomId(Long roomId, Member sender);
 }

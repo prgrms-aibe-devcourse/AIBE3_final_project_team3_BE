@@ -1,9 +1,11 @@
-package triplestar.mixchat.global.notifiaction.event;
+package triplestar.mixchat.global.notifiaction;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
 import triplestar.mixchat.domain.notification.dto.NotificationResp;
 import triplestar.mixchat.domain.notification.service.NotificationService;
@@ -17,7 +19,9 @@ public class NotificationListener {
     private final SimpMessagingTemplate messagingTemplate;
 
     @TransactionalEventListener
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleNotificationEvent(NotificationEvent event) {
+        log.info("이벤트 리스너 실행 {}", event);
         // DB에 알림 저장
         NotificationResp notification = notificationService.createNotification(event);
 

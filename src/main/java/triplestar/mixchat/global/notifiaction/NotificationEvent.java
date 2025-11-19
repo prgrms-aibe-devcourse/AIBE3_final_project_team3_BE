@@ -1,4 +1,4 @@
-package triplestar.mixchat.global.notifiaction.event;
+package triplestar.mixchat.global.notifiaction;
 
 import org.springframework.lang.Nullable;
 import triplestar.mixchat.domain.notification.constant.NotificationType;
