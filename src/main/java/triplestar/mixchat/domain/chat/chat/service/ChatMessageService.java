@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
@@ -18,6 +19,7 @@ import triplestar.mixchat.global.notifiaction.NotificationEvent;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ChatMessageService {
 
     private final ChatMessageRepository chatMessageRepository;
@@ -26,6 +28,7 @@ public class ChatMessageService {
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final ApplicationEventPublisher eventPublisher;
 
+    @Transactional
     public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType) {
         // 1. 사용자가 해당 채팅방의 멤버인지 검증 (캐시 -> DB 순서)
         chatRoomService.verifyUserIsMemberOfRoom(senderId, roomId);
@@ -38,7 +41,7 @@ public class ChatMessageService {
         List<ChatMember> roomMembers = chatRoomMemberRepository.findByChatRoomId(roomId, senderId);
 
         for (ChatMember receiver : roomMembers) {
-            if (receiver.isNotificationSettingAlways()) {
+            if (receiver.isNotificationAlways()) {
                 eventPublisher.publishEvent(
                         new NotificationEvent(
                                 receiver.getMember().getId(),
@@ -54,6 +57,7 @@ public class ChatMessageService {
         return MessageResp.from(savedMessage, senderNickname);
     }
 
+    @Transactional
     public MessageResp saveFileMessage(Long roomId, Long senderId, String senderNickname, String fileUrl, ChatMessage.MessageType messageType) {
         if (messageType != ChatMessage.MessageType.IMAGE && messageType != ChatMessage.MessageType.FILE) {
             throw new IllegalArgumentException("파일 메시지는 IMAGE 또는 FILE 타입이어야 합니다.");

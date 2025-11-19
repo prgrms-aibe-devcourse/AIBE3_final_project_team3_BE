@@ -30,6 +30,8 @@ public class ChatMember extends BaseEntity {
 
     private LocalDateTime lastReadAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ChatNotificationSetting chatNotificationSetting;
 
     public ChatMember(Member member, ChatRoom chatRoom, UserType userType) {
@@ -56,7 +58,7 @@ public class ChatMember extends BaseEntity {
         ROOM_MEMBER, ROOM_OWNER
     }
 
-    public boolean isNotificationSettingAlways() {
+    public boolean isNotificationAlways() {
         return this.chatNotificationSetting == ChatNotificationSetting.ALWAYS;
     }
 
