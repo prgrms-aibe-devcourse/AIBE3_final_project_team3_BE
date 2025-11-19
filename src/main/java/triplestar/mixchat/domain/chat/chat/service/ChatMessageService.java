@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
-import triplestar.mixchat.domain.chat.chat.repository.ChatRoomRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 
@@ -20,15 +19,9 @@ public class ChatMessageService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final MemberRepository memberRepository;
-    private final ChatRoomRepository chatRoomRepository;
 
-
-    public MessageResp saveMessage(Long roomId, Long senderId, String content, ChatMessage.MessageType messageType) {
-        chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("채팅방 없음"));
-        Member sender = memberRepository.findById(senderId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
+    public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType) {
+        // 컨트롤러에서 이미 인가 및 존재 여부를 확인했으므로, 여기서는 검증 로직을 모두 제거합니다.
         ChatMessage message = ChatMessage.builder()
                 .chatRoomId(roomId)
                 .senderId(senderId)
@@ -37,14 +30,16 @@ public class ChatMessageService {
                 .build();
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
-        return MessageResp.from(savedMessage, sender.getNickname());
+        // 파라미터로 받은 닉네임을 사용하여 응답을 생성합니다.
+        return MessageResp.from(savedMessage, senderNickname);
     }
 
-    public MessageResp saveFileMessage(Long roomId, Long senderId, String fileUrl, ChatMessage.MessageType messageType) {
+    public MessageResp saveFileMessage(Long roomId, Long senderId, String senderNickname, String fileUrl, ChatMessage.MessageType messageType) {
         if (messageType != ChatMessage.MessageType.IMAGE && messageType != ChatMessage.MessageType.FILE) {
             throw new IllegalArgumentException("파일 메시지는 IMAGE 또는 FILE 타입이어야 합니다.");
         }
-        return saveMessage(roomId, senderId, fileUrl, messageType);
+        // 수정된 saveMessage 메소드를 호출하도록 변경합니다.
+        return saveMessage(roomId, senderId, senderNickname, fileUrl, messageType);
     }
 
     public List<MessageResp> getMessagesWithSenderInfo(Long roomId) {

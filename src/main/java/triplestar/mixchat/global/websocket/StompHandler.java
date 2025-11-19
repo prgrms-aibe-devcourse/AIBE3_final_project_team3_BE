@@ -93,7 +93,7 @@ public class StompHandler implements ExecutorChannelInterceptor {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new AccessDeniedException("사용자 정보를 찾을 수 없습니다. ID: " + memberId));
 
-        CustomUserDetails userDetails = new CustomUserDetails(member.getId(), member.getRole());
+        CustomUserDetails userDetails = new CustomUserDetails(member.getId(), member.getRole(), member.getNickname());
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities());
         accessor.setUser(authentication);

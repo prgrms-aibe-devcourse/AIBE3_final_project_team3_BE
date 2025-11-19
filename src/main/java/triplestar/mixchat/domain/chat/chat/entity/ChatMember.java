@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @Table(name = "chat_members")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ChatMember extends BaseEntity {
+public class    ChatMember extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)

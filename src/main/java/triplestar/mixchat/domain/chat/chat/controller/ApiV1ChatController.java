@@ -87,7 +87,7 @@ public class ApiV1ChatController implements ApiChatController {
             @RequestBody TextMessageReq request
     ) {
         MessageResp messageResp =
-                chatMessageService.saveMessage(roomId, currentUser.getId(), request.content(), ChatMessage.MessageType.TEXT);
+                chatMessageService.saveMessage(roomId, currentUser.getId(), currentUser.getNickname(), request.content(), ChatMessage.MessageType.TEXT);
         return CustomResponse.ok("메시지 전송에 성공하였습니다.", messageResp);
     }
 
@@ -110,7 +110,7 @@ public class ApiV1ChatController implements ApiChatController {
     ) {
         String fileUrl = s3Uploader.uploadFile(file, "chat-files");
         MessageResp messageResp =
-                chatMessageService.saveFileMessage(roomId, currentUser.getId(), fileUrl, messageType);
+                chatMessageService.saveFileMessage(roomId, currentUser.getId(), currentUser.getNickname(), fileUrl, messageType);
 
         messagingTemplate.convertAndSend(
                 "/topic/chat/room/" + roomId,
