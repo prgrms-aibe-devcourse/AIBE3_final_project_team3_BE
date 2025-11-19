@@ -1,5 +1,7 @@
 package triplestar.mixchat.domain.member.member.dto;
 
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -11,48 +13,38 @@ import triplestar.mixchat.domain.member.member.entity.Member;
 
 @Schema(description = "회원 프로필 상세 조회 응답 DTO")
 public record MemberProfileResp(
-        @Schema(description = "회원 고유 ID", example = "123")
-        @NotNull
+        @Schema(description = "회원 고유 ID", example = "123", requiredMode = REQUIRED)
         Long memberId,
 
-        @Schema(description = "이메일 주소", example = "gildong@example.com")
-        @NotBlank
+        @Schema(description = "이메일 주소", example = "gildong@example.com", requiredMode = REQUIRED)
         String email,
 
-        @Schema(description = "실명", example = "홍길동")
-        @NotBlank
+        @Schema(description = "실명", example = "홍길동", requiredMode = REQUIRED)
         String name,
 
-        @Schema(description = "닉네임", example = "MixMaster")
-        @NotBlank
+        @Schema(description = "닉네임", example = "MixMaster", requiredMode = REQUIRED)
         String nickname,
 
-        @Schema(description = "국가 (Full Name)", example = "Korea")
-        @NotNull
+        @Schema(description = "국가 (Full Name)", example = "Korea", requiredMode = REQUIRED)
         Country country,
 
-        @Schema(description = "영어 실력 레벨", example = "BEGINNER")
-        @NotNull
+        @Schema(description = "영어 실력 레벨", example = "BEGINNER", requiredMode = REQUIRED)
         EnglishLevel englishLevel,
 
-        @Schema(description = "관심사 목록", example = "[\"농구\", \"독서\"]")
-        @NotEmpty
+        @Schema(description = "관심사 목록", example = "[\"농구\", \"독서\"]", requiredMode = REQUIRED)
         List<String> interests,
 
-        @Schema(description = "자기소개", example = "안녕하세요. 5년차 웹 개발자입니다.")
-        @NotBlank
+        @Schema(description = "자기소개", example = "안녕하세요. 5년차 웹 개발자입니다.", requiredMode = REQUIRED)
         String description,
 
-        @Schema(description = "프로필 이미지 URL", example = "https://cdn.example.com/profile/123_photo.jpg")
-        @NotBlank
+        @Schema(description = "프로필 이미지 URL", example = "https://cdn.example.com/profile/123_photo.jpg", requiredMode = REQUIRED)
         String profileImageUrl,
 
-        @Schema(description = "현재 로그인 사용자와 친구 관계인지 여부", example = "true")
-        @NotNull
+        @Schema(description = "현재 로그인 사용자와 친구 관계인지 여부", example = "true", requiredMode = REQUIRED)
         Boolean isFriend,
 
-        @Schema(description = "현재 로그인 사용자가 상대에게 친구 신청을 보냈거나 받았는지 대기 중인 상태인지 여부", example = "false")
-        @NotNull
+        @Schema(description = "현재 로그인 사용자가 상대에게 친구 신청을 보냈거나 받았는지 대기 중인 상태인지 여부",
+                example = "false", requiredMode = REQUIRED)
         Boolean isPendingRequest
 ) {
         public static MemberProfileResp forAnonymousViewer(Member member) {

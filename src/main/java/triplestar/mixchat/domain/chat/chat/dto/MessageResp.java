@@ -1,36 +1,30 @@
 package triplestar.mixchat.domain.chat.chat.dto;
 
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 
-import java.time.LocalDateTime;
 
 @Schema(description = "채팅 메시지 응답")
 public record MessageResp(
-        @NotNull
-        @Schema(description = "메시지 고유 ID", example = "60c72b2f9b1d8e001f8e4bde")
+        @Schema(description = "메시지 고유 ID", example = "60c72b2f9b1d8e001f8e4bde", requiredMode = REQUIRED)
         String id,
 
-        @NotNull
-        @Schema(description = "발신자 ID", example = "1")
+        @Schema(description = "발신자 ID", example = "1", requiredMode = REQUIRED)
         Long senderId,
 
-        @NotBlank
-        @Schema(description = "발신자 닉네임", example = "JohnDoe")
+        @Schema(description = "발신자 닉네임", example = "JohnDoe", requiredMode = REQUIRED)
         String sender,
 
-        @NotBlank
-        @Schema(description = "메시지 내용", example = "안녕하세요!")
+        @Schema(description = "메시지 내용", example = "안녕하세요!", requiredMode = REQUIRED)
         String content,
 
-        @NotNull
-        @Schema(description = "메시지 발신 시간")
+        @Schema(description = "메시지 발신 시간", requiredMode = REQUIRED)
         LocalDateTime createdAt,
 
-        @NotNull
-        @Schema(description = "메시지 타입", example = "TALK")
+        @Schema(description = "메시지 타입", example = "TALK", requiredMode = REQUIRED)
         ChatMessage.MessageType messageType
 ) {
     public static MessageResp from(ChatMessage entity, String senderName) {
