@@ -49,6 +49,27 @@ public class ChatAuthCacheService {
     }
 
     /**
+     * 특정 채팅방 캐시에서 사용자를 제거합니다.
+     *
+     * @param roomId 채팅방 ID
+     * @param userId 제거할 사용자 ID
+     */
+    public void removeMember(Long roomId, Long userId) {
+        String key = createKey(roomId);
+        redisTemplate.opsForSet().remove(key, String.valueOf(userId));
+    }
+
+    /**
+     * 특정 채팅방의 멤버 목록 캐시 전체를 삭제합니다.
+     *
+     * @param roomId 채팅방 ID
+     */
+    public void removeRoom(Long roomId) {
+        String key = createKey(roomId);
+        redisTemplate.delete(key);
+    }
+
+    /**
      * Redis 키를 생성합니다.
      * 예: "chat:auth:room:123:members"
      *

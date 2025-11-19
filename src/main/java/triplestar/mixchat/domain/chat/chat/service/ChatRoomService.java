@@ -1,6 +1,10 @@
 package triplestar.mixchat.domain.chat.chat.service;
 
 
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -10,16 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatRoom;
-import triplestar.mixchat.domain.chat.chat.repository.ChatMemberRepository;
+import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.cache.ChatAuthCacheService;
-
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +27,7 @@ public class ChatRoomService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final MemberRepository memberRepository;
-    private final ChatMemberRepository chatMemberRepository;
+    private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatAuthCacheService chatAuthCacheService; // 캐시 서비스 주입
 
@@ -61,7 +60,7 @@ public class ChatRoomService {
         }
 
         // 2. 캐시에 없으면 DB 조회 (Cache Miss)
-        boolean isMember = chatMemberRepository.existsByMemberIdAndChatRoomId(memberId, roomId);
+        boolean isMember = chatRoomMemberRepository.existsByChatRoom_IdAndMember_Id(memberId, roomId);
         if (!isMember) {
             log.warn("인가 거부: 사용자(ID:{})가 채팅방(ID:{})의 멤버가 아닙니다.", memberId, roomId);
             throw new AccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");

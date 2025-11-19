@@ -38,7 +38,6 @@ public class ChatMessage {
     @Field("updated_at")
     private LocalDateTime updatedAt;
 
-    @Builder
     public ChatMessage(Long chatRoomId, Long senderId, String content, MessageType messageType) {
         if (chatRoomId == null) {
             throw new IllegalArgumentException("chatRoomId는 null일 수 없습니다.");

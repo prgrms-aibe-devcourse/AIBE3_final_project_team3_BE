@@ -1,6 +1,5 @@
 package triplestar.mixchat.domain.chat.chat.service;
 
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
@@ -19,18 +18,17 @@ public class ChatMessageService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final MemberRepository memberRepository;
+    private final ChatRoomService chatRoomService; // 검증 로직을 위해 주입
 
     public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType) {
-        // 컨트롤러에서 이미 인가 및 존재 여부를 확인했으므로, 여기서는 검증 로직을 모두 제거합니다.
-        ChatMessage message = ChatMessage.builder()
-                .chatRoomId(roomId)
-                .senderId(senderId)
-                .content(content)
-                .messageType(messageType)
-                .build();
+        // 1. 사용자가 해당 채팅방의 멤버인지 검증 (캐시 -> DB 순서)
+        chatRoomService.verifyUserIsMemberOfRoom(senderId, roomId);
+
+        // 2. 검증 통과 후 메시지 생성 및 저장 (생성자 사용)
+        ChatMessage message = new ChatMessage(roomId, senderId, content, messageType);
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
-        // 파라미터로 받은 닉네임을 사용하여 응답을 생성합니다.
+        // 3. 응답 생성
         return MessageResp.from(savedMessage, senderNickname);
     }
 
@@ -38,7 +36,6 @@ public class ChatMessageService {
         if (messageType != ChatMessage.MessageType.IMAGE && messageType != ChatMessage.MessageType.FILE) {
             throw new IllegalArgumentException("파일 메시지는 IMAGE 또는 FILE 타입이어야 합니다.");
         }
-        // 수정된 saveMessage 메소드를 호출하도록 변경합니다.
         return saveMessage(roomId, senderId, senderNickname, fileUrl, messageType);
     }
 
