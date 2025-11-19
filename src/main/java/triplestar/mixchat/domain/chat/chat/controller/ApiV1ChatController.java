@@ -1,5 +1,6 @@
 package triplestar.mixchat.domain.chat.chat.controller;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,7 +43,7 @@ public class ApiV1ChatController implements ApiChatController {
     @PostMapping("/rooms/direct")
     public CustomResponse<ChatRoomResp> createDirectRoom(
             @AuthenticationPrincipal CustomUserDetails currentUser,
-            CreateDirectChatReq request
+            @Valid @RequestBody CreateDirectChatReq request
     ) {
         ChatRoomResp roomResp =
                 chatRoomService.findOrCreateDirectRoom(currentUser.getId(), request.partnerId());
@@ -52,7 +54,7 @@ public class ApiV1ChatController implements ApiChatController {
     @PostMapping("/rooms/group")
     public CustomResponse<ChatRoomResp> createGroupRoom(
             @AuthenticationPrincipal CustomUserDetails currentUser,
-            CreateGroupChatReq request
+            @Valid @RequestBody CreateGroupChatReq request
     ) {
         ChatRoomResp roomResp =
                 chatRoomService.createGroupRoom(request.roomName(), request.memberIds(), currentUser.getId());
@@ -63,7 +65,7 @@ public class ApiV1ChatController implements ApiChatController {
     @PostMapping("/rooms/public")
     public CustomResponse<ChatRoomResp> createPublicGroupRoom(
             @AuthenticationPrincipal CustomUserDetails currentUser,
-            CreatePublicChatReq request
+            @Valid @RequestBody CreatePublicChatReq request
     ) {
         ChatRoomResp roomResp =
                 chatRoomService.createPublicGroupRoom(request.roomName(), currentUser.getId());
@@ -84,7 +86,7 @@ public class ApiV1ChatController implements ApiChatController {
     public CustomResponse<MessageResp> sendMessage(
             @PathVariable("roomId") Long roomId,
             @AuthenticationPrincipal CustomUserDetails currentUser,
-            @RequestBody TextMessageReq request
+            @Valid @RequestBody TextMessageReq request
     ) {
         MessageResp messageResp =
                 chatMessageService.saveMessage(roomId, currentUser.getId(), currentUser.getNickname(), request.content(), ChatMessage.MessageType.TEXT);
@@ -105,8 +107,8 @@ public class ApiV1ChatController implements ApiChatController {
     public CustomResponse<MessageResp> uploadFile(
             @PathVariable("roomId") Long roomId,
             @AuthenticationPrincipal CustomUserDetails currentUser,
-            @RequestPart MultipartFile file,
-            ChatMessage.MessageType messageType
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("messageType") ChatMessage.MessageType messageType
     ) {
         String fileUrl = s3Uploader.uploadFile(file, "chat-files");
         MessageResp messageResp =
