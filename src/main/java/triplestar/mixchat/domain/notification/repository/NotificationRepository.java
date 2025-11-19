@@ -14,22 +14,13 @@ import triplestar.mixchat.domain.notification.entity.Notification;
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
     @Query("""
-                SELECT new triplestar.mixchat.domain.notification.dto.NotificationResp(
-                    n.id,
-                    r.id,
-                    n.sender.id,
-                    n.sender.nickname,
-                    n.type,
-                    n.isRead,
-                    n.createdAt,
-                    n.content
-                )
+                SELECT n
                 FROM Notification n
                 JOIN n.receiver r
-                LEFT JOIN n.sender s
+                LEFT JOIN FETCH n.sender s
                 WHERE r.id = :receiverId
             """)
-    Page<NotificationResp> findAllByReceiverId(Long receiverId, Pageable pageable);
+    Page<Notification> findAllByReceiverId(Long receiverId, Pageable pageable);
 
     @Query("""
                 UPDATE Notification n

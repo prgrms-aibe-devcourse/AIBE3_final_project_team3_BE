@@ -5,6 +5,7 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import triplestar.mixchat.domain.notification.constant.NotificationType;
+import triplestar.mixchat.domain.notification.entity.Notification;
 
 @Schema(description = "알림 목록 조회 응답 DTO")
 public record NotificationResp(
@@ -30,6 +31,23 @@ public record NotificationResp(
         LocalDateTime createdAt,
 
         @Schema(description = "알림 내용 (추가 텍스트)", example = "시스템 업데이트가 예정되어 있습니다.", requiredMode = REQUIRED)
-        String extraContent
+        String content,
+
+        Long elapsedSeconds
 ) {
+        public static NotificationResp from(Notification notification, LocalDateTime now) {
+                Long elapsed = java.time.Duration.between(notification.getCreatedAt(), now).getSeconds();
+
+                return new NotificationResp(
+                        notification.getId(),
+                        notification.getReceiver().getId(),
+                        notification.getSender() == null ? null : notification.getSender().getId(),
+                        notification.getSender() == null ? null : notification.getSender().getNickname(),
+                        notification.getType(),
+                        notification.isRead(),
+                        notification.getCreatedAt(),
+                        notification.getContent(),
+                        elapsed
+                );
+        }
 }

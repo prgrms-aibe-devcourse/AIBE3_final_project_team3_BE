@@ -66,7 +66,8 @@ public class NotificationService {
                 saved.getType(),
                 saved.isRead(),
                 saved.getCreatedAt(),
-                saved.getContent()
+                saved.getContent(),
+                0L
         );
     }
 
@@ -74,7 +75,10 @@ public class NotificationService {
      * 알림 조회(페이징)
      */
     public Page<NotificationResp> getNotifications(Long receiverId, Pageable pageable) {
-        return notificationRepository.findAllByReceiverId(receiverId, pageable);
+        Page<Notification> notifications = notificationRepository.findAllByReceiverId(receiverId, pageable);
+        LocalDateTime now = LocalDateTime.now();
+
+        return notifications.map(n -> NotificationResp.from(n, now));
     }
 
     /**
