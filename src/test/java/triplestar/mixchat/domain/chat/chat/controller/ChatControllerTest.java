@@ -34,6 +34,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatRoom;
+import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
 import triplestar.mixchat.domain.chat.chat.service.ChatRoomService;
 import triplestar.mixchat.domain.member.member.constant.Country;
@@ -56,6 +57,7 @@ class ChatControllerTest {
     @MockitoBean private MongoMappingContext mongoMappingContext;
     @MockitoBean private ChatRoomService chatRoomService;
     @MockitoBean private ChatMessageService chatMessageService;
+    @MockitoBean private ChatMessageRepository chatMessageRepository;
     @MockitoBean private S3Uploader s3Uploader;
     @MockitoBean private SimpMessagingTemplate messagingTemplate;
     @MockitoBean private AuthJwtProvider authJwtProvider;
