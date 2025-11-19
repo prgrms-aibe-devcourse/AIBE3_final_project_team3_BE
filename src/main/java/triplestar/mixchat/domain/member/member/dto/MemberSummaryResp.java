@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.member.auth.dto;
+package triplestar.mixchat.domain.member.member.dto;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
@@ -34,7 +34,7 @@ public record MemberSummaryResp(
         this(
                 savedMember.getId(),
                 savedMember.getName(),
-                savedMember.getCountry().getCode(),
+                savedMember.getCountry().name(),
                 savedMember.getNickname(),
                 savedMember.getEnglishLevel().name(),
                 savedMember.getInterests(),
