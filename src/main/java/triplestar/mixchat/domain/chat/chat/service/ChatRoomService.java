@@ -141,8 +141,6 @@ public class ChatRoomService {
                 .collect(Collectors.toList());
     }
 
-
-
     public ChatRoom getRoom(Long id) {
         return chatRoomRepository.findById(id).orElseThrow(() -> new RuntimeException("채팅방 없음"));
     }
