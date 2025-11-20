@@ -3,6 +3,8 @@ package triplestar.mixchat.domain.notification.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -26,6 +28,7 @@ public class Notification extends BaseEntity {
     private Member sender;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private NotificationType type;
 
     private String content;

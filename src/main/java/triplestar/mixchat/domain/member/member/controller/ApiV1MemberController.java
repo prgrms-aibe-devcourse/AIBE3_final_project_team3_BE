@@ -66,7 +66,7 @@ public class ApiV1MemberController implements ApiMemberController {
     }
 
     @Override
-    @GetMapping("{id}")
+    @GetMapping("/{id}")
     public CustomResponse<MemberProfileResp> getMemberProfile(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             @PathVariable Long id
