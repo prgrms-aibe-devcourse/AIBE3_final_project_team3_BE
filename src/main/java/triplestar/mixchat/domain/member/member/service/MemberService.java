@@ -43,8 +43,6 @@ public class MemberService {
                 req.englishLevel(),
                 req.interest(),
                 req.description());
-
-        memberRepository.save(member);
     }
 
     @Transactional
