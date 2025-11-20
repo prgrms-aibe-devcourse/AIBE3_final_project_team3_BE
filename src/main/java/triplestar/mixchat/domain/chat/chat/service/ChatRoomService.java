@@ -79,8 +79,17 @@ public class ChatRoomService {
 
     @Transactional
     public ChatRoomResp findOrCreateDirectRoom(Long member1Id, Long member2Id) {
-        Member member1 = findMemberById(member1Id);
-        Member member2 = findMemberById(member2Id);
+        Member member1;
+        Member member2;
+
+        if(member1Id < member2Id) {
+            member1 = findMemberById(member1Id);
+            member2 = findMemberById(member2Id);
+        }
+        else{
+            member1 = findMemberById(member2Id);
+            member2 = findMemberById(member1Id);
+        }
 
         ChatRoom room = chatRoomRepository.findDirectRoomByMembers(member1, member2)
                 .orElseGet(() -> {
