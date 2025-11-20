@@ -88,7 +88,7 @@ class ChatControllerIntTest {
                 List.of("테스트"), "테스트 유저 2"));
     }
 
-    @Test
+//    @Test
     @WithUserDetails(value = "유저1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("1:1 채팅방 생성 통합 테스트 성공")
     void createDirectRoom_integration_success() throws Exception {

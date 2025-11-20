@@ -20,6 +20,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.member.friend.dto.FriendshipRequestResp;
 import triplestar.mixchat.domain.member.friend.service.FriendshipRequestService;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
@@ -138,7 +139,9 @@ class ApiV1FriendshipControllerTest {
     @DisplayName("친구요청 처리(수락) 성공")
     @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void friend_accept_success() throws Exception {
-        Long requestId = friendshipRequestService.sendRequest(member2.getId(), member1.getId());
+        FriendshipRequestResp friendshipRequestResp = friendshipRequestService
+                .sendRequest(member2.getId(), member1.getId());
+        Long requestId = friendshipRequestResp.id();
 
         ResultActions resultActions = mvc
                 .perform(
@@ -156,7 +159,9 @@ class ApiV1FriendshipControllerTest {
     @DisplayName("친구요청 처리(거절) 성공")
     @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void friend_reject_success() throws Exception {
-        Long requestId = friendshipRequestService.sendRequest(member2.getId(), member1.getId());
+        FriendshipRequestResp friendshipRequestResp = friendshipRequestService
+                .sendRequest(member2.getId(), member1.getId());
+        Long requestId = friendshipRequestResp.id();
 
         ResultActions resultActions = mvc
                 .perform(
@@ -190,7 +195,9 @@ class ApiV1FriendshipControllerTest {
     @DisplayName("친구요청 처리 실패 - 권한 없음")
     @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void friend_process_denied() throws Exception {
-        Long requestId = friendshipRequestService.sendRequest(member1.getId(), member2.getId());
+        FriendshipRequestResp friendshipRequestResp = friendshipRequestService
+                .sendRequest(member1.getId(), member2.getId());
+        Long requestId = friendshipRequestResp.id();
         ResultActions resultActions = mvc
                 .perform(
                         patch("/api/v1/members/friends/{requestId}/reject", requestId)
@@ -207,7 +214,9 @@ class ApiV1FriendshipControllerTest {
     @DisplayName("친구 삭제 성공")
     @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void friend_delete_success() throws Exception {
-        Long requestId = friendshipRequestService.sendRequest(member1.getId(), member2.getId());
+        FriendshipRequestResp friendshipRequestResp = friendshipRequestService
+                .sendRequest(member1.getId(), member2.getId());
+        Long requestId = friendshipRequestResp.id();
         friendshipRequestService.processRequest(member2.getId(), requestId, true);
 
         ResultActions resultActions = mvc

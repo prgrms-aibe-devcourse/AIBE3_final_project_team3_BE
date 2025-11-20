@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.member.friend.dto.FriendshipRequestResp;
 import triplestar.mixchat.domain.member.friend.service.FriendshipRequestService;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
@@ -204,7 +205,9 @@ class MemberServiceTest {
         Member member2 = memberRepository.save(TestMemberFactory.createMember("test2"));
 
         // member1이 member2에게 친구 신청
-        Long requestId = friendshipRequestService.sendRequest(member1.getId(), member2.getId());
+        FriendshipRequestResp friendshipRequestResp = friendshipRequestService
+                .sendRequest(member1.getId(), member2.getId());
+        Long requestId = friendshipRequestResp.id();
 
         // member2가 친구 신청 수락
         friendshipRequestService.processRequest(member2.getId(), requestId, true);

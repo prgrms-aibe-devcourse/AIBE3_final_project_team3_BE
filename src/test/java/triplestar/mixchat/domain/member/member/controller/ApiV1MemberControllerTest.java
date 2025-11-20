@@ -111,7 +111,7 @@ class ApiV1MemberControllerTest {
     }
 
     @Test
-    @DisplayName("자신의 프로필 조회 성공")
+    @DisplayName("자신의 상세 조회 성공")
     @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void get_member_profile_success() throws Exception {
         ResultActions resultActions = mvc
@@ -123,12 +123,12 @@ class ApiV1MemberControllerTest {
 
         resultActions
                 .andExpect(handler().handlerType(ApiV1MemberController.class))
-                .andExpect(handler().methodName("getMemberProfile"))
+                .andExpect(handler().methodName("getMemberDetail"))
                 .andExpect(status().isOk());
     }
 
     @Test
-    @DisplayName("다른 회원의 프로필 조회 성공")
+    @DisplayName("다른 회원의 상세 조회 성공")
     @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void get_other_member_profile_success() throws Exception {
         Member otherMember = memberRepository.save(TestMemberFactory.createMember("user2"));
@@ -141,12 +141,12 @@ class ApiV1MemberControllerTest {
 
         resultActions
                 .andExpect(handler().handlerType(ApiV1MemberController.class))
-                .andExpect(handler().methodName("getMemberProfile"))
+                .andExpect(handler().methodName("getMemberDetail"))
                 .andExpect(status().isOk());
     }
 
     @Test
-    @DisplayName("비회원의 회원 프로필 조회 성공")
+    @DisplayName("비회원의 회원 상세 조회 성공")
     void get_member_profile_as_guest_success() throws Exception {
         ResultActions resultActions = mvc
                 .perform(
@@ -157,7 +157,7 @@ class ApiV1MemberControllerTest {
 
         resultActions
                 .andExpect(handler().handlerType(ApiV1MemberController.class))
-                .andExpect(handler().methodName("getMemberProfile"))
+                .andExpect(handler().methodName("getMemberDetail"))
                 .andExpect(status().isOk());
     }
 }

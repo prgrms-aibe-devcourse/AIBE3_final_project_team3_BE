@@ -6,9 +6,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
-import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
-import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
+import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
+import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
@@ -43,9 +43,9 @@ public interface ApiMemberController {
     // --- 3. 회원 상세 프로필 조회 (GET /{id}) ---
     @Operation(
             summary = "회원 상세 프로필 조회",
-            description = "특정 회원의 상세 프로필을 조회합니다. 토큰이 없거나 유효하지 않아도 조회 가능합니다. 로그인된 경우 친구/요청 상태 정보가 추가됩니다."
+            description = "특정 회원의 상세 정보를 조회합니다. 토큰이 없거나 유효하지 않아도 조회 가능합니다. 로그인된 경우 친구/요청 상태 정보가 추가됩니다."
     )
-    CustomResponse<MemberDetailResp> getMemberProfile(
+    CustomResponse<MemberDetailResp> getMemberDetail(
             @Parameter(hidden = true)
             CustomUserDetails customUserDetails, // 토큰이 있다면 인증 정보를 주입
             @Parameter(description = "조회 대상 회원의 ID", example = "10")
@@ -53,11 +53,10 @@ public interface ApiMemberController {
     );
 
     // --- 4. 내 정보 조회 (GET /me) ---
-    @Operation(summary = "내 정보 조회", description = "인증된 사용자의 프로필 정보를 조회합니다.")
+    @Operation(summary = "내 정보 조회", description = "인증된 사용자의 상세 정보를 조회합니다.")
     @SignInInRequireResponse
-    CustomResponse<MemberDetailResp> getMyProfile( // 반환 타입을 MemberProfileResp로 통일
-                                                   @Parameter(hidden = true)
-            CustomUserDetails customUserDetails
+    CustomResponse<MemberDetailResp> getMyProfile(
+            @Parameter(hidden = true) CustomUserDetails customUserDetails
     );
 
     // --- 5. 모든 회원 목록 조회 (GET /) ---
