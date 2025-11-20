@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+@Schema(description = "사용자 정답 제출")
 public record SentenceGameSubmitReq(
         @NotNull
         @Schema(description = "문장 ID", example = "10")

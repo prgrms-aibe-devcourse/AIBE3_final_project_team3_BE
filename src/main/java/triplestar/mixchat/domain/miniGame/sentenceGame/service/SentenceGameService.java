@@ -1,5 +1,6 @@
 package triplestar.mixchat.domain.miniGame.sentenceGame.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import java.util.Collections;
 import java.util.List;
@@ -36,19 +37,18 @@ public class SentenceGameService {
         List<SentenceGame> all = sentenceGameRepository.findAll();
         Collections.shuffle(all);
 
-        List<SentenceGameStartResp.QuestionItem> selected = all.stream()
-                .limit(count)
-                .map(SentenceGameStartResp.QuestionItem::from)
-                .toList();
-
-        return new SentenceGameStartResp(selected);
+        return SentenceGameStartResp.from(
+                all.stream()
+                        .limit(count)
+                        .toList()
+        );
     }
 
     @Transactional
     public SentenceGameSubmitResp submitAnswer(SentenceGameSubmitReq req) {
 
         SentenceGame game = sentenceGameRepository.findById(req.sentenceGameId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 문장입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 문장입니다."));
 
         boolean correct = game.getCorrectedContent()
                 .equalsIgnoreCase(req.userAnswer().trim());

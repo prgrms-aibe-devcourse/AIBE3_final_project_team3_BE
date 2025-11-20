@@ -6,9 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import triplestar.mixchat.domain.miniGame.sentenceGame.dto.SentenceGameCountResp;
-import triplestar.mixchat.domain.miniGame.sentenceGame.dto.SentenceGameStartReq;
 import triplestar.mixchat.domain.miniGame.sentenceGame.dto.SentenceGameStartResp;
 import triplestar.mixchat.domain.miniGame.sentenceGame.dto.SentenceGameSubmitReq;
 import triplestar.mixchat.domain.miniGame.sentenceGame.dto.SentenceGameSubmitResp;
@@ -31,9 +31,9 @@ public class ApiV1SentenceGameController implements ApiSentenceGameController{
     @Override
     @GetMapping("/start")
     public CustomResponse<SentenceGameStartResp> getStartGame(
-            @RequestBody @Valid SentenceGameStartReq req
+            @RequestParam Integer count
     ) {
-        SentenceGameStartResp resp = sentenceGameService.startGame(req.count());
+        SentenceGameStartResp resp = sentenceGameService.startGame(count);
         return CustomResponse.ok("게임 문제가 생성되었습니다.", resp);
     }
 
