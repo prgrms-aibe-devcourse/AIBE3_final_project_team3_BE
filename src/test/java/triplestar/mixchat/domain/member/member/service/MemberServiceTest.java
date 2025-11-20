@@ -151,8 +151,8 @@ class MemberServiceTest {
         assertThat(resp.description()).isEqualTo(member1.getDescription());
         assertThat(resp.profileImageUrl()).isEqualTo(member1.getProfileImageUrl());
         assertThat(resp.isFriend()).isFalse();
-        assertThat(resp.isPendingFriendRequestFromMe()).isFalse();
-        assertThat(resp.isPendingFriendRequestFromOpponent()).isFalse();
+        assertThat(resp.isFriendRequestSent()).isFalse();
+        assertThat(resp.receivedFriendRequestId()).isNull();
     }
 
     @Test
@@ -163,8 +163,8 @@ class MemberServiceTest {
         MemberDetailResp resp = memberService.getMemberDetails(member1.getId(), member2.getId());
 
         assertThat(resp.isFriend()).isFalse();
-        assertThat(resp.isPendingFriendRequestFromMe()).isFalse();
-        assertThat(resp.isPendingFriendRequestFromOpponent()).isFalse();
+        assertThat(resp.isFriendRequestSent()).isFalse();
+        assertThat(resp.receivedFriendRequestId()).isNull();
     }
 
     @Test
@@ -179,8 +179,8 @@ class MemberServiceTest {
         MemberDetailResp resp = memberService.getMemberDetails(member1.getId(), member2.getId());
 
         assertThat(resp.isFriend()).isFalse();
-        assertThat(resp.isPendingFriendRequestFromMe()).isTrue();
-        assertThat(resp.isPendingFriendRequestFromOpponent()).isFalse();
+        assertThat(resp.isFriendRequestSent()).isTrue();
+        assertThat(resp.receivedFriendRequestId()).isNull();
     }
 
     @Test
@@ -195,8 +195,8 @@ class MemberServiceTest {
         MemberDetailResp resp = memberService.getMemberDetails(member1.getId(), member2.getId());
 
         assertThat(resp.isFriend()).isFalse();
-        assertThat(resp.isPendingFriendRequestFromMe()).isFalse();
-        assertThat(resp.isPendingFriendRequestFromOpponent()).isTrue();
+        assertThat(resp.isFriendRequestSent()).isFalse();
+        assertThat(resp.receivedFriendRequestId()).isNotNull();
     }
 
     @Test
@@ -216,8 +216,8 @@ class MemberServiceTest {
         MemberDetailResp resp = memberService.getMemberDetails(member1.getId(), member2.getId());
 
         assertThat(resp.isFriend()).isTrue();
-        assertThat(resp.isPendingFriendRequestFromMe()).isFalse();
-        assertThat(resp.isPendingFriendRequestFromOpponent()).isFalse();
+        assertThat(resp.isFriendRequestSent()).isFalse();
+        assertThat(resp.receivedFriendRequestId()).isNull();
     }
 
     @Test
@@ -226,8 +226,8 @@ class MemberServiceTest {
         MemberDetailResp resp = memberService.getMemberDetails(member1.getId(), member1.getId());
 
         assertThat(resp.isFriend()).isFalse();
-        assertThat(resp.isPendingFriendRequestFromMe()).isFalse();
-        assertThat(resp.isPendingFriendRequestFromOpponent()).isFalse();
+        assertThat(resp.isFriendRequestSent()).isFalse();
+        assertThat(resp.receivedFriendRequestId()).isNull();
     }
 
     @Test

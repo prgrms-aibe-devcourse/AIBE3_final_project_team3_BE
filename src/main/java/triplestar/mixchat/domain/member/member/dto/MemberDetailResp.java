@@ -41,12 +41,12 @@ public record MemberDetailResp(
         boolean isFriend,
 
         @Schema(description = "현재 로그인 사용자가 상대방에게 친구 요청을 보내고 대기 중인 상태인지 여부",
-                example = "false", requiredMode = REQUIRED)
-        boolean isPendingFriendRequestFromMe,
+                example = "true")
+        boolean isFriendRequestSent,
 
-        @Schema(description = "현재 로그인 사용자가 상대방으로부터 친구 요청을 받고 대기 중인 상태인지 여부",
-                example = "false", requiredMode = REQUIRED)
-        boolean isPendingFriendRequestFromOpponent
+        @Schema(description = "상대방이 현재 사용자에게 보낸 친구 요청의 ID. 대기 중인 요청이 없으면 null입니다.",
+                example = "51")
+        Long receivedFriendRequestId
 ) {
         public static MemberDetailResp forAnonymousViewer(Member member) {
                 return new MemberDetailResp(
@@ -61,7 +61,7 @@ public record MemberDetailResp(
                         member.getProfileImageUrl(),
                         false,
                         false,
-                        false
+                        null
                 );
         }
 }
