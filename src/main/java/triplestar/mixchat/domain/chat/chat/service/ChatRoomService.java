@@ -60,9 +60,9 @@ public class ChatRoomService {
         }
 
         // 2. 캐시에 없으면 DB 조회 (Cache Miss)
-        boolean isMember = chatRoomMemberRepository.existsByChatRoom_IdAndMember_Id(memberId, roomId);
+        boolean isMember = chatRoomMemberRepository.existsByChatRoom_IdAndMember_Id(roomId, memberId);
         if (!isMember) {
-            log.warn("인가 거부: 사용자(ID:{})가 채팅방(ID:{})의 멤버가 아닙니다.", memberId, roomId);
+            log.warn("인가 거부: 사용자(ID:{})가 채팅방(ID:{})의 멤버가 아닙니다.", roomId, memberId);
             throw new AccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
         }
 
@@ -74,13 +74,22 @@ public class ChatRoomService {
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다. ID: " + memberId));
+                .orElseThrow(() -> new AccessDeniedException("사용자를 찾을 수 없습니다. ID: " + memberId));
     }
 
     @Transactional
     public ChatRoomResp findOrCreateDirectRoom(Long member1Id, Long member2Id) {
-        Member member1 = findMemberById(member1Id);
-        Member member2 = findMemberById(member2Id);
+        Member member1;
+        Member member2;
+
+        if(member1Id < member2Id) {
+            member1 = findMemberById(member1Id);
+            member2 = findMemberById(member2Id);
+        }
+        else{
+            member1 = findMemberById(member2Id);
+            member2 = findMemberById(member1Id);
+        }
 
         ChatRoom room = chatRoomRepository.findDirectRoomByMembers(member1, member2)
                 .orElseGet(() -> {
@@ -93,6 +102,10 @@ public class ChatRoomService {
                     newRoom.getMembers().add(chatMember2);
 
                     ChatRoom savedRoom = chatRoomRepository.save(newRoom);
+
+                    // 누락된 캐시 관리 로직 추가
+                    chatAuthCacheService.addMember(savedRoom.getId(), member1Id);
+                    chatAuthCacheService.addMember(savedRoom.getId(), member2Id);
 
                     ChatRoomResp roomDto = ChatRoomResp.from(savedRoom); // roomDto 생성
 
@@ -124,6 +137,11 @@ public class ChatRoomService {
         newRoom.getMembers().addAll(chatMembers);
 
         ChatRoom savedRoom = chatRoomRepository.save(newRoom);
+
+        // 누락된 캐시 관리 로직 추가
+        savedRoom.getMembers().forEach(cm ->
+                chatAuthCacheService.addMember(savedRoom.getId(), cm.getMember().getId())
+        );
 
         ChatRoomResp roomDto = ChatRoomResp.from(savedRoom);
         members.forEach(member -> {
@@ -165,6 +183,9 @@ public class ChatRoomService {
                 .orElseThrow(() -> new SecurityException("채팅방에 속해있지 않습니다."));
 
         room.getMembers().remove(memberToRemove);
+
+        // 누락된 캐시 관리 로직 추가
+        chatAuthCacheService.removeMember(roomId, currentUserId);
 
         if (room.getRoomType() == ChatRoom.RoomType.GROUP && room.getMembers().isEmpty()) {
             chatRoomRepository.delete(room);
