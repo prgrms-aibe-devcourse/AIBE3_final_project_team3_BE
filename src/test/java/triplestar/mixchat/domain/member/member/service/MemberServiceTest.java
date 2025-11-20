@@ -14,6 +14,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.friend.service.FriendshipRequestService;
+import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.dto.MemberProfileResp;
@@ -49,14 +50,14 @@ class MemberServiceTest {
         assertThat(member1.getEmail()).isEqualTo("test1@example.com");
         assertThat(member1.getName()).isEqualTo("test1");
         assertThat(member1.getNickname()).isEqualTo("test1");
-        assertThat(member1.getCountry().getCode()).isEqualTo("CA");
+        assertThat(member1.getCountry()).isEqualTo(Country.CA);
         assertThat(member1.getEnglishLevel()).isEqualTo(EnglishLevel.INTERMEDIATE);
         assertThat(member1.getInterests()).containsExactlyInAnyOrder("음악");
         assertThat(member1.getDescription()).isEqualTo("테스트 회원입니다.");
 
         MemberInfoModifyReq dto = new MemberInfoModifyReq(
                 "레제",
-                "JP",
+                Country.RU,
                 "자칭 여고생",
                 EnglishLevel.ADVANCED,
                 List.of("독서", "운동"),
@@ -71,7 +72,7 @@ class MemberServiceTest {
                 .orElseThrow(() -> new AssertionError("멤버 조회 실패"));
 
         assertThat(updatedMember.getName()).isEqualTo("레제");
-        assertThat(updatedMember.getCountry().getCode()).isEqualTo("JP");
+        assertThat(updatedMember.getCountry()).isEqualTo(Country.RU);
         assertThat(updatedMember.getNickname()).isEqualTo("자칭 여고생");
         assertThat(updatedMember.getEnglishLevel()).isEqualTo(EnglishLevel.ADVANCED);
         assertThat(updatedMember.getInterests()).containsExactlyInAnyOrder("독서", "운동");
@@ -96,6 +97,42 @@ class MemberServiceTest {
         // minio에 UUID로 저장되므로 파일 이름이 아닌 확장자만 확인
         assertThat(updatedMember.getProfileImageUrl()).isNotEqualTo("http://localhost:9000/test-bucket/default-profile.webp");
         assertThat(updatedMember.getProfileImageUrl()).endsWith(".png");
+    }
+
+    @Test
+    @DisplayName("프로필 이미지 null 업로드 - 기본 이미지로 변경 성공")
+    void upload_profile_image_null_success() {
+        memberService.uploadProfileImage(member1.getId(), null);
+
+        Member updatedMember = memberRepository.findById(member1.getId())
+                .orElseThrow(() -> new AssertionError("멤버 조회 실패"));
+
+        assertThat(updatedMember.getProfileImageUrl()).isEqualTo("http://localhost:9000/test-bucket/default-profile.webp");
+    }
+
+    @Test
+    @DisplayName("프로필 이미지 파일 크기 초과 실패")
+    void upload_profile_image_file_size_exceed_fail() {
+        byte[] largeFileContent = new byte[4 * 1024 * 1024];
+        MockMultipartFile largeFile = new MockMultipartFile(
+                "multipartFile",
+                "large_image.png",
+                "image/png",
+                largeFileContent);
+        assertThatThrownBy(() -> memberService.uploadProfileImage(member1.getId(), largeFile))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("프로필 이미지 파일 확장자 불가 실패")
+    void upload_profile_image_file_extension_invalid_fail() {
+        MockMultipartFile invalidFile = new MockMultipartFile(
+                "multipartFile",
+                "image.txt",
+                "text/plain",
+                "dummy text content".getBytes());
+        assertThatThrownBy(() -> memberService.uploadProfileImage(member1.getId(), invalidFile))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -191,5 +228,4 @@ class MemberServiceTest {
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("존재하지 않는 회원입니다.");
     }
-
 }

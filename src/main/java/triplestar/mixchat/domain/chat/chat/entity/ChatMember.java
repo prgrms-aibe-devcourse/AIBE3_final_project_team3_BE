@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import triplestar.mixchat.domain.chat.chat.constant.ChatNotificationSetting;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
@@ -29,6 +30,10 @@ public class ChatMember extends BaseEntity {
 
     private LocalDateTime lastReadAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ChatNotificationSetting chatNotificationSetting;
+
     public ChatMember(Member member, ChatRoom chatRoom, UserType userType) {
         if (member == null) {
             throw new IllegalArgumentException("member는 null일 수 없습니다.");
@@ -43,11 +48,25 @@ public class ChatMember extends BaseEntity {
         this.member = member;
         this.chatRoom = chatRoom;
         this.userType = userType;
+        // 기본 알림 설정은 ALWAYS로 설정
+        this.chatNotificationSetting = ChatNotificationSetting.ALWAYS;
         
         //lastReadAt은 채팅 읽은 사람 수 기능 구현시 추가 예정
     }
 
     public enum UserType {
         ROOM_MEMBER, ROOM_OWNER
+    }
+
+    public boolean isNotificationAlways() {
+        return this.chatNotificationSetting == ChatNotificationSetting.ALWAYS;
+    }
+
+    public void turnOffNotifications() {
+        this.chatNotificationSetting = ChatNotificationSetting.NONE;
+    }
+
+    public void turnOnNotifications() {
+        this.chatNotificationSetting = ChatNotificationSetting.ALWAYS;
     }
 }

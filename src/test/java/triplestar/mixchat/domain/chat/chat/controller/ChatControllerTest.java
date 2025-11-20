@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
+import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -33,6 +34,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatRoom;
+import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
 import triplestar.mixchat.domain.chat.chat.service.ChatRoomService;
 import triplestar.mixchat.domain.member.member.constant.Country;
@@ -52,8 +54,10 @@ class ChatControllerTest {
     @Autowired private ObjectMapper objectMapper;
 
     @MockitoBean private JpaMetamodelMappingContext jpaMetamodelMappingContext;
+    @MockitoBean private MongoMappingContext mongoMappingContext;
     @MockitoBean private ChatRoomService chatRoomService;
     @MockitoBean private ChatMessageService chatMessageService;
+    @MockitoBean private ChatMessageRepository chatMessageRepository;
     @MockitoBean private S3Uploader s3Uploader;
     @MockitoBean private SimpMessagingTemplate messagingTemplate;
     @MockitoBean private AuthJwtProvider authJwtProvider;
@@ -68,7 +72,7 @@ class ChatControllerTest {
                 Password.encrypt("ValidPassword123", passwordEncoder),
                 nickname,
                 nickname,
-                Country.SOUTH_KOREA,
+                Country.KR,
                 EnglishLevel.BEGINNER,
                 List.of("테스트"),
                 "테스트 설명"

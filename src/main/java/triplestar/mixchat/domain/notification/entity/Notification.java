@@ -7,7 +7,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -34,13 +33,20 @@ public class Notification extends BaseEntity {
     @Column(nullable = false)
     private boolean isRead;
 
-    @Builder
     private Notification(Member receiver, Member sender, NotificationType type, String content) {
         validate(receiver, type);
         this.receiver = receiver;
         this.sender = sender;
         this.type = type;
         this.content = content;
+    }
+
+    public static Notification withSenderAndContent(Member receiver, Member sender, NotificationType type, String content) {
+        return new Notification(receiver, sender, type, content);
+    }
+
+    public static Notification create(Member receiver, NotificationType type) {
+        return new Notification(receiver, null, type, null);
     }
 
     private void validate(Member receiver, NotificationType type) {

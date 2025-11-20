@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
+import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.auth.dto.LogInResp;
 import triplestar.mixchat.domain.member.auth.dto.LogInReq;
 import triplestar.mixchat.domain.member.auth.service.AuthService;
@@ -28,9 +28,9 @@ public class ApiV1AuthController implements ApiAuthController {
     @Override
     @PostMapping("/join")
     public CustomResponse<MemberSummaryResp> join(
-            @RequestBody @Valid MemberJoinReq memberJoinReq
+            @RequestBody @Valid SignUpReq signUpReq
     ) {
-        MemberSummaryResp resp = authService.join(memberJoinReq);
+        MemberSummaryResp resp = authService.join(signUpReq);
         return CustomResponse.ok("회원가입에 성공했습니다.", resp);
     }
 

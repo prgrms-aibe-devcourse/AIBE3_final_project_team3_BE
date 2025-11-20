@@ -1,5 +1,13 @@
 package triplestar.mixchat.domain.chat.chat.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
@@ -22,12 +31,7 @@ import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import triplestar.mixchat.global.cache.ChatAuthCacheService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -41,6 +45,9 @@ class ChatControllerIntTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @MockitoBean // 캐시 서비스는 실제 Redis에 의존하므로 테스트 시에는 Mock 객체로 대체합니다.
+    private ChatAuthCacheService chatAuthCacheService;
 
     // 통합 테스트에서는 실제 Repository를 주입받아 DB 상태를 준비하고 검증합니다.
     @Autowired
@@ -62,11 +69,11 @@ class ChatControllerIntTest {
         // TestFactoryMember도 활용 가능합니다.
         user1 = memberRepository.save(Member.createMember(
                 "user1@example.com", Password.encrypt("ValidPassword123", passwordEncoder),
-                "유저1", "유저1", Country.SOUTH_KOREA, EnglishLevel.BEGINNER,
+                "유저1", "유저1", Country.KR, EnglishLevel.BEGINNER,
                 List.of("테스트"), "테스트 유저 1"));
         user2 = memberRepository.save(Member.createMember(
                 "user2@example.com", Password.encrypt("ValidPassword123", passwordEncoder),
-                "유저2", "유저2", Country.UNITED_STATES, EnglishLevel.INTERMEDIATE,
+                "유저2", "유저2", Country.UK, EnglishLevel.INTERMEDIATE,
                 List.of("테스트"), "테스트 유저 2"));
     }
 
@@ -75,6 +82,9 @@ class ChatControllerIntTest {
     @DisplayName("1:1 채팅방 생성 통합 테스트 성공")
     void createDirectRoom_integration_success() throws Exception {
         // given (준비)
+        // 이 테스트에서는 캐시 로직을 검증하는 것이 아니므로, 캐시 확인은 항상 통과하도록 설정합니다.
+        given(chatAuthCacheService.isMember(anyLong(), anyLong())).willReturn(true);
+
         // user1, user2는 @BeforeEach에서 실제 DB에 저장되었습니다.
         CreateDirectChatReq requestDto = new CreateDirectChatReq(user2.getId());
 

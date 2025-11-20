@@ -6,11 +6,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
+import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.auth.dto.LogInResp;
 import triplestar.mixchat.domain.member.auth.dto.LogInReq;
-import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
@@ -29,18 +28,18 @@ public class AuthService {
     private final AuthJwtProvider authJwtProvider;
     private final RedisTokenRepository redisTokenRepository;
 
-    @Qualifier("defaultProfileBaseURL")
+    @Qualifier("defaultProfileImageUrl")
     private final String defaultProfileBaseURL;
 
     /**
      * 회원가입
      */
-    public MemberSummaryResp join(MemberJoinReq req) {
+    public MemberSummaryResp join(SignUpReq req) {
         validateJoinReq(req);
         Member member = Member.createMember(
                 req.email(), Password.encrypt(req.password(), passwordEncoder),
                 req.name(), req.nickname(),
-                Country.findByCode(req.country()), req.englishLevel(), req.interests(), req.description()
+                req.country(), req.englishLevel(), req.interests(), req.description()
         );
         member.updateProfileImageUrl(defaultProfileBaseURL);
 
@@ -48,7 +47,7 @@ public class AuthService {
         return new MemberSummaryResp(savedMember);
     }
 
-    private void validateJoinReq(MemberJoinReq req) {
+    private void validateJoinReq(SignUpReq req) {
         String reqEmail = req.email();
         if (memberRepository.existsByEmail(reqEmail)) {
             throw new UniqueConstraintException("이미 사용중인 이메일입니다: " + reqEmail);

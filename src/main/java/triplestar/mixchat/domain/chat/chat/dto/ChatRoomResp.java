@@ -1,31 +1,26 @@
 package triplestar.mixchat.domain.chat.chat.dto;
 
 
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
+import java.util.stream.Collectors;
 import triplestar.mixchat.domain.chat.chat.entity.ChatRoom;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 public record ChatRoomResp(
-        @NotNull
-        @Schema(description = "채팅방 ID", example = "1")
+        @Schema(description = "채팅방 ID", example = "1", requiredMode = REQUIRED)
         Long id,
 
-        @NotBlank
-        @Schema(description = "채팅방 이름", example = "그룹 채팅방")
+        @Schema(description = "채팅방 이름", example = "그룹 채팅방", requiredMode = REQUIRED)
         String name,
 
-        @NotNull
-        @Schema(description = "채팅방 타입", example = "GROUP")
+        @Schema(description = "채팅방 타입", example = "GROUP", requiredMode = REQUIRED)
         ChatRoom.RoomType roomType,
 
-        @NotEmpty
-        @Schema(description = "채팅방 멤버 목록")
+        @Schema(description = "채팅방 멤버 목록", requiredMode = REQUIRED)
         List<MemberDto> members
 ) {
     public static ChatRoomResp from(ChatRoom entity) {

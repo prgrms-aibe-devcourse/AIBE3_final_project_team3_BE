@@ -18,10 +18,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // 클라이언트가 웹소켓 연결을 시작할 엔드포인트를 설정합니다.
-        // SockJS는 웹소켓을 지원하지 않는 브라우저에서도 유사한 경험을 제공합니다.
+        // SockJS 지원을 제거하고 표준 웹소켓만 사용합니다.
         registry.addEndpoint("/ws-stomp")
-                .setAllowedOriginPatterns("*") // 모든 출처에서의 연결을 허용합니다. (개발용)
-                .withSockJS();
+                .setAllowedOriginPatterns("*"); // 모든 출처에서의 연결을 허용합니다. (개발용)
     }
 
     @Override
@@ -39,6 +38,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
+        // StompHandler는 여전히 필요합니다. (인증/인가 처리)
         registration.interceptors(stompHandler);
     }
 }

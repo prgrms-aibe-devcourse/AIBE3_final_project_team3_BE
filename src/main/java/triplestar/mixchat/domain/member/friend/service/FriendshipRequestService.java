@@ -2,6 +2,7 @@ package triplestar.mixchat.domain.member.friend.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,6 +10,8 @@ import triplestar.mixchat.domain.member.friend.entity.FriendshipRequest;
 import triplestar.mixchat.domain.member.friend.repository.FriendshipRequestRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.domain.notification.constant.NotificationType;
+import triplestar.mixchat.global.notifiaction.NotificationEvent;
 
 @Service
 @Transactional
@@ -18,6 +21,7 @@ public class FriendshipRequestService {
     private final FriendshipService friendshipService;
     private final FriendshipRequestRepository friendshipRequestRepository;
     private final MemberRepository memberRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 친구 요청 생성
@@ -29,6 +33,9 @@ public class FriendshipRequestService {
 
         FriendshipRequest friendshipRequest = new FriendshipRequest(sender, receiver);
         FriendshipRequest entity = friendshipRequestRepository.save(friendshipRequest);
+
+        // 알림 이벤트 발행
+        eventPublisher.publishEvent(new NotificationEvent(receiverId, senderId, NotificationType.FRIEND_REQUEST));
         return entity.getId();
     }
 
@@ -66,6 +73,9 @@ public class FriendshipRequestService {
         }
 
         friendshipRequestRepository.delete(request);
+
+        // 알림 이벤트 발행
+        publishRequestResult(isAccepted, request);
     }
 
     private FriendshipRequest validateFriendshipRequest(Long memberId, Long requestId) {
@@ -76,5 +86,21 @@ public class FriendshipRequestService {
             throw new AccessDeniedException("본인이 받은 친구 요청만 처리할 수 있습니다.");
         }
         return request;
+    }
+
+    private void publishRequestResult(boolean isAccepted, FriendshipRequest request) {
+        if (isAccepted) {
+            eventPublisher.publishEvent(new NotificationEvent(
+                    request.getSender().getId(),
+                    request.getReceiver().getId(),
+                    NotificationType.FRIEND_REQUEST_ACCEPT
+            ));
+        } else {
+            eventPublisher.publishEvent(new NotificationEvent(
+                    request.getSender().getId(),
+                    request.getReceiver().getId(),
+                    NotificationType.FRIEND_REQUEST_REJECT
+            ));
+        }
     }
 }

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-import triplestar.mixchat.domain.notification.event.NotificationEvent;
+import triplestar.mixchat.global.notifiaction.NotificationEvent;
 import triplestar.mixchat.domain.notification.dto.NotificationResp;
 import triplestar.mixchat.domain.notification.entity.Notification;
 import triplestar.mixchat.domain.notification.repository.NotificationRepository;
@@ -54,11 +54,7 @@ public class NotificationService {
                     .orElseThrow(() -> new EntityNotFoundException("해당 회원 ID 없음"));
         }
 
-        Notification notification = Notification.builder()
-                .receiver(receiver)
-                .sender(sender)
-                .type(event.type())
-                .content(event.extraContent()).build();
+        Notification notification = Notification.withSenderAndContent(receiver, sender, event.type(), event.extraContent());
 
         Notification saved = notificationRepository.save(notification);
 
@@ -70,7 +66,8 @@ public class NotificationService {
                 saved.getType(),
                 saved.isRead(),
                 saved.getCreatedAt(),
-                saved.getContent()
+                saved.getContent(),
+                0L
         );
     }
 
@@ -78,7 +75,10 @@ public class NotificationService {
      * 알림 조회(페이징)
      */
     public Page<NotificationResp> getNotifications(Long receiverId, Pageable pageable) {
-        return notificationRepository.findAllByReceiverId(receiverId, pageable);
+        Page<Notification> notifications = notificationRepository.findAllByReceiverId(receiverId, pageable);
+        LocalDateTime now = LocalDateTime.now();
+
+        return notifications.map(n -> NotificationResp.from(n, now));
     }
 
     /**

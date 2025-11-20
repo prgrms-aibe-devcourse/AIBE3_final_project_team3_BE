@@ -1,50 +1,68 @@
 package triplestar.mixchat.domain.chat.chat.service;
 
-
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
-import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
-import triplestar.mixchat.domain.chat.chat.repository.ChatRoomRepository;
-import triplestar.mixchat.domain.member.member.entity.Member;
-import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
+import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
+import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
+import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
+import triplestar.mixchat.domain.member.member.entity.Member;
+import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.domain.notification.constant.NotificationType;
+import triplestar.mixchat.global.notifiaction.NotificationEvent;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ChatMessageService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final MemberRepository memberRepository;
-    private final ChatRoomRepository chatRoomRepository;
+    private final ChatRoomService chatRoomService; // 검증 로직을 위해 주입
+    private final ChatRoomMemberRepository chatRoomMemberRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
+    @Transactional
+    public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType) {
+        // 1. 사용자가 해당 채팅방의 멤버인지 검증 (캐시 -> DB 순서)
+        chatRoomService.verifyUserIsMemberOfRoom(senderId, roomId);
 
-    public MessageResp saveMessage(Long roomId, Long senderId, String content, ChatMessage.MessageType messageType) {
-        chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("채팅방 없음"));
-        Member sender = memberRepository.findById(senderId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-        ChatMessage message = ChatMessage.builder()
-                .chatRoomId(roomId)
-                .senderId(senderId)
-                .content(content)
-                .messageType(messageType)
-                .build();
+        // 2. 검증 통과 후 메시지 생성 및 저장 (생성자 사용)
+        ChatMessage message = new ChatMessage(roomId, senderId, content, messageType);
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
-        return MessageResp.from(savedMessage, sender.getNickname());
+        // 3. 알림 이벤트
+        List<ChatMember> roomMembers = chatRoomMemberRepository.findByChatRoomId(roomId, senderId);
+
+        for (ChatMember receiver : roomMembers) {
+            if (receiver.isNotificationAlways()) {
+                eventPublisher.publishEvent(
+                        new NotificationEvent(
+                                receiver.getMember().getId(),
+                                senderId,
+                                NotificationType.CHAT_MESSAGE,
+                                savedMessage.getContent()
+                        )
+                );
+            }
+            // TODO : Mention 기능 지원하게 되면 Mention Only 알림 처리
+        }
+        // 4. 응답 생성
+        return MessageResp.from(savedMessage, senderNickname);
     }
 
-    public MessageResp saveFileMessage(Long roomId, Long senderId, String fileUrl, ChatMessage.MessageType messageType) {
+    @Transactional
+    public MessageResp saveFileMessage(Long roomId, Long senderId, String senderNickname, String fileUrl, ChatMessage.MessageType messageType) {
         if (messageType != ChatMessage.MessageType.IMAGE && messageType != ChatMessage.MessageType.FILE) {
             throw new IllegalArgumentException("파일 메시지는 IMAGE 또는 FILE 타입이어야 합니다.");
         }
-        return saveMessage(roomId, senderId, fileUrl, messageType);
+        return saveMessage(roomId, senderId, senderNickname, fileUrl, messageType);
     }
 
     public List<MessageResp> getMessagesWithSenderInfo(Long roomId) {

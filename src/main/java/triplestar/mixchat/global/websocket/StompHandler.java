@@ -7,9 +7,10 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
-import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.messaging.support.ExecutorChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -30,7 +31,7 @@ import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
 // stompHandler는 웹소켓 메시지를 가로채는 인터셉터
 // order + 99를 통해 기본 인터셉터들보다는 늦게, 다른 커스텀보다는 빠르게 설정
 @Order(Ordered.HIGHEST_PRECEDENCE + 99)
-public class StompHandler implements ChannelInterceptor {
+public class StompHandler implements ExecutorChannelInterceptor {
 
     private final AuthJwtProvider authJwtProvider;
     private final MemberRepository memberRepository;
@@ -56,17 +57,27 @@ public class StompHandler implements ChannelInterceptor {
         switch (command) {
             case CONNECT -> handleConnect(accessor);
             case SUBSCRIBE -> handleSubscribe(accessor);
-            case SEND -> handleSend(accessor);
+            case SEND -> { /* preSend에서는 특별한 작업을 하지 않음. beforeHandle에서 처리. */ }
             case DISCONNECT -> log.info("STOMP DISCONNECT: sessionId={}", accessor.getSessionId());
             default -> { /* NO-OP */ }
         }
         return message;
     }
 
-    private void handleSend(StompHeaderAccessor accessor) {
-        Authentication authentication = requireAuth(accessor);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        log.debug("STOMP SEND: Authenticated user {} for destination {}", authentication.getName(), accessor.getDestination());
+    @Override
+    public Message<?> beforeHandle(Message<?> message, MessageChannel channel, MessageHandler handler) {
+        StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+        Principal principal = accessor.getUser();
+
+        // [로그 추가] beforeHandle에서 principal 객체 확인
+        if (principal != null) {
+            log.info("✅ [beforeHandle] Principal'{}' found in session '{}'. Setting SecurityContext.", principal.getName(), accessor.getSessionId());
+            SecurityContextHolder.getContext().setAuthentication((Authentication) principal);
+        } else {
+            log.warn("❌ [beforeHandle] Principal NOT FOUND in session '{}'. SecurityContext will be empty.", accessor.getSessionId());
+        }
+        
+        return message;
     }
 
     private void handleConnect(StompHeaderAccessor accessor) {
@@ -82,12 +93,13 @@ public class StompHandler implements ChannelInterceptor {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new AccessDeniedException("사용자 정보를 찾을 수 없습니다. ID: " + memberId));
 
-        CustomUserDetails userDetails = new CustomUserDetails(member.getId(), member.getRole());
+        CustomUserDetails userDetails = new CustomUserDetails(member.getId(), member.getRole(), member.getNickname());
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities());
         accessor.setUser(authentication);
 
-        log.info("STOMP CONNECT (Authenticated): memberId={}, sessionId={}", memberId, accessor.getSessionId());
+        // [로그 추가] handleConnect에서 인증 정보가 세션에 잘 설정되었는지 확인
+        log.info("✅ [handleConnect] User '{}' authentication object set to session '{}'", authentication.getName(), accessor.getSessionId());
     }
 
     private void handleSubscribe(StompHeaderAccessor accessor) {
@@ -119,8 +131,8 @@ public class StompHandler implements ChannelInterceptor {
 
     private Authentication requireAuth(StompHeaderAccessor accessor) {
         Principal principal = accessor.getUser();
-        if (principal instanceof Authentication auth && auth.isAuthenticated()) {
-            return auth;
+        if (principal instanceof Authentication && ((Authentication) principal).isAuthenticated()) {
+            return (Authentication) principal;
         }
         throw new BadCredentialsException("인증된 사용자만 이 작업을 수행할 수 있습니다.");
     }

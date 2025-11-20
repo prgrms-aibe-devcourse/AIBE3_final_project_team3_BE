@@ -27,8 +27,8 @@ public interface ApiNotificationController {
     CustomResponse<Page<NotificationResp>> getNotifications(
             @Parameter(hidden = true)
             CustomUserDetails userDetails,
-            @Parameter(description = "페이지네이션 정보 (size=20, sort=createdAt, direction=DESC 기본값)")
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @Parameter(hidden = true)
+            Pageable pageable
     );
 
     // --- 2. 모든 알림 읽음 처리 (PATCH /read-all) ---
