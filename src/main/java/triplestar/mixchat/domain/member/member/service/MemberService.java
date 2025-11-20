@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
-import triplestar.mixchat.domain.member.member.dto.MemberProfileResp;
+import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.s3.S3Uploader;
@@ -68,12 +68,12 @@ public class MemberService {
         member.updateProfileImageUrl(url);
     }
 
-    public MemberProfileResp getMemberDetails(Long signInId, Long memberId) {
+    public MemberDetailResp getMemberDetails(Long signInId, Long memberId) {
         // 비회원이 조회하는 경우
         // isFriend, isPendingRequest는 모두 false로 반환
         if (signInId == null) {
             Member member = findMemberById(memberId);
-            return MemberProfileResp.forAnonymousViewer(member);
+            return MemberDetailResp.forAnonymousViewer(member);
         }
 
         // 회원이 조회하는 경우

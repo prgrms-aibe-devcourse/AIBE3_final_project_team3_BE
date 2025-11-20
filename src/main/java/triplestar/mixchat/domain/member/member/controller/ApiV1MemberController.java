@@ -14,7 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.chat.find.service.FindService;
 import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
-import triplestar.mixchat.domain.member.member.dto.MemberProfileResp;
+import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
 import triplestar.mixchat.domain.member.member.service.MemberService;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
@@ -58,22 +58,22 @@ public class ApiV1MemberController implements ApiMemberController {
 
     @Override
     @GetMapping("/me")
-    public CustomResponse<MemberProfileResp> getMyProfile(
+    public CustomResponse<MemberDetailResp> getMyProfile(
             @AuthenticationPrincipal CustomUserDetails customUserDetails
     ) {
-        MemberProfileResp memberProfile = memberService.getMemberDetails(customUserDetails.getId(), customUserDetails.getId());
+        MemberDetailResp memberProfile = memberService.getMemberDetails(customUserDetails.getId(), customUserDetails.getId());
         return CustomResponse.ok("내 정보를 성공적으로 조회했습니다.", memberProfile);
     }
 
     @Override
     @GetMapping("/{id}")
-    public CustomResponse<MemberProfileResp> getMemberProfile(
+    public CustomResponse<MemberDetailResp> getMemberDetail(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             @PathVariable Long id
     ) {
         Long signInId = customUserDetails != null ? customUserDetails.getId() : null;
 
-        MemberProfileResp memberDetails = memberService.getMemberDetails(signInId, id);
-        return CustomResponse.ok("회원 정보 조회에 성공했습니다.", memberDetails);
+        MemberDetailResp memberDetails = memberService.getMemberDetails(signInId, id);
+        return CustomResponse.ok("회원 상세 정보 조회에 성공했습니다.", memberDetails);
     }
 }

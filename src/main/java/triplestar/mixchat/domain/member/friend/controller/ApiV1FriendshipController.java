@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import triplestar.mixchat.domain.member.friend.dto.FriendshipSendReq;
+import triplestar.mixchat.domain.member.friend.dto.FriendshipRequestResp;
 import triplestar.mixchat.domain.member.friend.service.FriendshipRequestService;
 import triplestar.mixchat.domain.member.friend.service.FriendshipService;
 import triplestar.mixchat.global.response.CustomResponse;
@@ -25,14 +26,14 @@ public class ApiV1FriendshipController implements ApiFriendshipController {
 
     @Override
     @PostMapping
-    public CustomResponse<Long> sendFriendRequest(
+    public CustomResponse<FriendshipRequestResp> sendFriendRequest(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody FriendshipSendReq req
     ) {
         Long memberId = userDetails.getId();
-        Long requestId = friendshipRequestService.sendRequest(memberId, req.receiverId());
+        FriendshipRequestResp resp = friendshipRequestService.sendRequest(memberId, req.receiverId());
 
-        return CustomResponse.ok("친구 요청이 성공적으로 전송되었습니다.", requestId);
+        return CustomResponse.ok("친구 요청이 성공적으로 전송되었습니다.", resp);
     }
 
     @Override

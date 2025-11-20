@@ -13,11 +13,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.member.friend.dto.FriendshipRequestResp;
 import triplestar.mixchat.domain.member.friend.service.FriendshipRequestService;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
-import triplestar.mixchat.domain.member.member.dto.MemberProfileResp;
+import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.testutils.TestMemberFactory;
@@ -138,7 +139,7 @@ class MemberServiceTest {
     @Test
     @DisplayName("회원 상세 조회 - 비회원 조회 성공")
     void get_member_details_non_member_success() {
-        MemberProfileResp resp = memberService.getMemberDetails(null, member1.getId());
+        MemberDetailResp resp = memberService.getMemberDetails(null, member1.getId());
 
         assertThat(resp.memberId()).isEqualTo(member1.getId());
         assertThat(resp.email()).isEqualTo(member1.getEmail());
@@ -150,7 +151,8 @@ class MemberServiceTest {
         assertThat(resp.description()).isEqualTo(member1.getDescription());
         assertThat(resp.profileImageUrl()).isEqualTo(member1.getProfileImageUrl());
         assertThat(resp.isFriend()).isFalse();
-        assertThat(resp.isPendingRequest()).isFalse();
+        assertThat(resp.isPendingFriendRequestFromMe()).isFalse();
+        assertThat(resp.isPendingFriendRequestFromOpponent()).isFalse();
     }
 
     @Test
@@ -158,10 +160,11 @@ class MemberServiceTest {
     void get_member_details_member_no_friend_no_request_success() {
         Member member2 = memberRepository.save(TestMemberFactory.createMember("test2"));
 
-        MemberProfileResp resp = memberService.getMemberDetails(member1.getId(), member2.getId());
+        MemberDetailResp resp = memberService.getMemberDetails(member1.getId(), member2.getId());
 
         assertThat(resp.isFriend()).isFalse();
-        assertThat(resp.isPendingRequest()).isFalse();
+        assertThat(resp.isPendingFriendRequestFromMe()).isFalse();
+        assertThat(resp.isPendingFriendRequestFromOpponent()).isFalse();
     }
 
     @Test
@@ -173,10 +176,11 @@ class MemberServiceTest {
         friendshipRequestService.sendRequest(member1.getId(), member2.getId());
 
         // member1이 member2의 정보를 조회
-        MemberProfileResp resp = memberService.getMemberDetails(member1.getId(), member2.getId());
+        MemberDetailResp resp = memberService.getMemberDetails(member1.getId(), member2.getId());
 
         assertThat(resp.isFriend()).isFalse();
-        assertThat(resp.isPendingRequest()).isTrue();
+        assertThat(resp.isPendingFriendRequestFromMe()).isTrue();
+        assertThat(resp.isPendingFriendRequestFromOpponent()).isFalse();
     }
 
     @Test
@@ -188,10 +192,11 @@ class MemberServiceTest {
         friendshipRequestService.sendRequest(member2.getId(), member1.getId());
 
         // member1이 member2의 정보를 조회
-        MemberProfileResp resp = memberService.getMemberDetails(member1.getId(), member2.getId());
+        MemberDetailResp resp = memberService.getMemberDetails(member1.getId(), member2.getId());
 
         assertThat(resp.isFriend()).isFalse();
-        assertThat(resp.isPendingRequest()).isTrue();
+        assertThat(resp.isPendingFriendRequestFromMe()).isFalse();
+        assertThat(resp.isPendingFriendRequestFromOpponent()).isTrue();
     }
 
     @Test
@@ -200,25 +205,29 @@ class MemberServiceTest {
         Member member2 = memberRepository.save(TestMemberFactory.createMember("test2"));
 
         // member1이 member2에게 친구 신청
-        Long requestId = friendshipRequestService.sendRequest(member1.getId(), member2.getId());
+        FriendshipRequestResp friendshipRequestResp = friendshipRequestService
+                .sendRequest(member1.getId(), member2.getId());
+        Long requestId = friendshipRequestResp.id();
 
         // member2가 친구 신청 수락
         friendshipRequestService.processRequest(member2.getId(), requestId, true);
 
         // member1이 member2의 정보를 조회
-        MemberProfileResp resp = memberService.getMemberDetails(member1.getId(), member2.getId());
+        MemberDetailResp resp = memberService.getMemberDetails(member1.getId(), member2.getId());
 
         assertThat(resp.isFriend()).isTrue();
-        assertThat(resp.isPendingRequest()).isFalse();
+        assertThat(resp.isPendingFriendRequestFromMe()).isFalse();
+        assertThat(resp.isPendingFriendRequestFromOpponent()).isFalse();
     }
 
     @Test
     @DisplayName("회원 상세 조회 - 자기 자신 조회 성공")
     void get_member_details_self_success() {
-        MemberProfileResp resp = memberService.getMemberDetails(member1.getId(), member1.getId());
+        MemberDetailResp resp = memberService.getMemberDetails(member1.getId(), member1.getId());
 
         assertThat(resp.isFriend()).isFalse();
-        assertThat(resp.isPendingRequest()).isFalse();
+        assertThat(resp.isPendingFriendRequestFromMe()).isFalse();
+        assertThat(resp.isPendingFriendRequestFromOpponent()).isFalse();
     }
 
     @Test

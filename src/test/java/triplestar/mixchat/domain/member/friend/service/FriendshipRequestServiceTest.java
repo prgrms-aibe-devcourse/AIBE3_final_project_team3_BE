@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.member.friend.dto.FriendshipRequestResp;
 import triplestar.mixchat.domain.member.friend.repository.FriendshipRequestRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
@@ -79,7 +80,9 @@ class FriendshipRequestServiceTest {
     @Test
     @DisplayName("친구 요청 수락/거절 성공 - 수락")
     void process_success_accept() {
-        Long requestId = friendshipRequestService.sendRequest(member1.getId(), member2.getId());
+        FriendshipRequestResp friendshipRequestResp = friendshipRequestService
+                .sendRequest(member1.getId(), member2.getId());
+        Long requestId = friendshipRequestResp.id();
         friendshipRequestService.processRequest(member2.getId(), requestId, true);
 
         assertThat(friendshipService.isFriends(member1.getId(), member2.getId())).isTrue();
@@ -92,7 +95,9 @@ class FriendshipRequestServiceTest {
     @Test
     @DisplayName("친구 요청 수락/거절 이미 친구관계")
     void send_fail_already_friends() {
-        Long requestId = friendshipRequestService.sendRequest(member1.getId(), member2.getId());
+        FriendshipRequestResp friendshipRequestResp = friendshipRequestService
+                .sendRequest(member1.getId(), member2.getId());
+        Long requestId = friendshipRequestResp.id();
         friendshipRequestService.processRequest(member2.getId(), requestId, true);
 
         assertThatThrownBy(() -> friendshipRequestService.sendRequest(member1.getId(), member2.getId()))
@@ -107,7 +112,9 @@ class FriendshipRequestServiceTest {
     @Test
     @DisplayName("친구 요청 수락/거절 성공 - 거절")
     void process_success_reject() {
-        Long requestId = friendshipRequestService.sendRequest(member1.getId(), member2.getId());
+        FriendshipRequestResp friendshipRequestResp = friendshipRequestService
+                .sendRequest(member1.getId(), member2.getId());
+        Long requestId = friendshipRequestResp.id();
         friendshipRequestService.processRequest(member2.getId(), requestId, false);
 
         assertThat(friendshipService.isFriends(member1.getId(), member2.getId())).isFalse();
@@ -130,7 +137,9 @@ class FriendshipRequestServiceTest {
     @Test
     @DisplayName("친구 요청 수락/거절 실패 - 요청 받은사람만 처리 가능")
     void process_fail_access_denied() {
-        Long requestId = friendshipRequestService.sendRequest(member1.getId(), member2.getId());
+        FriendshipRequestResp friendshipRequestResp = friendshipRequestService
+                .sendRequest(member1.getId(), member2.getId());
+        Long requestId = friendshipRequestResp.id();
 
         assertThatThrownBy(() -> friendshipRequestService.processRequest(member1.getId(), requestId, false))
                 .isInstanceOf(AccessDeniedException.class)
@@ -140,7 +149,9 @@ class FriendshipRequestServiceTest {
     @Test
     @DisplayName("친구 관계 삭제 성공")
     void delete_friendship_success() {
-        Long requestId = friendshipRequestService.sendRequest(member1.getId(), member2.getId());
+        FriendshipRequestResp friendshipRequestResp = friendshipRequestService
+                .sendRequest(member1.getId(), member2.getId());
+        Long requestId = friendshipRequestResp.id();
         friendshipRequestService.processRequest(member2.getId(), requestId, true);
 
         assertThat(friendshipService.isFriends(member1.getId(), member2.getId())).isTrue();
