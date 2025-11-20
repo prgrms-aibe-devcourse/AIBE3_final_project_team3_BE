@@ -38,15 +38,15 @@ public record MemberDetailResp(
         String profileImageUrl,
 
         @Schema(description = "현재 로그인 사용자와 친구 관계인지 여부", example = "true", requiredMode = REQUIRED)
-        Boolean isFriend,
+        boolean isFriend,
 
         @Schema(description = "현재 로그인 사용자가 상대방에게 친구 요청을 보내고 대기 중인 상태인지 여부",
                 example = "false", requiredMode = REQUIRED)
-        Boolean isPendingFriendRequestFromMe,
+        boolean isPendingFriendRequestFromMe,
 
         @Schema(description = "현재 로그인 사용자가 상대방으로부터 친구 요청을 받고 대기 중인 상태인지 여부",
                 example = "false", requiredMode = REQUIRED)
-        Boolean isPendingFriendRequestFromOpponent
+        boolean isPendingFriendRequestFromOpponent
 ) {
         public static MemberDetailResp forAnonymousViewer(Member member) {
                 return new MemberDetailResp(
