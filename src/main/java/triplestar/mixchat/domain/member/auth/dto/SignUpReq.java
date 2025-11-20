@@ -7,10 +7,11 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
+import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 
 @Schema(description = "사용자의 회원가입 요청 정보")
-public record MemberJoinReq(
+public record SignUpReq(
 
         @Schema(description = "사용자 이메일 주소", example = "user@example.com")
         @NotBlank
@@ -31,8 +32,8 @@ public record MemberJoinReq(
         String name,
 
         @Schema(description = "국가 코드 (ISO 3166 Alpha-2)", example = "KR")
-        @NotBlank
-        String country,
+        @NotNull
+        Country country,
 
         @Schema(description = "사용자 닉네임", example = "MixMaster")
         @NotBlank

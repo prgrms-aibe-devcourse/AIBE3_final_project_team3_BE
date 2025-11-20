@@ -25,7 +25,7 @@ public record MemberProfileResp(
         @Schema(description = "닉네임", example = "MixMaster", requiredMode = REQUIRED)
         String nickname,
 
-        @Schema(description = "국가 (Full Name)", example = "Korea", requiredMode = REQUIRED)
+        @Schema(description = "국가 코드 (Alpha-2)", example = "KR", requiredMode = REQUIRED)
         Country country,
 
         @Schema(description = "영어 실력 레벨", example = "BEGINNER", requiredMode = REQUIRED)

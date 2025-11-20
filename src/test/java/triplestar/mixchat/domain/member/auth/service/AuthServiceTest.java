@@ -11,10 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
-import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
+import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
 import triplestar.mixchat.domain.member.auth.dto.LogInReq;
-import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.auth.dto.LogInResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
@@ -37,18 +38,18 @@ class AuthServiceTest {
     private AuthJwtProvider authJwtProvider;
 
     private MemberSummaryResp joinDummy(String email) {
-        MemberJoinReq memberJoinReq = new MemberJoinReq(
+        SignUpReq signUpReq = new SignUpReq(
                 email,
                 "user1234",
                 "user1234",
                 "홍길동",
-                "UK",
+                Country.UK,
                 "loveCoding",
                 EnglishLevel.NATIVE,
                 List.of("프로그래밍 좋아함"),
                 "다른 것도 좋아함"
         );
-        return authService.join(memberJoinReq);
+        return authService.join(signUpReq);
     }
 
     @Test
@@ -61,7 +62,7 @@ class AuthServiceTest {
 
         assertThat(member.getEmail()).isEqualTo("test@test.com");
         assertThat(member.getName()).isEqualTo("홍길동");
-        assertThat(member.getCountry().getCode()).isEqualTo("UK");
+        assertThat(member.getCountry()).isEqualTo(Country.UK);
         assertThat(member.getNickname()).isEqualTo("loveCoding");
         assertThat(member.getEnglishLevel()).isEqualTo(EnglishLevel.NATIVE);
         assertThat(member.getInterests()).isEqualTo(List.of("프로그래밍 좋아함"));
@@ -87,12 +88,12 @@ class AuthServiceTest {
     @Test
     @DisplayName("회원가입 - 실패 패스워드 확인 불일치")
     void join_fail_password_confirm() {
-        MemberJoinReq memberJoinReq = new MemberJoinReq(
+        SignUpReq signUpReq = new SignUpReq(
                 "test@test.com",
                 "user1234",
                 "user12345",
                 "홍길동",
-                "UK",
+                Country.UK,
                 "loveCoding",
                 EnglishLevel.NATIVE,
                 List.of("프로그래밍 좋아함"),
@@ -100,7 +101,7 @@ class AuthServiceTest {
         );
 
         Assertions.assertThatThrownBy(() -> {
-            authService.join(memberJoinReq);
+            authService.join(signUpReq);
         }).isInstanceOf(IllegalArgumentException.class);
     }
 

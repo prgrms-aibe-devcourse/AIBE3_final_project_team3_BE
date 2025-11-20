@@ -8,8 +8,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
+import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.auth.dto.LogInReq;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
@@ -24,7 +24,7 @@ public interface ApiAuthController {
     @Operation(summary = "회원가입", description = "새로운 사용자를 회원으로 가입시킵니다.")
     CustomResponse<MemberSummaryResp> join(
             @RequestBody(description = "가입 정보", required = true)
-            MemberJoinReq memberJoinReq
+            SignUpReq signUpReq
     );
 
     // --- 2. 로그인 (POST /sign-in) ---

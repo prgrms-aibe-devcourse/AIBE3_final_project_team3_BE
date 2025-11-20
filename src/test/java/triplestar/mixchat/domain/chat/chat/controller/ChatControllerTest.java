@@ -72,7 +72,7 @@ class ChatControllerTest {
                 Password.encrypt("ValidPassword123", passwordEncoder),
                 nickname,
                 nickname,
-                Country.SOUTH_KOREA,
+                Country.KR,
                 EnglishLevel.BEGINNER,
                 List.of("테스트"),
                 "테스트 설명"

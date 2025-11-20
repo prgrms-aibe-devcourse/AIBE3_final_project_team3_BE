@@ -69,7 +69,7 @@ public class ApiV1AdminReportControllerTest {
                         Password.encrypt("AdminPass123!", passwordEncoder),
                         "관리자",
                         "admin",
-                        Country.SOUTH_KOREA,
+                        Country.KR,
                         EnglishLevel.INTERMEDIATE,
                         List.of("관리"),
                         "관리자 계정"
@@ -82,7 +82,7 @@ public class ApiV1AdminReportControllerTest {
                         Password.encrypt("Password1!", passwordEncoder),
                         "신고대상1",
                         "target1",
-                        Country.SOUTH_KOREA,
+                        Country.KR,
                         EnglishLevel.BEGINNER,
                         List.of("travel"),
                         "신고 대상 유저1"
@@ -95,7 +95,7 @@ public class ApiV1AdminReportControllerTest {
                         Password.encrypt("Password2!", passwordEncoder),
                         "신고대상2",
                         "target2",
-                        Country.SOUTH_KOREA,
+                        Country.KR,
                         EnglishLevel.BEGINNER,
                         List.of("travel"),
                         "신고 대상 유저2"
@@ -108,7 +108,7 @@ public class ApiV1AdminReportControllerTest {
                         Password.encrypt("Password3!", passwordEncoder),
                         "신고대상3",
                         "target3",
-                        Country.SOUTH_KOREA,
+                        Country.KR,
                         EnglishLevel.BEGINNER,
                         List.of("travel"),
                         "신고 대상 유저3"
