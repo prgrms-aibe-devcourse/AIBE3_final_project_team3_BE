@@ -28,7 +28,7 @@ public record MemberInfoModifyReq(
 
         @Schema(description = "관심사", example = "요리, 여행")
         @NotEmpty
-        List<String> interest,
+        List<String> interests,
 
         @Schema(description = "자기소개")
         @NotBlank

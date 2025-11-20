@@ -62,7 +62,7 @@ class ApiV1MemberControllerTest {
                                             "country": "KR",
                                             "nickname": "새로운닉네임",
                                             "englishLevel": "ADVANCED",
-                                            "interest": ["독서", "영화"],
+                                            "interests": ["독서", "영화"],
                                             "description": "업데이트된 자기소개입니다."
                                         }
                                         """)

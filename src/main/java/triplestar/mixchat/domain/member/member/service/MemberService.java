@@ -41,7 +41,7 @@ public class MemberService {
                 req.nickname(),
                 req.country(),
                 req.englishLevel(),
-                req.interest(),
+                req.interests(),
                 req.description());
     }
 
