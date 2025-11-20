@@ -6,6 +6,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.member.friend.dto.FriendshipRequestResp;
 import triplestar.mixchat.domain.member.friend.entity.FriendshipRequest;
 import triplestar.mixchat.domain.member.friend.repository.FriendshipRequestRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -26,7 +27,7 @@ public class FriendshipRequestService {
     /**
      * 친구 요청 생성
      */
-    public Long sendRequest(Long senderId, Long receiverId) {
+    public FriendshipRequestResp sendRequest(Long senderId, Long receiverId) {
         Member sender = findMemberById(senderId);
         Member receiver = findMemberById(receiverId);
         validateFriendshipRequest(sender, receiver);
@@ -36,7 +37,7 @@ public class FriendshipRequestService {
 
         // 알림 이벤트 발행
         eventPublisher.publishEvent(new NotificationEvent(receiverId, senderId, NotificationType.FRIEND_REQUEST));
-        return entity.getId();
+        return FriendshipRequestResp.from(entity);
     }
 
     private void validateFriendshipRequest(Member sender, Member receiver) {

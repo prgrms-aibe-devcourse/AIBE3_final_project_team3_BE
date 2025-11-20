@@ -21,6 +21,7 @@ import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.TestExecutionEvent;
@@ -41,7 +42,7 @@ import triplestar.mixchat.global.cache.ChatAuthCacheService;
         MongoAutoConfiguration.class,
         MongoDataAutoConfiguration.class,
         MongoRepositoriesAutoConfiguration.class,
-        MongoReactiveAutoConfiguration.class,
+        MongoReactiveAutoConfiguration.class
 })
 @SpringBootTest
 @AutoConfigureMockMvc
