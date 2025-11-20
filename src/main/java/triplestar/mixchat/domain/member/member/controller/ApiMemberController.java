@@ -40,9 +40,9 @@ public interface ApiMemberController {
             MultipartFile multipartFile
     );
   
-    // --- 3. 회원 상세 프로필 조회 (GET /{id}) ---
+    // --- 3. 회원 상세 조회 (GET /{id}) ---
     @Operation(
-            summary = "회원 상세 프로필 조회",
+            summary = "회원 상세 조회",
             description = "특정 회원의 상세 정보를 조회합니다. 토큰이 없거나 유효하지 않아도 조회 가능합니다. 로그인된 경우 친구/요청 상태 정보가 추가됩니다."
     )
     CustomResponse<MemberDetailResp> getMemberDetail(

@@ -8,7 +8,7 @@ import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
-@Schema(description = "회원 프로필 상세 조회 응답 DTO")
+@Schema(description = "회원 상세 조회 응답 DTO")
 public record MemberDetailResp(
         @Schema(description = "회원 고유 ID", example = "123", requiredMode = REQUIRED)
         Long memberId,
