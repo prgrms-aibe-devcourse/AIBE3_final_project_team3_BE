@@ -66,14 +66,14 @@ public class ApiV1MemberController implements ApiMemberController {
     }
 
     @Override
-    @GetMapping("{id}")
-    public CustomResponse<MemberDetailResp> getMemberDetail(
+    @GetMapping("/{id}")
+    public CustomResponse<MemberProfileResp> getMemberDetail(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             @PathVariable Long id
     ) {
         Long signInId = customUserDetails != null ? customUserDetails.getId() : null;
 
         MemberDetailResp memberDetails = memberService.getMemberDetails(signInId, id);
-        return CustomResponse.ok("회원 정보 조회에 성공했습니다.", memberDetails);
+        return CustomResponse.ok("회원 상세 정보 조회에 성공했습니다.", memberDetails);
     }
 }
