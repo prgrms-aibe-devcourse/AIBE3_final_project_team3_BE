@@ -32,6 +32,8 @@ public class SentenceGameService {
 
         if (count > total) {
             throw new IllegalArgumentException("요청한 문제 수(" + count + ")가 등록된 총 문제 수(" + total + ")보다 많습니다.");
+        } else if(count > 20) {
+            throw new IllegalArgumentException("요청한 문제 수(" + count + ")가 너무 많습니다.");
         }
 
         List<SentenceGame> all = sentenceGameRepository.findAll();
