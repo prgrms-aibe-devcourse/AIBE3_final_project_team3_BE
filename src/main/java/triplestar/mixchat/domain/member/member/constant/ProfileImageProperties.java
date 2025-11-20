@@ -1,4 +1,4 @@
-package triplestar.mixchat.global.s3;
+package triplestar.mixchat.domain.member.member.constant;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class MemberS3Properties {
+public class ProfileImageProperties {
 
     @Value("${cloud.aws.s3.endpoint}")
     private String endpoint;
