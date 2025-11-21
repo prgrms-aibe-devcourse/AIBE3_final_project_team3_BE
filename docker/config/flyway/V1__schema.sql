@@ -6,75 +6,74 @@ CREATE SCHEMA IF NOT EXISTS `mysql_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf
 USE `mysql_db` ;
 
 CREATE TABLE IF NOT EXISTS `members` (
-                                         `id`               BIGINT       NOT NULL AUTO_INCREMENT,
-                                         `created_at`       DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-                                         `modified_at`      DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    `id`                 BIGINT        NOT NULL AUTO_INCREMENT,
+    `created_at`         DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `modified_at`        DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+                                        ON UPDATE CURRENT_TIMESTAMP(6),
 
-                                         `email`            VARCHAR(255) NOT NULL UNIQUE,
-                                         `password`         VARCHAR(255) NOT NULL,
-                                         `name`             VARCHAR(50)  NOT NULL,
-                                         `nickname`         VARCHAR(50)  NOT NULL,
+    -- 기본 정보
+    `email`              VARCHAR(255)  NOT NULL UNIQUE,
+    `password`           VARCHAR(255)  NOT NULL,
+    `name`               VARCHAR(50)   NOT NULL,
+    `nickname`           VARCHAR(50)   NOT NULL,
 
-                                         `country`          VARCHAR(50)  NOT NULL,
-                                         `english_level`    VARCHAR(20)  NOT NULL,
-                                         `interests`        TEXT NOT NULL,
-                                         `description`      TEXT NULL,
+    -- 프로필 정보
+    `country`            VARCHAR(50)   NOT NULL,
+    `english_level`      VARCHAR(20)   NOT NULL,
+    `interests`          TEXT          NOT NULL,
+    `description`        TEXT          NULL,
+    `profile_image_url`  VARCHAR(255),
 
-                                         `role`             VARCHAR(20)  NOT NULL,
-                                         `membership_grade` VARCHAR(20)  NOT NULL,
+    -- 권한 및 멤버십
+    `role`               VARCHAR(20)   NOT NULL,
+    `membership_grade`   VARCHAR(20)   NOT NULL,
 
-                                         `last_sign_in_at`  DATETIME(6),
+    -- 로그인 / 차단 / 삭제 상태
+    `last_sign_in_at`    DATETIME(6),
+    `is_blocked`         BOOLEAN       NOT NULL DEFAULT FALSE,
+    `blocked_at`         DATETIME(6),
+    `block_reason`       VARCHAR(255),
+    `is_deleted`         BOOLEAN       NOT NULL DEFAULT FALSE,
+    `deleted_at`         DATETIME(6),
 
-                                         `is_blocked`       BOOLEAN      NOT NULL DEFAULT FALSE,
-                                         `blocked_at`       DATETIME(6),
-                                         `block_reason`     VARCHAR(255),
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
-                                         `is_deleted`       BOOLEAN      NOT NULL DEFAULT FALSE,
-                                         `deleted_at`       DATETIME(6),
-
-                                         PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `friendships` (
-    `id`                BIGINT       NOT NULL AUTO_INCREMENT,
-    `smaller_member_id` BIGINT       NOT NULL,
-    `larger_member_id`  BIGINT       NOT NULL,
-
-    `created_at`        DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-
+                                             `id`                 BIGINT        NOT NULL AUTO_INCREMENT,
+                                             `smaller_member_id`  BIGINT        NOT NULL,
+                                             `larger_member_id`   BIGINT        NOT NULL,
+                                             `created_at`         DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
 
     PRIMARY KEY (`id`),
+
     UNIQUE KEY `uk_smaller_larger_member` (`smaller_member_id`, `larger_member_id`),
 
-    -- 외래 키 제약 조건
     CONSTRAINT `fk_friendships_smaller_member`
-    FOREIGN KEY (`smaller_member_id`)
-    REFERENCES `members` (`id`),
+    FOREIGN KEY (`smaller_member_id`) REFERENCES `members` (`id`),
 
     CONSTRAINT `fk_friendships_larger_member`
-    FOREIGN KEY (`larger_member_id`)
-    REFERENCES `members` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    FOREIGN KEY (`larger_member_id`)  REFERENCES `members` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `friendship_requests` (
-    `id`               BIGINT       NOT NULL AUTO_INCREMENT,
-    `sender_id`        BIGINT       NOT NULL,
-    `receiver_id`      BIGINT       NOT NULL,
-
-    `created_at`       DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `id`           BIGINT        NOT NULL AUTO_INCREMENT,
+    `sender_id`    BIGINT        NOT NULL,
+    `receiver_id`  BIGINT        NOT NULL,
+    `created_at`   DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
 
     PRIMARY KEY (`id`),
+
     UNIQUE KEY `uk_sender_receiver_pair` (`sender_id`, `receiver_id`),
 
-    -- 외래 키 제약 조건
     CONSTRAINT `fk_friendship_requests_sender`
-    FOREIGN KEY (`sender_id`)
-    REFERENCES `members` (`id`),
+    FOREIGN KEY (`sender_id`)   REFERENCES `members` (`id`),
 
     CONSTRAINT `fk_friendship_requests_receiver`
-    FOREIGN KEY (`receiver_id`)
-    REFERENCES `members` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    FOREIGN KEY (`receiver_id`) REFERENCES `members` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
 
 
 CREATE TABLE IF NOT EXISTS `reports` (
