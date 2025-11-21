@@ -29,10 +29,10 @@ public class ChatInteractionService {
 
     private final MemberRepository memberRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
-    private final ChatAuthCacheService chatAuthCacheService; // 캐시 서비스 주입
-    private final DirectChatRoomRepository directChatRoomRepository; // DirectChatRoomRepository 주입
-    private final GroupChatRoomRepository groupChatRoomRepository; // GroupChatRoomRepository 주입
-    private final AIChatRoomRepository aiChatRoomRepository; // AIChatRoomRepository 주입
+    private final ChatAuthCacheService chatAuthCacheService;
+    private final DirectChatRoomRepository directChatRoomRepository;
+    private final GroupChatRoomRepository groupChatRoomRepository;
+    private final AIChatRoomRepository aiChatRoomRepository;
 
 
     private Member findMemberById(Long memberId) {

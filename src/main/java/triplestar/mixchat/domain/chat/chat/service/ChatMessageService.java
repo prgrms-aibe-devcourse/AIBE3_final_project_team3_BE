@@ -24,7 +24,7 @@ public class ChatMessageService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final MemberRepository memberRepository;
-    private final ChatInteractionService chatInteractionService; // ChatInteractionService 주입
+    private final ChatInteractionService chatInteractionService;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final ApplicationEventPublisher eventPublisher;
 

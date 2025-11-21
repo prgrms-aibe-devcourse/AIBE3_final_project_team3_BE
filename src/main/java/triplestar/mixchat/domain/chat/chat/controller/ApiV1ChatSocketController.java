@@ -12,7 +12,7 @@ import org.springframework.stereotype.Controller;
 import triplestar.mixchat.domain.chat.chat.dto.MessageReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
-import triplestar.mixchat.domain.chat.chat.service.ChatInteractionService; // ChatInteractionService 임포트
+import triplestar.mixchat.domain.chat.chat.service.ChatInteractionService;
 import triplestar.mixchat.global.security.CustomUserDetails;
 
 @Slf4j
@@ -45,7 +45,7 @@ public class ApiV1ChatSocketController {
                 senderNickname,
                 messageReq.content(),
                 messageReq.messageType(),
-                messageReq.conversationType() // conversationType 추가
+                messageReq.conversationType()
         );
 
         String destination = "/topic/" + messageReq.conversationType().name().toLowerCase() + "/rooms/" + messageReq.roomId();

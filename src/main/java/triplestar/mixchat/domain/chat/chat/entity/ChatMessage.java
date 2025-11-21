@@ -1,16 +1,14 @@
 package triplestar.mixchat.domain.chat.chat.entity;
 
 import jakarta.persistence.Id;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-
-import java.time.LocalDateTime;
 
 //mongoDB용 Entity
 @Getter
@@ -58,7 +56,7 @@ public class ChatMessage {
         if (content == null || content.isBlank()) {
             throw new IllegalArgumentException("content는 비어 있을 수 없습니다.");
         }
-        if (conversationType == null) { // conversationType null 체크 추가
+        if (conversationType == null) {
             throw new IllegalArgumentException("conversationType은 null일 수 없습니다.");
         }
 

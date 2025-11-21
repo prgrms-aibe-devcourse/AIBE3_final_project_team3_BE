@@ -26,7 +26,7 @@ public class ChatMember extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "conversation_type", nullable = false)
-    private ChatMessage.ConversationType conversationType; // ChatMessage의 ConversationType 사용
+    private ChatMessage.ConversationType conversationType;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

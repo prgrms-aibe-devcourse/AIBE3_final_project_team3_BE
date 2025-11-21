@@ -10,7 +10,7 @@ import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
 @Entity
 @Getter
-@Table(name = "group_chat_rooms") // 독립적인 테이블 사용
+@Table(name = "group_chat_rooms")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GroupChatRoom extends BaseEntity {
 
