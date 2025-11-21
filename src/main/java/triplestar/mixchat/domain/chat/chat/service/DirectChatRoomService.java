@@ -67,6 +67,10 @@ public class DirectChatRoomService {
                     chatAuthCacheService.addMember(savedRoom.getId(), member1Id);
                     chatAuthCacheService.addMember(savedRoom.getId(), member2Id);
 
+                    // ChatMember 생성 및 저장
+                    chatRoomMemberRepository.save(new ChatMember(member1, savedRoom.getId(), ChatMessage.ConversationType.DIRECT, ChatMember.UserType.ROOM_MEMBER));
+                    chatRoomMemberRepository.save(new ChatMember(member2, savedRoom.getId(), ChatMessage.ConversationType.DIRECT, ChatMember.UserType.ROOM_MEMBER));
+
                     // DTO 변환
                     DirectChatRoomResp roomDto = DirectChatRoomResp.from(savedRoom);
 
@@ -104,11 +108,7 @@ public class DirectChatRoomService {
         chatInteractionService.reportUser(currentUserId, reportedUserId, roomId, ChatMessage.ConversationType.DIRECT, reason);
     }
 
-    /**
-     * 사용자가 참여하고 있는 1:1 채팅방 목록 조회
-     * @param currentUserId 현재 사용자 ID
-     * @return 1:1 채팅방 목록
-     */
+    // 사용자가 참여하고 있는 1:1 채팅방 목록 조회
     @Transactional(readOnly = true)
     public List<DirectChatRoomResp> getRoomsForUser(Long currentUserId) {
         Member currentUser = findMemberById(currentUserId);

@@ -8,7 +8,7 @@ import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 @Entity
 @Getter
-@Table(name = "direct_chat_participants",
+@Table(name = "direct_chat_rooms",
        uniqueConstraints = @UniqueConstraint(
            columnNames = {"user1_id", "user2_id"}
        ))

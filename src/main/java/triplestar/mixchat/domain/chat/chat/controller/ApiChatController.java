@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomDataResp;
+import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
@@ -44,6 +45,13 @@ public interface ApiChatController {
     CustomResponse<GroupChatRoomResp> createGroupRoom( // Return type changed
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody CreateGroupChatReq request
+    );
+
+    @Operation(summary = "AI 채팅방 생성", description = "새로운 AI 채팅방을 생성합니다.")
+    @SignInInRequireResponse
+    CustomResponse<AIChatRoomResp> createAiRoom(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody CreateAIChatReq request
     );
 
 //    @Operation(summary = "공개 그룹 채팅방 생성", description = "모든 사용자가 참여할 수 있는 공개 그룹 채팅방을 생성합니다.")
