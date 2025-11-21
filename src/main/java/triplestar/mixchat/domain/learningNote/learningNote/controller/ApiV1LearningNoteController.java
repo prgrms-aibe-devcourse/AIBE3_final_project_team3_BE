@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningFilter;
 import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteCreateReq;
-import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteResp;
+import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteFeedbackResp;
 import triplestar.mixchat.domain.learningNote.learningNote.service.LearningNoteService;
 import triplestar.mixchat.domain.translation.translation.constant.TranslationTagCode;
 import triplestar.mixchat.global.response.CustomResponse;
@@ -41,13 +41,13 @@ public class ApiV1LearningNoteController implements ApiLearningNoteController{
 
     @Override
     @GetMapping
-    public CustomResponse<Page<LearningNoteResp>> getLearningNotes(
+    public CustomResponse<Page<LearningNoteFeedbackResp>> getLearningNotes(
             @PageableDefault(size = 20) Pageable pageable,
             @RequestParam TranslationTagCode tag,
             @RequestParam LearningFilter learningFilter,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        Page<LearningNoteResp> result = learningNoteService.getLearningNotes(pageable, user.getId(), tag, learningFilter);
+        Page<LearningNoteFeedbackResp> result = learningNoteService.getLearningNotes(pageable, user.getId(), tag, learningFilter);
         return CustomResponse.ok("학습노트 목록 조회 성공", result);
     }
 

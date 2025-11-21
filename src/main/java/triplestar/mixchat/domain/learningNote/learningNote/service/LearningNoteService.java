@@ -9,9 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningFilter;
 import triplestar.mixchat.domain.learningNote.learningNote.dto.FeedbackCreateReq;
-import triplestar.mixchat.domain.learningNote.learningNote.dto.FeedbackListResp;
 import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteCreateReq;
-import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteResp;
+import triplestar.mixchat.domain.learningNote.learningNote.dto.LearningNoteFeedbackResp;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.Feedback;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.FeedbackRepository;
@@ -45,23 +44,17 @@ public class LearningNoteService {
     }
 
     @Transactional
-    public Page<LearningNoteResp> getLearningNotes(Pageable  pageable, Long memberId, TranslationTagCode tag, LearningFilter learningFilter) {
+    public Page<LearningNoteFeedbackResp> getLearningNotes(Pageable  pageable, Long memberId, TranslationTagCode tag, LearningFilter learningFilter) {
         Boolean isMarked = switch (learningFilter) {
             case LEARNED -> true;
             case UNLEARNED -> false;
             case ALL -> null;
         };
 
-        Page<LearningNote> notes = learningNoteRepository.findByMemberWithFilters(memberId, tag, isMarked, pageable);
+        Page<Feedback> feedbacks = feedbackRepository.findFeedbacksByMember(memberId,tag,isMarked,pageable);
 
-        return notes.map(note ->
-                new LearningNoteResp(
-                        note.getOriginalContent(),
-                        note.getCorrectedContent(),
-                        note.getFeedbacks().stream()
-                                .map(FeedbackListResp::from)
-                                .toList()
-                )
+        return feedbacks.map(fb ->
+                LearningNoteFeedbackResp.create(fb.getLearningNote(), fb)
         );
     }
 
