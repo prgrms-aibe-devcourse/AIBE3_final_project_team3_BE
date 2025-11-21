@@ -41,7 +41,7 @@ public class AIChatRoomService {
         AIChatRoom newRoom = AIChatRoom.create("AI Chat", "gpt-4", "Friendly Assistant"); // Example values
         AIChatRoom savedRoom = aiChatRoomRepository.save(newRoom);
 
-        ChatMember chatMember = new ChatMember(creator, savedRoom.getId(), ChatMessage.ConversationType.AI, ChatMember.UserType.ROOM_OWNER);
+        ChatMember chatMember = new ChatMember(creator, savedRoom.getId(), ChatMessage.chatRoomType.AI, ChatMember.UserType.ROOM_OWNER);
         chatRoomMemberRepository.save(chatMember);
 
         chatAuthCacheService.addMember(savedRoom.getId(), creatorId);
@@ -51,7 +51,7 @@ public class AIChatRoomService {
 
     @Transactional(readOnly = true)
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
-        chatInteractionService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.ConversationType.AI);
+        chatInteractionService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.chatRoomType.AI);
     }
 
     @Transactional(readOnly = true)
@@ -70,7 +70,7 @@ public class AIChatRoomService {
     // AI 채팅방 나가기
     @Transactional
     public void leaveAIChatRoom(Long roomId, Long currentUserId) {
-        chatInteractionService.leaveRoom(currentUserId, roomId, ChatMessage.ConversationType.AI);
+        chatInteractionService.leaveRoom(currentUserId, roomId, ChatMessage.chatRoomType.AI);
     }
 }
 

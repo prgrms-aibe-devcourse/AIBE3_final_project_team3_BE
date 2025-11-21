@@ -5,5 +5,5 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 
 public interface ChatMessageRepository extends MongoRepository<ChatMessage, String> {
-    List<ChatMessage> findByChatRoomIdAndConversationTypeOrderByCreatedAtAsc(Long chatRoomId, ChatMessage.ConversationType conversationType);
+    List<ChatMessage> findByChatRoomIdAndChatRoomTypeOrderByCreatedAtAsc(Long chatRoomId, ChatMessage.chatRoomType chatRoomType);
 }

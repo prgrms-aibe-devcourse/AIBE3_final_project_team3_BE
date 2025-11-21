@@ -36,7 +36,7 @@ public class ApiV1ChatSocketController {
         String senderNickname = userDetails.getNickname();
 
         // 1. 사용자가 해당 채팅방에 메시지를 보낼 권한이 있는지 확인 (ChatInteractionService로 위임)
-        chatInteractionService.verifyUserIsMemberOfRoom(senderId, messageReq.roomId(), messageReq.conversationType());
+        chatInteractionService.verifyUserIsMemberOfRoom(senderId, messageReq.roomId(), messageReq.chatRoomType());
 
         // 2. 권한이 확인되면 메시지 저장 및 전송
         MessageResp messageResp = chatMessageService.saveMessage(
@@ -45,10 +45,10 @@ public class ApiV1ChatSocketController {
                 senderNickname,
                 messageReq.content(),
                 messageReq.messageType(),
-                messageReq.conversationType()
+                messageReq.chatRoomType()
         );
 
-        String destination = "/topic/" + messageReq.conversationType().name().toLowerCase() + "/rooms/" + messageReq.roomId();
+        String destination = "/topic/" + messageReq.chatRoomType().name().toLowerCase() + "/rooms/" + messageReq.roomId();
         messagingTemplate.convertAndSend(destination, messageResp);
         log.debug("Message sent to room {}: {}", messageReq.roomId(), messageResp.content());
     }

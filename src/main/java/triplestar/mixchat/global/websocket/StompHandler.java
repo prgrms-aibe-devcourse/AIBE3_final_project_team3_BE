@@ -124,11 +124,11 @@ public class StompHandler implements ExecutorChannelInterceptor {
         if (matcher.matches()) {
             String typeString = matcher.group(1).toUpperCase();
             Long roomId = Long.parseLong(matcher.group(2));
-            ChatMessage.ConversationType conversationType =
-                    ChatMessage.ConversationType.valueOf(typeString);
+            ChatMessage.chatRoomType chatRoomType =
+                    ChatMessage.chatRoomType.valueOf(typeString);
 
             chatInteractionService.verifyUserIsMemberOfRoom(
-                    userDetails.getId(), roomId, conversationType);
+                    userDetails.getId(), roomId, chatRoomType);
             log.info(
                     "SUBSCRIBE (Room): memberId={} destination={}", userDetails.getId(), destination);
             return;

@@ -34,7 +34,7 @@ public class GroupChatRoomService {
 
     @Transactional(readOnly = true)
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
-        chatInteractionService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.ConversationType.GROUP);
+        chatInteractionService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.chatRoomType.GROUP);
     }
 
 
@@ -57,7 +57,7 @@ public class GroupChatRoomService {
 
         List<ChatMember> chatMembers = members.stream().map(member -> {
             ChatMember.UserType userType = member.equals(creator) ? ChatMember.UserType.ROOM_OWNER : ChatMember.UserType.ROOM_MEMBER;
-            return new ChatMember(member, savedRoom.getId(), ChatMessage.ConversationType.GROUP, userType);
+            return new ChatMember(member, savedRoom.getId(), ChatMessage.chatRoomType.GROUP, userType);
         }).collect(Collectors.toList());
         chatRoomMemberRepository.saveAll(chatMembers);
 
@@ -79,7 +79,7 @@ public class GroupChatRoomService {
         List<GroupChatRoom> rooms = groupChatRoomRepository.findAllByMember(currentUser);
         return rooms.stream()
                 .map(room -> {
-                    List<ChatMember> chatMembers = chatRoomMemberRepository.findByChatRoomIdAndConversationType(room.getId(), ChatMessage.ConversationType.GROUP);
+                    List<ChatMember> chatMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(room.getId(), ChatMessage.chatRoomType.GROUP);
                     return GroupChatRoomResp.from(room, chatMembers);
                 })
                 .collect(Collectors.toList());
@@ -91,16 +91,16 @@ public class GroupChatRoomService {
 
     @Transactional
     public void leaveRoom(Long roomId, Long currentUserId) {
-        chatInteractionService.leaveRoom(currentUserId, roomId, ChatMessage.ConversationType.GROUP);
+        chatInteractionService.leaveRoom(currentUserId, roomId, ChatMessage.chatRoomType.GROUP);
     }
 
     @Transactional
     public void blockUser(Long roomId, Long currentUserId, Long blockedUserId) {
-        chatInteractionService.blockUser(currentUserId, blockedUserId, roomId, ChatMessage.ConversationType.GROUP);
+        chatInteractionService.blockUser(currentUserId, blockedUserId, roomId, ChatMessage.chatRoomType.GROUP);
     }
 
     @Transactional
     public void reportUser(Long roomId, Long currentUserId, Long reportedUserId, String reason) {
-        chatInteractionService.reportUser(currentUserId, reportedUserId, roomId, ChatMessage.ConversationType.GROUP, reason);
+        chatInteractionService.reportUser(currentUserId, reportedUserId, roomId, ChatMessage.chatRoomType.GROUP, reason);
     }
 }

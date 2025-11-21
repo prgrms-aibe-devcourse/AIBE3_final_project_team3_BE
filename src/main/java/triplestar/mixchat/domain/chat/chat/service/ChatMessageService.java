@@ -29,16 +29,16 @@ public class ChatMessageService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatMessage.ConversationType conversationType) {
+    public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatMessage.chatRoomType chatRoomType) {
         // 1. 사용자가 해당 채팅방의 멤버인지 검증 (ChatInteractionService로 위임)
-        chatInteractionService.verifyUserIsMemberOfRoom(senderId, roomId, conversationType);
+        chatInteractionService.verifyUserIsMemberOfRoom(senderId, roomId, chatRoomType);
 
         // 2. 검증 통과 후 메시지 생성 및 저장 (생성자 사용)
-        ChatMessage message = new ChatMessage(roomId, senderId, content, messageType, conversationType);
+        ChatMessage message = new ChatMessage(roomId, senderId, content, messageType, chatRoomType);
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
         // 3. 알림 이벤트
-        List<ChatMember> roomMembers = chatRoomMemberRepository.findByChatRoomIdAndConversationTypeAndMember_IdNot(roomId, conversationType, senderId);
+        List<ChatMember> roomMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_IdNot(roomId, chatRoomType, senderId);
 
         for (ChatMember receiver : roomMembers) {
             if (receiver.isNotificationAlways()) {
@@ -58,15 +58,15 @@ public class ChatMessageService {
     }
 
     @Transactional
-    public MessageResp saveFileMessage(Long roomId, Long senderId, String senderNickname, String fileUrl, ChatMessage.MessageType messageType, ChatMessage.ConversationType conversationType) {
+    public MessageResp saveFileMessage(Long roomId, Long senderId, String senderNickname, String fileUrl, ChatMessage.MessageType messageType, ChatMessage.chatRoomType chatRoomType) {
         if (messageType != ChatMessage.MessageType.IMAGE && messageType != ChatMessage.MessageType.FILE) {
             throw new IllegalArgumentException("파일 메시지는 IMAGE 또는 FILE 타입이어야 합니다.");
         }
-        return saveMessage(roomId, senderId, senderNickname, fileUrl, messageType, conversationType);
+        return saveMessage(roomId, senderId, senderNickname, fileUrl, messageType, chatRoomType);
     }
 
-    public List<MessageResp> getMessagesWithSenderInfo(Long roomId, ChatMessage.ConversationType conversationType) {
-        List<ChatMessage> messages = chatMessageRepository.findByChatRoomIdAndConversationTypeOrderByCreatedAtAsc(roomId, conversationType);
+    public List<MessageResp> getMessagesWithSenderInfo(Long roomId, ChatMessage.chatRoomType chatRoomType) {
+        List<ChatMessage> messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeOrderByCreatedAtAsc(roomId, chatRoomType);
 
         List<Long> senderIds = messages.stream()
                 .map(ChatMessage::getSenderId)

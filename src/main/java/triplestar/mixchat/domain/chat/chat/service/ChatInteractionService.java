@@ -42,8 +42,8 @@ public class ChatInteractionService {
 
     //사용자가 특정 대화방의 멤버인지 확인 (캐시 적용)
     @Transactional(readOnly = true)
-    public void verifyUserIsMemberOfRoom(Long memberId, Long roomId, ChatMessage.ConversationType conversationType) {
-        if (roomId == null || memberId == null || conversationType == null) {
+    public void verifyUserIsMemberOfRoom(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType) {
+        if (roomId == null || memberId == null || chatRoomType == null) {
             throw new AccessDeniedException("사용자, 대화방 정보 또는 대화 타입이 유효하지 않습니다.");
         }
 
@@ -53,41 +53,41 @@ public class ChatInteractionService {
         }
 
         // 2. 캐시에 없으면 DB 조회 (Cache Miss)
-        boolean isMember = chatRoomMemberRepository.existsByChatRoomIdAndConversationTypeAndMember_Id(
-                roomId, conversationType, memberId);
+        boolean isMember = chatRoomMemberRepository.existsByChatRoomIdAndChatRoomTypeAndMember_Id(
+                roomId, chatRoomType, memberId);
         if (!isMember) {
-            log.warn("인가 거부: 사용자(ID:{})가 대화방(ID:{}, 타입:{})의 멤버가 아닙니다.", memberId, roomId, conversationType);
+            log.warn("인가 거부: 사용자(ID:{})가 대화방(ID:{}, 타입:{})의 멤버가 아닙니다.", memberId, roomId, chatRoomType);
             throw new AccessDeniedException("해당 대화방에 접근할 권한이 없습니다.");
         }
 
         // 3. DB에 존재하면, 그 결과를 캐시에 저장 (다음 조회를 위해)
-        log.debug("DB check passed for user {} in room {} (type {}). Caching the result.", memberId, roomId, conversationType);
+        log.debug("DB check passed for user {} in room {} (type {}). Caching the result.", memberId, roomId, chatRoomType);
         chatAuthCacheService.addMember(roomId, memberId);
     }
 
     //사용자 차단 (미구현)
     @Transactional
-    public void blockUser(Long blockerId, Long blockedId, Long conversationId, ChatMessage.ConversationType conversationType) {
+    public void blockUser(Long blockerId, Long blockedId, Long chatRoomId, ChatMessage.chatRoomType chatRoomType) {
         // TODO: 사용자 차단 로직 구현
-        log.info("User {} blocked user {} in conversation {} (type {}).", blockerId, blockedId, conversationId, conversationType);
+        log.info("User {} blocked user {} in chatRoom {} (type {}).", blockerId, blockedId, chatRoomId, chatRoomType);
         throw new UnsupportedOperationException("사용자 차단 기능은 아직 구현되지 않았습니다.");
     }
 
     //사용자/대화방 신고 (미구현)
     @Transactional
-    public void reportUser(Long reporterId, Long reportedId, Long conversationId, ChatMessage.ConversationType conversationType, String reason) {
+    public void reportUser(Long reporterId, Long reportedId, Long chatRoomId, ChatMessage.chatRoomType chatRoomType, String reason) {
         // TODO: 사용자/대화방 신고 로직 구현
-        log.info("User {} reported user {} or conversation {} (type {}) for reason: {}.", reporterId, reportedId, conversationId, conversationType, reason);
+        log.info("User {} reported user {} or chatRoom {} (type {}) for reason: {}.", reporterId, reportedId, chatRoomId, chatRoomType, reason);
         throw new UnsupportedOperationException("사용자/대화방 신고 기능은 아직 구현되지 않았습니다.");
     }
 
     /**
      * 사용자가 참여하고 있는 모든 대화방 목록 조회
      * @param currentUserId 현재 사용자 ID
-     * @return 모든 타입의 대화방 목록 (Map<ConversationType, List<DTO>>)
+     * @return 모든 타입의 대화방 목록 (Map<chatRoomType, List<DTO>>)
      */
     @Transactional(readOnly = true)
-    public Map<ChatMessage.ConversationType, List<?>> getAllConversationsForUser(Long currentUserId) {
+    public Map<ChatMessage.chatRoomType, List<?>> getAllchatRoomsForUser(Long currentUserId) {
         Member currentUser = findMemberById(currentUserId);
         List<ChatMember> chatMembers = chatRoomMemberRepository.findByMember(currentUser);
 
@@ -97,7 +97,7 @@ public class ChatInteractionService {
 
         for (ChatMember chatMember : chatMembers) {
             Long roomId = chatMember.getChatRoomId();
-            ChatMessage.ConversationType type = chatMember.getConversationType();
+            ChatMessage.chatRoomType type = chatMember.getChatRoomType();
 
             switch (type) {
                 case DIRECT:
@@ -106,7 +106,7 @@ public class ChatInteractionService {
                     break;
                 case GROUP:
                     groupChatRoomRepository.findById(roomId).ifPresent(groupRoom -> {
-                        List<ChatMember> groupMembers = chatRoomMemberRepository.findByChatRoomIdAndConversationType(roomId, ChatMessage.ConversationType.GROUP);
+                        List<ChatMember> groupMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, ChatMessage.chatRoomType.GROUP);
                         groupRooms.add(GroupChatRoomResp.from(groupRoom, groupMembers));
                     });
                     break;
@@ -117,17 +117,17 @@ public class ChatInteractionService {
             }
         }
 
-        Map<ChatMessage.ConversationType, List<?>> conversations = new HashMap<>();
-        conversations.put(ChatMessage.ConversationType.DIRECT, directRooms);
-        conversations.put(ChatMessage.ConversationType.GROUP, groupRooms);
-        conversations.put(ChatMessage.ConversationType.AI, aiRooms);
+        Map<ChatMessage.chatRoomType, List<?>> chatRooms = new HashMap<>();
+        chatRooms.put(ChatMessage.chatRoomType.DIRECT, directRooms);
+        chatRooms.put(ChatMessage.chatRoomType.GROUP, groupRooms);
+        chatRooms.put(ChatMessage.chatRoomType.AI, aiRooms);
 
-        return conversations;
+        return chatRooms;
     }
 
     //정 대화방의 알림 설정 변경/
     @Transactional
-    public void updateNotificationSetting(Long memberId, Long roomId, ChatMessage.ConversationType conversationType, boolean enableNotifications) {
+    public void updateNotificationSetting(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType, boolean enableNotifications) {
         // TODO: ChatMember의 알림 설정 변경 로직 구현
         log.warn("updateNotificationSetting 메서드는 아직 구현되지 않았습니다.");
         throw new UnsupportedOperationException("알림 설정 변경 기능은 아직 구현되지 않았습니다.");
@@ -135,7 +135,7 @@ public class ChatInteractionService {
 
     //특정 대화방에서 사용자의 마지막 읽은 메시지 업데이트 (미구현)/
     @Transactional
-    public void updateLastReadMessage(Long memberId, Long roomId, ChatMessage.ConversationType conversationType, String lastReadMessageId) {
+    public void updateLastReadMessage(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType, String lastReadMessageId) {
         // TODO: ChatMember의 lastReadAt 또는 lastReadMessageId 업데이트 로직 구현
         log.warn("updateLastReadMessage 메서드는 아직 구현되지 않았습니다.");
         throw new UnsupportedOperationException("마지막 읽은 메시지 업데이트 기능은 아직 구현되지 않았습니다.");
@@ -145,15 +145,13 @@ public class ChatInteractionService {
      * 대화방 나가기 로직
      * @param memberId 나가는 사용자 ID
      * @param roomId 대화방 ID
-     * @param conversationType 대화방 타입
+     * @param chatRoomType 대화방 타입
      */
     @Transactional
-    public void leaveRoom(Long memberId, Long roomId, ChatMessage.ConversationType conversationType) {
-        Member currentUser = findMemberById(memberId);
-
+    public void leaveRoom(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType) {
         // 1. ChatMember 찾기 및 삭제
         ChatMember memberToRemove = chatRoomMemberRepository
-                .findByChatRoomIdAndConversationTypeAndMember(roomId, conversationType, currentUser)
+                .findByChatRoomIdAndChatRoomTypeAndMember_Id(roomId, chatRoomType, memberId)
                 .orElseThrow(() -> new SecurityException("해당 대화방에 속해있지 않습니다."));
         chatRoomMemberRepository.delete(memberToRemove);
 
@@ -161,10 +159,10 @@ public class ChatInteractionService {
         chatAuthCacheService.removeMember(roomId, memberId);
 
         // 3. 남은 멤버 수 확인 후 대화방 삭제 (해당 타입의 방에만 적용)
-        long remainingMembersCount = chatRoomMemberRepository.countByChatRoomIdAndConversationType(roomId, conversationType);
+        long remainingMembersCount = chatRoomMemberRepository.countByChatRoomIdAndChatRoomType(roomId, chatRoomType);
 
         if (remainingMembersCount == 0) {
-            switch (conversationType) {
+            switch (chatRoomType) {
                 case DIRECT:
                     directChatRoomRepository.deleteById(roomId);
                     break;
@@ -175,7 +173,7 @@ public class ChatInteractionService {
                     aiChatRoomRepository.deleteById(roomId);
                     break;
                 default:
-                    log.warn("알 수 없는 대화 타입으로 인해 방 삭제에 실패했습니다: {}", conversationType);
+                    log.warn("알 수 없는 대화 타입으로 인해 방 삭제에 실패했습니다: {}", chatRoomType);
                     break;
             }
         }

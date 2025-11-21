@@ -111,12 +111,12 @@ public class ApiV1ChatController implements ApiChatController {
     @PostMapping("/rooms/{roomId}/message")
     public CustomResponse<MessageResp> sendMessage(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.ConversationType conversationType,
+            @RequestParam ChatMessage.chatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody TextMessageReq request
     ) {
         MessageResp messageResp =
-                chatMessageService.saveMessage(roomId, currentUser.getId(), currentUser.getNickname(), request.content(), ChatMessage.MessageType.TEXT, conversationType);
+                chatMessageService.saveMessage(roomId, currentUser.getId(), currentUser.getNickname(), request.content(), ChatMessage.MessageType.TEXT, chatRoomType);
         return CustomResponse.ok("메시지 전송에 성공하였습니다.", messageResp);
     }
 
@@ -124,10 +124,10 @@ public class ApiV1ChatController implements ApiChatController {
     @GetMapping("/rooms/{roomId}/messages")
     public CustomResponse<ChatRoomDataResp> getMessages(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.ConversationType conversationType
+            @RequestParam ChatMessage.chatRoomType chatRoomType
     ) {
-        List<MessageResp> messageResps = chatMessageService.getMessagesWithSenderInfo(roomId, conversationType);
-        ChatRoomDataResp responseData = new ChatRoomDataResp(conversationType, messageResps);
+        List<MessageResp> messageResps = chatMessageService.getMessagesWithSenderInfo(roomId, chatRoomType);
+        ChatRoomDataResp responseData = new ChatRoomDataResp(chatRoomType, messageResps);
         return CustomResponse.ok("메시지 목록과 대화 타입 조회에 성공하였습니다.", responseData);
     }
 
@@ -135,14 +135,14 @@ public class ApiV1ChatController implements ApiChatController {
     @PostMapping(value = "/rooms/{roomId}/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CustomResponse<MessageResp> uploadFile(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.ConversationType conversationType,
+            @RequestParam ChatMessage.chatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam("file") MultipartFile file,
             @RequestParam("messageType") ChatMessage.MessageType messageType
     ) {
         String fileUrl = s3Uploader.uploadFile(file, "chat-files");
         MessageResp messageResp =
-                chatMessageService.saveFileMessage(roomId, currentUser.getId(), currentUser.getNickname(), fileUrl, messageType, conversationType);
+                chatMessageService.saveFileMessage(roomId, currentUser.getId(), currentUser.getNickname(), fileUrl, messageType, chatRoomType);
 
         messagingTemplate.convertAndSend(
                 "/topic/chat/room/" + roomId,
@@ -156,17 +156,17 @@ public class ApiV1ChatController implements ApiChatController {
     @DeleteMapping("/rooms/{roomId}/leave")
     public void leaveRoom(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.ConversationType conversationType, // conversationType 추가
+            @RequestParam ChatMessage.chatRoomType chatRoomType, // chatRoomType 추가
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        if (conversationType == ChatMessage.ConversationType.DIRECT) {
+        if (chatRoomType == ChatMessage.chatRoomType.DIRECT) {
             directChatRoomService.leaveRoom(roomId, currentUser.getId());
-        } else if (conversationType == ChatMessage.ConversationType.GROUP) {
+        } else if (chatRoomType == ChatMessage.chatRoomType.GROUP) {
             groupChatRoomService.leaveRoom(roomId, currentUser.getId());
-        } else if (conversationType == ChatMessage.ConversationType.AI) {
+        } else if (chatRoomType == ChatMessage.chatRoomType.AI) {
             aiChatRoomService.leaveAIChatRoom(roomId, currentUser.getId());
         } else {
-            throw new IllegalArgumentException("지원하지 않는 대화 타입입니다: " + conversationType);
+            throw new IllegalArgumentException("지원하지 않는 대화 타입입니다: " + chatRoomType);
         }
     }
 
@@ -174,19 +174,19 @@ public class ApiV1ChatController implements ApiChatController {
     @PostMapping("/rooms/{roomId}/block")
     public void blockUser(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.ConversationType conversationType,
+            @RequestParam ChatMessage.chatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        chatInteractionService.blockUser(currentUser.getId(), null, roomId, conversationType);
+        chatInteractionService.blockUser(currentUser.getId(), null, roomId, chatRoomType);
     }
 
     @Override
     @PostMapping("/rooms/{roomId}/reportUser")
     public void reportUser(
             @PathVariable Long roomId,
-            @RequestParam ChatMessage.ConversationType conversationType,
+            @RequestParam ChatMessage.chatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        chatInteractionService.reportUser(currentUser.getId(), null, roomId, conversationType, null);
+        chatInteractionService.reportUser(currentUser.getId(), null, roomId, chatRoomType, null);
     }
 }

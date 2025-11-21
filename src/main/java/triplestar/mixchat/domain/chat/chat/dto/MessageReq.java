@@ -21,6 +21,6 @@ public record MessageReq(
 
         @NotNull
         @Schema(description = "대화방 타입", example = "GROUP")
-        ChatMessage.ConversationType conversationType // ConversationType 추가
+        ChatMessage.chatRoomType chatRoomType // chatRoomType 추가
 ) {
 }
