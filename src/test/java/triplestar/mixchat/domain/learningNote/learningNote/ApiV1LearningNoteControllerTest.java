@@ -1,7 +1,6 @@
 package triplestar.mixchat.domain.learningNote.learningNote;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasItems;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -187,59 +186,98 @@ class ApiV1LearningNoteControllerTest {
                         .param("page", "0")
                         .param("size", "10")
                         .param("tag", TranslationTagCode.GRAMMAR.toString())
-                        .param("learningFilter", LearningFilter.LEARNED.toString())
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .param("learningFilter", LearningFilter.LEARNED.toString()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.msg").value("학습노트 목록 조회 성공"))
-                // GRAMMAR 태그의 학습 완료 2개 확인
-                .andExpect(jsonPath("$.data.content[*].feedback[*].tag", hasItems("GRAMMAR")))
-                .andExpect(jsonPath("$.data.content[*].feedback[*].problem", hasItems("goes", "walk")))
-                .andExpect(jsonPath("$.data.content[*].feedback[*].correction", hasItems("go", "walks")))
-                .andExpect(jsonPath("$.data.content[*].feedback[*].extra", hasItems("삼인칭 단수 수정", "3인칭 단수")));
+
+                // 결과 개수 = 2
+                .andExpect(jsonPath("$.data.content.length()").value(2))
+
+                // content[0]
+                .andExpect(jsonPath("$.data.content[0].feedback.tag").value("GRAMMAR"))
+                .andExpect(jsonPath("$.data.content[0].feedback.problem").value("goes"))
+                .andExpect(jsonPath("$.data.content[0].feedback.correction").value("go"))
+                .andExpect(jsonPath("$.data.content[0].feedback.extra").value("삼인칭 단수 수정"))
+
+                // content[1]
+                .andExpect(jsonPath("$.data.content[1].feedback.tag").value("GRAMMAR"))
+                .andExpect(jsonPath("$.data.content[1].feedback.problem").value("walk"))
+                .andExpect(jsonPath("$.data.content[1].feedback.correction").value("walks"))
+                .andExpect(jsonPath("$.data.content[1].feedback.extra").value("3인칭 단수"));
     }
 
     @Test
     @DisplayName("학습노트 목록 조회 성공 - TRANSLATION 태그 + UNLEARNED 상태 (3개 결과)")
     @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void getLearningNotes_translation_unlearned_success() throws Exception {
+
         mockMvc.perform(get("/api/v1/learning-notes")
                         .param("page", "0")
                         .param("size", "10")
                         .param("tag", TranslationTagCode.TRANSLATION.toString())
-                        .param("learningFilter", LearningFilter.UNLEARNED.toString())
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .param("learningFilter", LearningFilter.UNLEARNED.toString()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.msg").value("학습노트 목록 조회 성공"))
-                // TRANSLATION 태그의 미학습 3개 확인
-                .andExpect(jsonPath("$.data.content[*].feedback[*].tag", hasItems("TRANSLATION")))
-                .andExpect(jsonPath("$.data.content[*].feedback[*].problem", hasItems("학교", "사과를", "먹는다")))
-                .andExpect(jsonPath("$.data.content[*].feedback[*].correction", hasItems("school", "an apple", "eat")))
-                .andExpect(jsonPath("$.data.content[*].feedback[*].extra", hasItems("단어 번역", "직역 수정")));
+
+                // 총 3개
+                .andExpect(jsonPath("$.data.content.length()").value(3))
+
+                // content[0]
+                .andExpect(jsonPath("$.data.content[0].feedback.tag").value("TRANSLATION"))
+                .andExpect(jsonPath("$.data.content[0].feedback.problem").value("학교"))
+                .andExpect(jsonPath("$.data.content[0].feedback.correction").value("school"))
+                .andExpect(jsonPath("$.data.content[0].feedback.extra").value("단어 번역"))
+
+                // content[1]
+                .andExpect(jsonPath("$.data.content[1].feedback.tag").value("TRANSLATION"))
+                .andExpect(jsonPath("$.data.content[1].feedback.problem").value("사과를"))
+                .andExpect(jsonPath("$.data.content[1].feedback.correction").value("an apple"))
+                .andExpect(jsonPath("$.data.content[1].feedback.extra").value("직역 수정"))
+
+                // content[2]
+                .andExpect(jsonPath("$.data.content[2].feedback.tag").value("TRANSLATION"))
+                .andExpect(jsonPath("$.data.content[2].feedback.problem").value("먹는다"))
+                .andExpect(jsonPath("$.data.content[2].feedback.correction").value("eat"))
+                .andExpect(jsonPath("$.data.content[2].feedback.extra").value("직역 수정"));
     }
 
     @Test
     @DisplayName("학습노트 목록 조회 성공 - GRAMMAR 태그 + ALL 상태 (3개 결과)")
     @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void getLearningNotes_grammar_all_success() throws Exception {
+
         mockMvc.perform(get("/api/v1/learning-notes")
                         .param("page", "0")
                         .param("size", "10")
                         .param("tag", TranslationTagCode.GRAMMAR.toString())
-                        .param("learningFilter", LearningFilter.ALL.toString())
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .param("learningFilter", LearningFilter.ALL.toString()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.msg").value("학습노트 목록 조회 성공"))
-                // GRAMMAR 태그 전부 (fb1, fb3, fb4)
-                .andExpect(jsonPath("$.data.content[*].feedback[*].tag", hasItems("GRAMMAR")))
-                .andExpect(jsonPath("$.data.content[*].feedback[*].problem", hasItems("goes", "walk", "day")))
-                .andExpect(jsonPath("$.data.content[*].feedback[*].correction", hasItems("go", "walks", "days")))
-                .andExpect(jsonPath("$.data.content[*].feedback[*].extra", hasItems("삼인칭 단수 수정", "3인칭 단수", "복수형 수정")));
 
+                // 총 3개 (fb1, fb3, fb4)
+                .andExpect(jsonPath("$.data.content.length()").value(3))
+
+                // content[0]
+                .andExpect(jsonPath("$.data.content[0].feedback.tag").value("GRAMMAR"))
+                .andExpect(jsonPath("$.data.content[0].feedback.problem").value("goes"))
+                .andExpect(jsonPath("$.data.content[0].feedback.correction").value("go"))
+                .andExpect(jsonPath("$.data.content[0].feedback.extra").value("삼인칭 단수 수정"))
+
+                // content[1]
+                .andExpect(jsonPath("$.data.content[1].feedback.tag").value("GRAMMAR"))
+                .andExpect(jsonPath("$.data.content[1].feedback.problem").value("walk"))
+                .andExpect(jsonPath("$.data.content[1].feedback.correction").value("walks"))
+                .andExpect(jsonPath("$.data.content[1].feedback.extra").value("3인칭 단수"))
+
+                // content[2]
+                .andExpect(jsonPath("$.data.content[2].feedback.tag").value("GRAMMAR"))
+                .andExpect(jsonPath("$.data.content[2].feedback.problem").value("day"))
+                .andExpect(jsonPath("$.data.content[2].feedback.correction").value("days"))
+                .andExpect(jsonPath("$.data.content[2].feedback.extra").value("복수형 수정"));
     }
-
     @Test
     @DisplayName("학습노트 목록 조회 실패 - 잘못된 태그 입력 시 400 반환")
     @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
