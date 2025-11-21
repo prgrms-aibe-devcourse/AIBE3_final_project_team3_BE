@@ -38,7 +38,7 @@ public class Feedback extends BaseEntity {
     @Column(nullable = false)
     private String extra;
 
-    @Column(name = "is_marked", nullable = false)
+    @Column(name = "is_marked", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     private boolean marked = false;
 
     private Feedback(LearningNote learningNote,
