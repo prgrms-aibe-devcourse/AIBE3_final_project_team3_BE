@@ -3,16 +3,13 @@ package triplestar.mixchat.domain.member.member.dto;
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
-@Schema(description = "회원 프로필 상세 조회 응답 DTO")
-public record MemberProfileResp(
+@Schema(description = "회원 상세 조회 응답 DTO")
+public record MemberDetailResp(
         @Schema(description = "회원 고유 ID", example = "123", requiredMode = REQUIRED)
         Long memberId,
 
@@ -41,14 +38,18 @@ public record MemberProfileResp(
         String profileImageUrl,
 
         @Schema(description = "현재 로그인 사용자와 친구 관계인지 여부", example = "true", requiredMode = REQUIRED)
-        Boolean isFriend,
+        boolean isFriend,
 
-        @Schema(description = "현재 로그인 사용자가 상대에게 친구 신청을 보냈거나 받았는지 대기 중인 상태인지 여부",
-                example = "false", requiredMode = REQUIRED)
-        Boolean isPendingRequest
+        @Schema(description = "현재 로그인 사용자가 상대방에게 친구 요청을 보내고 대기 중인 상태인지 여부",
+                example = "true")
+        boolean isFriendRequestSent,
+
+        @Schema(description = "상대방이 현재 사용자에게 보낸 친구 요청의 ID. 대기 중인 요청이 없으면 null입니다.",
+                example = "51")
+        Long receivedFriendRequestId
 ) {
-        public static MemberProfileResp forAnonymousViewer(Member member) {
-                return new MemberProfileResp(
+        public static MemberDetailResp forAnonymousViewer(Member member) {
+                return new MemberDetailResp(
                         member.getId(),
                         member.getEmail(),
                         member.getName(),
@@ -59,7 +60,8 @@ public record MemberProfileResp(
                         member.getDescription(),
                         member.getProfileImageUrl(),
                         false,
-                        false
+                        false,
+                        null
                 );
         }
 }

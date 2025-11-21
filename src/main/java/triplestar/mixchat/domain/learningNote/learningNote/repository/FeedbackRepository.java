@@ -1,20 +1,25 @@
 package triplestar.mixchat.domain.learningNote.learningNote.repository;
 
-import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.Feedback;
+import triplestar.mixchat.domain.translation.translation.constant.TranslationTagCode;
 
 public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
     @Query("""
-        select f from Feedback f
-        join fetch f.learningNote n
-        join fetch n.member m
-        where f.id = :feedbackId and m.id = :memberId
+        SELECT f
+        FROM Feedback f
+        JOIN FETCH f.learningNote n
+        WHERE n.member.id = :memberId
+        AND (:tag IS NULL OR f.tag = :tag)
+        AND (:isMarked IS NULL OR f.marked = :isMarked)
     """)
-    Optional<Feedback> findByIdAndMemberId(
-            @Param("feedbackId") Long feedbackId,
-            @Param("memberId") Long memberId
+    Page<Feedback> findFeedbacksByMember(
+            Long memberId,
+            TranslationTagCode tag,
+            Boolean isMarked,
+            Pageable pageable
     );
 }

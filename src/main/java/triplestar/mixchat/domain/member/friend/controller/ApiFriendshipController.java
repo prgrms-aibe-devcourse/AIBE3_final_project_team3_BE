@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PathVariable;
+import triplestar.mixchat.domain.member.friend.dto.FriendshipRequestResp;
 import triplestar.mixchat.domain.member.friend.dto.FriendshipSendReq;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
@@ -47,7 +48,7 @@ public interface ApiFriendshipController {
     )
     // 401만 있음 -> 403까지 포함해야 할 경우 SecurityRequireResponse 사용
     @SignInInRequireResponse
-    CustomResponse<Long> sendFriendRequest(
+    CustomResponse<FriendshipRequestResp> sendFriendRequest(
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @RequestBody(description = "로그인 정보", required = true)
             FriendshipSendReq friendshipSendReq
