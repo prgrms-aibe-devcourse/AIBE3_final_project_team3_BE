@@ -27,9 +27,9 @@ public class DirectChatRoomService {
     private final MemberRepository memberRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final SimpMessagingTemplate messagingTemplate;
-    private final ChatAuthCacheService chatAuthCacheService; // 캐시 서비스 주입
-    private final ChatMessageService chatMessageService; // ChatMessageService 주입
-    private final ChatInteractionService chatInteractionService; // ChatInteractionService 주입
+    private final ChatAuthCacheService chatAuthCacheService;
+    private final ChatMessageService chatMessageService;
+    private final ChatInteractionService chatInteractionService;
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
@@ -43,33 +43,27 @@ public class DirectChatRoomService {
     }
 
     @Transactional
-    public DirectChatRoomResp findOrCreateDirectChatRoom(Long member1Id, Long member2Id, String senderNickname) { // senderNickname 파라미터 추가
-        Member member1;
-        Member member2;
+    public DirectChatRoomResp findOrCreateDirectChatRoom(Long member1Id, Long member2Id, String senderNickname) {
+        Member member1 = findMemberById(member1Id);
+        Member member2 = findMemberById(member2Id);
 
-        // 사용자 ID 정렬 (항상 member1이 작은 ID를 갖도록)
-        if (member1Id < member2Id) {
-            member1 = findMemberById(member1Id);
-            member2 = findMemberById(member2Id);
-        } else {
-            member1 = findMemberById(member2Id);
-            member2 = findMemberById(member1Id);
-        }
+        Long smallerId = Math.min(member1.getId(), member2.getId());
+        Long largerId = Math.max(member1.getId(), member2.getId());
 
         // 1:1 채팅방 조회 후 없으면 생성
-        DirectChatRoom room = directChatRoomRepository.findByUser1_IdAndUser2_Id(member1.getId(), member2.getId())
+        DirectChatRoom room = directChatRoomRepository.findByUser1_IdAndUser2_Id(smallerId, largerId) // 정렬된 ID를 쿼리에 사용
                 .orElseGet(() -> {
-                    // 새 1:1 채팅방 생성
+                    //Member 객체를 정적팩토리메서드 DirectChatRoom.create에 전달
                     DirectChatRoom newRoom = DirectChatRoom.create(member1, member2);
                     DirectChatRoom savedRoom = directChatRoomRepository.save(newRoom);
-
-                    // 캐시 관리
-                    chatAuthCacheService.addMember(savedRoom.getId(), member1Id);
-                    chatAuthCacheService.addMember(savedRoom.getId(), member2Id);
 
                     // ChatMember 생성 및 저장
                     chatRoomMemberRepository.save(new ChatMember(member1, savedRoom.getId(), ChatMessage.ConversationType.DIRECT, ChatMember.UserType.ROOM_MEMBER));
                     chatRoomMemberRepository.save(new ChatMember(member2, savedRoom.getId(), ChatMessage.ConversationType.DIRECT, ChatMember.UserType.ROOM_MEMBER));
+
+                    // 캐시 관리
+                    chatAuthCacheService.addMember(savedRoom.getId(), member1Id);
+                    chatAuthCacheService.addMember(savedRoom.getId(), member2Id);
 
                     // DTO 변환
                     DirectChatRoomResp roomDto = DirectChatRoomResp.from(savedRoom);
@@ -78,7 +72,7 @@ public class DirectChatRoomService {
                     messagingTemplate.convertAndSendToUser(member1.getId().toString(), "/topic/rooms", roomDto);
                     messagingTemplate.convertAndSendToUser(member2.getId().toString(), "/topic/rooms", roomDto);
 
-                    // 첫 메시지 전송 (TODO 해결)
+                    // 채팅 시작 첫 메시지 전송 (TODO 해결)
                     chatMessageService.saveMessage(savedRoom.getId(), member1Id, senderNickname, "1:1 채팅이 시작되었습니다.", ChatMessage.MessageType.SYSTEM, ChatMessage.ConversationType.DIRECT);
 
                     return savedRoom;

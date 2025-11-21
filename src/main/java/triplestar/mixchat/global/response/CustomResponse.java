@@ -1,16 +1,13 @@
 package triplestar.mixchat.global.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import org.springframework.lang.NonNull;
 
 // API 응답 포맷
-@Schema(description = "공통 응답 포맷")
 public record CustomResponse<T>(
         @JsonIgnore int statusCode,
         @NonNull String msg,
-        @Schema(description = "응답 데이터")
         T data
 ) {
     private static final List<Integer> ALLOWED_STATUS_CODES = List.of(
