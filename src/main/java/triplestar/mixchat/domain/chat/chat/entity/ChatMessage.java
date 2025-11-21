@@ -30,6 +30,11 @@ public class ChatMessage {
         TEXT, IMAGE, FILE, SYSTEM
     }
 
+    // 대화 타입 (1:1, 그룹, AI 등)을 구분하는 enum 추가
+    public enum ConversationType {
+        DIRECT, GROUP, AI
+    }
+
     @CreatedDate
     @Field("created_at")
     private LocalDateTime createdAt;
@@ -38,7 +43,9 @@ public class ChatMessage {
     @Field("updated_at")
     private LocalDateTime updatedAt;
 
-    public ChatMessage(Long chatRoomId, Long senderId, String content, MessageType messageType) {
+    private ConversationType conversationType; // 대화 타입을 저장하는 필드 추가
+
+    public ChatMessage(Long chatRoomId, Long senderId, String content, MessageType messageType, ConversationType conversationType) {
         if (chatRoomId == null) {
             throw new IllegalArgumentException("chatRoomId는 null일 수 없습니다.");
         }
@@ -51,11 +58,15 @@ public class ChatMessage {
         if (content == null || content.isBlank()) {
             throw new IllegalArgumentException("content는 비어 있을 수 없습니다.");
         }
+        if (conversationType == null) { // conversationType null 체크 추가
+            throw new IllegalArgumentException("conversationType은 null일 수 없습니다.");
+        }
 
         this.chatRoomId = chatRoomId;
         this.senderId = senderId;
         this.content = content;
         this.messageType = messageType;
+        this.conversationType = conversationType; // 필드 할당
     }
 }
 

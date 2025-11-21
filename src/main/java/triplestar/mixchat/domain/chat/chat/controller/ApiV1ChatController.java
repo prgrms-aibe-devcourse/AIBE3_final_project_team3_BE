@@ -13,18 +13,23 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import triplestar.mixchat.domain.chat.chat.dto.ChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
-import triplestar.mixchat.domain.chat.chat.dto.CreatePublicChatReq;
+import triplestar.mixchat.domain.chat.chat.dto.ChatRoomDataResp;
+import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.TextMessageReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.service.AIChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
-import triplestar.mixchat.domain.chat.chat.service.ChatRoomService;
+import triplestar.mixchat.domain.chat.chat.service.ChatInteractionService;
+import triplestar.mixchat.domain.chat.chat.service.DirectChatRoomService;
+import triplestar.mixchat.domain.chat.chat.service.GroupChatRoomService;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.global.security.CustomUserDetails;
@@ -34,85 +39,110 @@ import triplestar.mixchat.global.security.CustomUserDetails;
 @RequestMapping("/api/v1/chats")
 public class ApiV1ChatController implements ApiChatController {
 
-    private final ChatRoomService chatRoomService;
+    private final DirectChatRoomService directChatRoomService;
+    private final GroupChatRoomService groupChatRoomService;
+    private final AIChatRoomService aiChatRoomService;
+    private final ChatInteractionService chatInteractionService;
     private final ChatMessageService chatMessageService;
     private final S3Uploader s3Uploader;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     @PostMapping("/rooms/direct")
-    public CustomResponse<ChatRoomResp> createDirectRoom(
+    public CustomResponse<DirectChatRoomResp> createDirectRoom(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody CreateDirectChatReq request
     ) {
-        ChatRoomResp roomResp =
-                chatRoomService.findOrCreateDirectRoom(currentUser.getId(), request.partnerId());
+        DirectChatRoomResp roomResp =
+                directChatRoomService.findOrCreateDirectChatRoom(currentUser.getId(), request.partnerId(), currentUser.getNickname());
         return CustomResponse.ok("1:1 채팅방 생성/조회에 성공하였습니다.", roomResp);
     }
 
     @Override
     @PostMapping("/rooms/group")
-    public CustomResponse<ChatRoomResp> createGroupRoom(
+    public CustomResponse<GroupChatRoomResp> createGroupRoom(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody CreateGroupChatReq request
     ) {
-        ChatRoomResp roomResp =
-                chatRoomService.createGroupRoom(request.roomName(), request.memberIds(), currentUser.getId());
+        GroupChatRoomResp roomResp =
+                groupChatRoomService.createGroupRoom(request, currentUser.getId());
         return CustomResponse.ok("그룹 채팅방 생성에 성공하였습니다.", roomResp);
     }
 
-    @Override
-    @PostMapping("/rooms/public")
-    public CustomResponse<ChatRoomResp> createPublicGroupRoom(
-            @AuthenticationPrincipal CustomUserDetails currentUser,
-            @Valid @RequestBody CreatePublicChatReq request
+    @PostMapping("/rooms/ai")
+    public CustomResponse<AIChatRoomResp> createAiRoom(
+        @AuthenticationPrincipal CustomUserDetails currentUser,
+        @Valid @RequestBody CreateAIChatReq request
     ) {
-        ChatRoomResp roomResp =
-                chatRoomService.createPublicGroupRoom(request.roomName(), currentUser.getId());
-        return CustomResponse.ok("공개 그룹 채팅방 생성에 성공하였습니다.", roomResp);
+        AIChatRoomResp roomResp =
+            aiChatRoomService.createAIChatRoom(currentUser.getId(), request);
+        return CustomResponse.ok("AI 채팅방 생성에 성공하였습니다.", roomResp);
     }
 
     @Override
-    @GetMapping("/rooms")
-    public CustomResponse<List<ChatRoomResp>> getRooms(
-            @AuthenticationPrincipal CustomUserDetails currentUser
+    @GetMapping("/rooms/direct")
+    public CustomResponse<List<DirectChatRoomResp>> getDirectChatRooms(
+        @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        List<ChatRoomResp> rooms = chatRoomService.getRoomsForUser(currentUser.getId());
-        return CustomResponse.ok("채팅방 목록 조회에 성공하였습니다.", rooms);
+        List<DirectChatRoomResp> rooms = directChatRoomService.getRoomsForUser(currentUser.getId());
+        return CustomResponse.ok("1:1 채팅방 목록 조회에 성공하였습니다.", rooms);
     }
+
+    @Override
+    @GetMapping("/rooms/group")
+    public CustomResponse<List<GroupChatRoomResp>> getGroupChatRooms(
+        @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        List<GroupChatRoomResp> rooms = groupChatRoomService.getRoomsForUser(currentUser.getId());
+        return CustomResponse.ok("그룹 채팅방 목록 조회에 성공하였습니다.", rooms);
+    }
+
+    @Override
+    @GetMapping("/rooms/ai")
+    public CustomResponse<List<AIChatRoomResp>> getAiChatRooms(
+        @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        List<AIChatRoomResp> rooms = aiChatRoomService.getRoomsForUser(currentUser.getId());
+        return CustomResponse.ok("AI 채팅방 목록 조회에 성공하였습니다.", rooms);
+    }
+
 
     @Override
     @PostMapping("/rooms/{roomId}/message")
     public CustomResponse<MessageResp> sendMessage(
             @PathVariable("roomId") Long roomId,
+            @RequestParam ChatMessage.ConversationType conversationType,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody TextMessageReq request
     ) {
         MessageResp messageResp =
-                chatMessageService.saveMessage(roomId, currentUser.getId(), currentUser.getNickname(), request.content(), ChatMessage.MessageType.TEXT);
+                chatMessageService.saveMessage(roomId, currentUser.getId(), currentUser.getNickname(), request.content(), ChatMessage.MessageType.TEXT, conversationType);
         return CustomResponse.ok("메시지 전송에 성공하였습니다.", messageResp);
     }
 
     @Override
     @GetMapping("/rooms/{roomId}/messages")
-    public CustomResponse<List<MessageResp>> getMessages(
-            @PathVariable("roomId") Long roomId
+    public CustomResponse<ChatRoomDataResp> getMessages(
+            @PathVariable("roomId") Long roomId,
+            @RequestParam ChatMessage.ConversationType conversationType
     ) {
-        List<MessageResp> messageResps = chatMessageService.getMessagesWithSenderInfo(roomId);
-        return CustomResponse.ok("메시지 목록 조회에 성공하였습니다.", messageResps);
+        List<MessageResp> messageResps = chatMessageService.getMessagesWithSenderInfo(roomId, conversationType);
+        ChatRoomDataResp responseData = new ChatRoomDataResp(conversationType, messageResps);
+        return CustomResponse.ok("메시지 목록과 대화 타입 조회에 성공하였습니다.", responseData);
     }
 
     @Override
     @PostMapping(value = "/rooms/{roomId}/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CustomResponse<MessageResp> uploadFile(
             @PathVariable("roomId") Long roomId,
+            @RequestParam ChatMessage.ConversationType conversationType,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam("file") MultipartFile file,
             @RequestParam("messageType") ChatMessage.MessageType messageType
     ) {
         String fileUrl = s3Uploader.uploadFile(file, "chat-files");
         MessageResp messageResp =
-                chatMessageService.saveFileMessage(roomId, currentUser.getId(), currentUser.getNickname(), fileUrl, messageType);
+                chatMessageService.saveFileMessage(roomId, currentUser.getId(), currentUser.getNickname(), fileUrl, messageType, conversationType);
 
         messagingTemplate.convertAndSend(
                 "/topic/chat/room/" + roomId,
@@ -126,26 +156,37 @@ public class ApiV1ChatController implements ApiChatController {
     @DeleteMapping("/rooms/{roomId}/leave")
     public void leaveRoom(
             @PathVariable("roomId") Long roomId,
+            @RequestParam ChatMessage.ConversationType conversationType, // conversationType 추가
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        chatRoomService.leaveRoom(roomId, currentUser.getId());
+        if (conversationType == ChatMessage.ConversationType.DIRECT) {
+            directChatRoomService.leaveRoom(roomId, currentUser.getId());
+        } else if (conversationType == ChatMessage.ConversationType.GROUP) {
+            groupChatRoomService.leaveRoom(roomId, currentUser.getId());
+        } else if (conversationType == ChatMessage.ConversationType.AI) {
+            aiChatRoomService.leaveAIChatRoom(roomId, currentUser.getId());
+        } else {
+            throw new IllegalArgumentException("지원하지 않는 대화 타입입니다: " + conversationType);
+        }
     }
 
     @Override
     @PostMapping("/rooms/{roomId}/block")
     public void blockUser(
             @PathVariable("roomId") Long roomId,
+            @RequestParam ChatMessage.ConversationType conversationType,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        chatRoomService.blockUser(roomId, currentUser.getId());
+        chatInteractionService.blockUser(currentUser.getId(), null, roomId, conversationType);
     }
 
     @Override
     @PostMapping("/rooms/{roomId}/reportUser")
     public void reportUser(
-            @PathVariable("roomId") Long roomId,
+            @PathVariable Long roomId,
+            @RequestParam ChatMessage.ConversationType conversationType,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        chatRoomService.reportUser(roomId, currentUser.getId());
+        chatInteractionService.reportUser(currentUser.getId(), null, roomId, conversationType, null);
     }
 }

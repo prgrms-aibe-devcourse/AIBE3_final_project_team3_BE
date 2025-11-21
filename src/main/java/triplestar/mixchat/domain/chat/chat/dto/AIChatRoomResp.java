@@ -1,0 +1,29 @@
+package triplestar.mixchat.domain.chat.chat.dto;
+
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import triplestar.mixchat.domain.chat.chat.entity.AIChatRoom; // AIChatRoom 엔티티 사용
+
+public record AIChatRoomResp(
+        @Schema(description = "채팅방 ID", example = "1", requiredMode = REQUIRED)
+        Long id,
+
+        @Schema(description = "채팅방 이름", example = "AI 챗봇방", requiredMode = REQUIRED)
+        String name,
+
+        @Schema(description = "AI 모델 ID", example = "gpt-4", requiredMode = REQUIRED)
+        String aiModelId,
+
+        @Schema(description = "AI 페르소나", example = "친절한 비서", requiredMode = REQUIRED)
+        String aiPersona
+) {
+    public static AIChatRoomResp from(AIChatRoom entity) {
+        return new AIChatRoomResp(
+                entity.getId(),
+                entity.getName(),
+                entity.getAiModelId(),
+                entity.getAiPersona()
+        );
+    }
+}

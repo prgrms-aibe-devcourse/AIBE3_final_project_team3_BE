@@ -12,7 +12,7 @@ import org.springframework.stereotype.Controller;
 import triplestar.mixchat.domain.chat.chat.dto.MessageReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
-import triplestar.mixchat.domain.chat.chat.service.ChatRoomService;
+import triplestar.mixchat.domain.chat.chat.service.ChatInteractionService; // ChatInteractionService 임포트
 import triplestar.mixchat.global.security.CustomUserDetails;
 
 @Slf4j
@@ -20,7 +20,7 @@ import triplestar.mixchat.global.security.CustomUserDetails;
 @RequiredArgsConstructor
 public class ApiV1ChatSocketController {
 
-    private final ChatRoomService chatRoomService;
+    private final ChatInteractionService chatInteractionService; // ChatInteractionService 주입
     private final ChatMessageService chatMessageService;
     private final SimpMessageSendingOperations messagingTemplate;
 
@@ -35,19 +35,21 @@ public class ApiV1ChatSocketController {
         Long senderId = userDetails.getId();
         String senderNickname = userDetails.getNickname();
 
-        // 1. 사용자가 해당 채팅방에 메시지를 보낼 권한이 있는지 확인 (캐시 우선 조회)
-        chatRoomService.verifyUserIsMemberOfRoom(senderId, messageReq.roomId());
+        // 1. 사용자가 해당 채팅방에 메시지를 보낼 권한이 있는지 확인 (ChatInteractionService로 위임)
+        chatInteractionService.verifyUserIsMemberOfRoom(senderId, messageReq.roomId(), messageReq.conversationType());
 
-        // 2. 권한이 확인되면 메시지 저장 및 전송 (DB 조회 없음)
+        // 2. 권한이 확인되면 메시지 저장 및 전송
         MessageResp messageResp = chatMessageService.saveMessage(
                 messageReq.roomId(),
                 senderId,
                 senderNickname,
                 messageReq.content(),
-                messageReq.messageType()
+                messageReq.messageType(),
+                messageReq.conversationType() // conversationType 추가
         );
 
-        messagingTemplate.convertAndSend("/topic/rooms/" + messageReq.roomId(), messageResp);
+        String destination = "/topic/" + messageReq.conversationType().name().toLowerCase() + "/rooms/" + messageReq.roomId();
+        messagingTemplate.convertAndSend(destination, messageResp);
         log.debug("Message sent to room {}: {}", messageReq.roomId(), messageResp.content());
     }
 }

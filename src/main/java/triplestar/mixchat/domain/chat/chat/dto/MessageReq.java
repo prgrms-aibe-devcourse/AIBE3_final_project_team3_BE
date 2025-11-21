@@ -17,6 +17,10 @@ public record MessageReq(
 
         @NotNull
         @Schema(description = "메시지 타입", example = "TALK")
-        ChatMessage.MessageType messageType
+        ChatMessage.MessageType messageType,
+
+        @NotNull
+        @Schema(description = "대화방 타입", example = "GROUP")
+        ChatMessage.ConversationType conversationType // ConversationType 추가
 ) {
 }

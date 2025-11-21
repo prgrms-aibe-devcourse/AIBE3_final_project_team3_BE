@@ -1,6 +1,8 @@
 package triplestar.mixchat.global.websocket;
 
 import java.security.Principal;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.Ordered;
@@ -18,7 +20,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import triplestar.mixchat.domain.chat.chat.service.ChatRoomService;
+import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.service.ChatInteractionService;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.security.CustomUserDetails;
@@ -27,7 +30,6 @@ import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
 
 @Slf4j
 @Component
-// @RequiredArgsConstructor 제거
 // stompHandler는 웹소켓 메시지를 가로채는 인터셉터
 // order + 99를 통해 기본 인터셉터들보다는 늦게, 다른 커스텀보다는 빠르게 설정
 @Order(Ordered.HIGHEST_PRECEDENCE + 99)
@@ -35,14 +37,21 @@ public class StompHandler implements ExecutorChannelInterceptor {
 
     private final AuthJwtProvider authJwtProvider;
     private final MemberRepository memberRepository;
-    private final ChatRoomService chatRoomService;
+    private final ChatInteractionService chatInteractionService;
+
+    private static final Pattern ROOM_DESTINATION_PATTERN =
+            Pattern.compile("^/topic/(direct|group|ai)/rooms/(\\d+)");
 
     // 생성자를 직접 작성하고 @Lazy 어노테이션으로 순환 참조 해결
-    public StompHandler(AuthJwtProvider authJwtProvider, MemberRepository memberRepository, @Lazy ChatRoomService chatRoomService) {
+    public StompHandler(
+            AuthJwtProvider authJwtProvider,
+            MemberRepository memberRepository,
+            @Lazy ChatInteractionService chatInteractionService) {
         this.authJwtProvider = authJwtProvider;
         this.memberRepository = memberRepository;
-        this.chatRoomService = chatRoomService;
+        this.chatInteractionService = chatInteractionService;
     }
+
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -69,7 +78,7 @@ public class StompHandler implements ExecutorChannelInterceptor {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
         Principal principal = accessor.getUser();
 
-        // [로그 추가] beforeHandle에서 principal 객체 확인
+        // beforeHandle에서 principal 객체 확인
         if (principal != null) {
             log.info("✅ [beforeHandle] Principal'{}' found in session '{}'. Setting SecurityContext.", principal.getName(), accessor.getSessionId());
             SecurityContextHolder.getContext().setAuthentication((Authentication) principal);
@@ -98,7 +107,7 @@ public class StompHandler implements ExecutorChannelInterceptor {
                 userDetails, null, userDetails.getAuthorities());
         accessor.setUser(authentication);
 
-        // [로그 추가] handleConnect에서 인증 정보가 세션에 잘 설정되었는지 확인
+        // handleConnect에서 인증 정보가 세션에 잘 설정되었는지 확인
         log.info("✅ [handleConnect] User '{}' authentication object set to session '{}'", authentication.getName(), accessor.getSessionId());
     }
 
@@ -111,18 +120,27 @@ public class StompHandler implements ExecutorChannelInterceptor {
             throw new IllegalArgumentException("구독 목적지가 없습니다.");
         }
 
-        // 채팅방 구독 권한 확인
-        Long roomId = chatRoomService.getRoomIdFromDestination(destination);
-        if (roomId != null) {
-            chatRoomService.verifyUserIsMemberOfRoom(userDetails.getId(), roomId);
-            log.info("SUBSCRIBE (Room): memberId={} destination={}", userDetails.getId(), destination);
+        Matcher matcher = ROOM_DESTINATION_PATTERN.matcher(destination);
+        if (matcher.matches()) {
+            String typeString = matcher.group(1).toUpperCase();
+            Long roomId = Long.parseLong(matcher.group(2));
+            ChatMessage.ConversationType conversationType =
+                    ChatMessage.ConversationType.valueOf(typeString);
+
+            chatInteractionService.verifyUserIsMemberOfRoom(
+                    userDetails.getId(), roomId, conversationType);
+            log.info(
+                    "SUBSCRIBE (Room): memberId={} destination={}", userDetails.getId(), destination);
             return;
         }
 
         // 사용자별 목적지 구독 확인 (표준 방식)
         // /user/ 로 시작하는 모든 구독은 스프링이 현재 사용자의 세션에만 연결해주므로 안전함.
         if (destination.startsWith("/user/")) {
-            log.info("SUBSCRIBE (User Destination): memberId={} destination={}", userDetails.getId(), destination);
+            log.info(
+                    "SUBSCRIBE (User Destination): memberId={} destination={}",
+                    userDetails.getId(),
+                    destination);
             return;
         }
 

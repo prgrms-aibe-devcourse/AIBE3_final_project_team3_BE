@@ -20,9 +20,13 @@ public class ChatMember extends BaseEntity {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chat_room_id", nullable = false)
-    private ChatRoom chatRoom;
+    // 다형적 연관관계를 위해 chatRoomId와 conversationType 필드 추가
+    @Column(name = "chat_room_id", nullable = false)
+    private Long chatRoomId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "conversation_type", nullable = false)
+    private ChatMessage.ConversationType conversationType; // ChatMessage의 ConversationType 사용
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -34,19 +38,24 @@ public class ChatMember extends BaseEntity {
     @Column(nullable = false)
     private ChatNotificationSetting chatNotificationSetting;
 
-    public ChatMember(Member member, ChatRoom chatRoom, UserType userType) {
+    // 생성자로 chatRoom 대신 chatRoomId와 conversationType
+    public ChatMember(Member member, Long chatRoomId, ChatMessage.ConversationType conversationType, UserType userType) {
         if (member == null) {
             throw new IllegalArgumentException("member는 null일 수 없습니다.");
         }
-        if (chatRoom == null) {
-            throw new IllegalArgumentException("chatRoom은 null일 수 없습니다.");
+        if (chatRoomId == null) {
+            throw new IllegalArgumentException("chatRoomId는 null일 수 없습니다.");
+        }
+        if (conversationType == null) {
+            throw new IllegalArgumentException("conversationType은 null일 수 없습니다.");
         }
         if (userType == null) {
             throw new IllegalArgumentException("userType은 null일 수 없습니다.");
         }
 
         this.member = member;
-        this.chatRoom = chatRoom;
+        this.chatRoomId = chatRoomId;
+        this.conversationType = conversationType;
         this.userType = userType;
         // 기본 알림 설정은 ALWAYS로 설정
         this.chatNotificationSetting = ChatNotificationSetting.ALWAYS;
