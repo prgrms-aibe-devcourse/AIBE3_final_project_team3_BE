@@ -12,7 +12,8 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
         show_sql: true
-        ddl-auto: create-drop
+    hibernate:
+      ddl-auto: create-drop
   data:
 #    mongodb:
 #      uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/${MONGO_TEST_DB:mongo_test}

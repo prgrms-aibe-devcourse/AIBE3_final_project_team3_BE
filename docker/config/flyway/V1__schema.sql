@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS `members` (
 
                                          `country`          VARCHAR(50)  NOT NULL,
                                          `english_level`    VARCHAR(20)  NOT NULL,
-                                         `interest`         VARCHAR(100) NOT NULL,
+                                         `interests`        TEXT NOT NULL,
                                          `description`      TEXT NULL,
 
                                          `role`             VARCHAR(20)  NOT NULL,
