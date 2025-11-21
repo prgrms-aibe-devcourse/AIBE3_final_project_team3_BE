@@ -81,51 +81,7 @@ public class ChatInteractionService {
         throw new UnsupportedOperationException("사용자/대화방 신고 기능은 아직 구현되지 않았습니다.");
     }
 
-    /**
-     * 사용자가 참여하고 있는 모든 대화방 목록 조회
-     * @param currentUserId 현재 사용자 ID
-     * @return 모든 타입의 대화방 목록 (Map<chatRoomType, List<DTO>>)
-     */
-    @Transactional(readOnly = true)
-    public Map<ChatMessage.chatRoomType, List<?>> getAllchatRoomsForUser(Long currentUserId) {
-        Member currentUser = findMemberById(currentUserId);
-        List<ChatMember> chatMembers = chatRoomMemberRepository.findByMember(currentUser);
-
-        List<DirectChatRoomResp> directRooms = new ArrayList<>();
-        List<GroupChatRoomResp> groupRooms = new ArrayList<>();
-        List<AIChatRoomResp> aiRooms = new ArrayList<>();
-
-        for (ChatMember chatMember : chatMembers) {
-            Long roomId = chatMember.getChatRoomId();
-            ChatMessage.chatRoomType type = chatMember.getChatRoomType();
-
-            switch (type) {
-                case DIRECT:
-                    directChatRoomRepository.findById(roomId).ifPresent(directRoom ->
-                            directRooms.add(DirectChatRoomResp.from(directRoom)));
-                    break;
-                case GROUP:
-                    groupChatRoomRepository.findById(roomId).ifPresent(groupRoom -> {
-                        List<ChatMember> groupMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, ChatMessage.chatRoomType.GROUP);
-                        groupRooms.add(GroupChatRoomResp.from(groupRoom, groupMembers));
-                    });
-                    break;
-                case AI:
-                    aiChatRoomRepository.findById(roomId).ifPresent(aiRoom ->
-                            aiRooms.add(AIChatRoomResp.from(aiRoom)));
-                    break;
-            }
-        }
-
-        Map<ChatMessage.chatRoomType, List<?>> chatRooms = new HashMap<>();
-        chatRooms.put(ChatMessage.chatRoomType.DIRECT, directRooms);
-        chatRooms.put(ChatMessage.chatRoomType.GROUP, groupRooms);
-        chatRooms.put(ChatMessage.chatRoomType.AI, aiRooms);
-
-        return chatRooms;
-    }
-
-    //정 대화방의 알림 설정 변경/
+    //특정 대화방의 알림 설정 변경
     @Transactional
     public void updateNotificationSetting(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType, boolean enableNotifications) {
         // TODO: ChatMember의 알림 설정 변경 로직 구현
@@ -133,7 +89,7 @@ public class ChatInteractionService {
         throw new UnsupportedOperationException("알림 설정 변경 기능은 아직 구현되지 않았습니다.");
     }
 
-    //특정 대화방에서 사용자의 마지막 읽은 메시지 업데이트 (미구현)/
+    //특정 대화방에서 사용자의 마지막 읽은 메시지 업데이트 (미구현)
     @Transactional
     public void updateLastReadMessage(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType, String lastReadMessageId) {
         // TODO: ChatMember의 lastReadAt 또는 lastReadMessageId 업데이트 로직 구현
