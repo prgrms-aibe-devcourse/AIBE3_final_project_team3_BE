@@ -165,10 +165,6 @@ class ApiV1MemberControllerTest {
     @DisplayName("회원 목록 조회 성공")
     @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void list_members_success() throws Exception {
-        // 여러 회원 생성
-        memberRepository.save(TestMemberFactory.createMember("user2"));
-        memberRepository.save(TestMemberFactory.createMember("user3"));
-
         ResultActions resultActions = mvc
                 .perform(
                         get("/api/v1/members")
@@ -183,5 +179,18 @@ class ApiV1MemberControllerTest {
     }
 
     @Test
-    @DisplayName("")
+    @DisplayName("회원 목록 조회 - 비회원 성공")
+    void list_members_as_guest_success() throws Exception {
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/v1/members")
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(ApiV1MemberController.class))
+                .andExpect(handler().methodName("getMembers"))
+                .andExpect(status().isOk());
+    }
 }

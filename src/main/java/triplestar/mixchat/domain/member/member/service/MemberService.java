@@ -99,8 +99,6 @@ public class MemberService {
     @Transactional
     public void deleteSoftly(Long memberId) {
         Member member = findMemberById(memberId);
-        member.updateProfileImageUrl(defaultProfileBaseURL);
-        member.updateInfo("탈퇴한 회원", "탈퇴한 회원", Country.KR, EnglishLevel.BEGINNER
-                , List.of("탈퇴한 회원 정보"), "탈퇴한 회원입니다.");
+        member.deleteSoftly();
     }
 }
