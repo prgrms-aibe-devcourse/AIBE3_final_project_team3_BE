@@ -1,9 +1,7 @@
 package triplestar.mixchat.domain.member.member.service;
 
 import jakarta.persistence.EntityNotFoundException;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
@@ -11,13 +9,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import triplestar.mixchat.domain.member.member.constant.Country;
-import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
-import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
+import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.domain.member.presence.service.PresenceService;
 import triplestar.mixchat.global.s3.S3Uploader;
 
 @Service
@@ -27,6 +24,7 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final S3Uploader s3Uploader;
+    private final PresenceService presenceService;
 
     @Qualifier("defaultProfileImageUrl")
     private final String defaultProfileBaseURL;
@@ -54,11 +52,13 @@ public class MemberService {
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다."));
     }
 
-    public List<MemberSummaryResp> findAllMembers(Long currentUserId, Pageable pageable) {
+    public Page<MemberSummaryResp> findAllMembers(Long currentUserId, Pageable pageable) {
         Page<Member> members = memberRepository.findAllByIdIsNot(currentUserId, pageable);
-        return members.stream()
-                .map(MemberSummaryResp::new)
-                .collect(Collectors.toList());
+
+        return members.map(member -> {
+            boolean isOnline = presenceService.isOnline(member.getId());
+            return MemberSummaryResp.from(member, isOnline);
+        });
     }
 
     @Transactional

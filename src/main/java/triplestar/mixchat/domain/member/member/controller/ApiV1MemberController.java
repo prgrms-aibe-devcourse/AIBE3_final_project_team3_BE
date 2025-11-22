@@ -2,6 +2,7 @@ package triplestar.mixchat.domain.member.member.controller;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -74,12 +75,12 @@ public class ApiV1MemberController implements ApiMemberController {
     // TODO : 온라인 유저 표시
     @Override
     @GetMapping
-    public CustomResponse<List<MemberSummaryResp>> getMembers(
+    public CustomResponse<Page<MemberSummaryResp>> getMembers(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PageableDefault(size = 20) Pageable pageable
     ) {
         Long userId = userDetails.getId() != null ? userDetails.getId() : -1L;
-        List<MemberSummaryResp> members = memberService.findAllMembers(userId, pageable);
+        Page<MemberSummaryResp> members = memberService.findAllMembers(userId, pageable);
         return CustomResponse.ok("모든 회원 목록을 성공적으로 조회했습니다.", members);
     }
 
