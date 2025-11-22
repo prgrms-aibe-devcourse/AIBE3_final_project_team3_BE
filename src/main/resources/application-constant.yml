@@ -5,7 +5,9 @@ jwt:
 redis:
   prefix:
     refresh-token: "refresh:"
-
+    presence-user: "presence:"
+  expiration:
+    presence-user: "#{30}"
 cookie:
   domain: ${DOMAIN_NAME:mixchat.shop}
 
