@@ -7,7 +7,7 @@ redis:
     refresh-token: "refresh:"
     presence-user: "presence:"
   expiration:
-    presence-user: "#{30}"
+    presence-user: "#{90}"
 cookie:
   domain: ${DOMAIN_NAME:mixchat.shop}
 

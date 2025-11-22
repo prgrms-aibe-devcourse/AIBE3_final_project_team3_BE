@@ -21,8 +21,9 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Query("""
             SELECT new triplestar.mixchat.domain.member.member.dto.MemberDetailResp(
                 m.id,
-                m.nickname,
                 m.email,
+                m.name,
+                m.nickname,
                 m.country,
                 m.englishLevel,
                 m.interests,
@@ -62,7 +63,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     @Query("""
             SELECT m FROM Member m
-            WHERE m.id <> :id AND m.isDeleted = false AND m.isBlocked = false AND m.role = 'USER'
+            WHERE m.id <> :id AND m.isDeleted = false AND m.isBlocked = false AND m.role = 'ROLE_MEMBER'
     """)
     Page<Member> findAllByIdIsNot(Long id, Pageable pageable);
 }
