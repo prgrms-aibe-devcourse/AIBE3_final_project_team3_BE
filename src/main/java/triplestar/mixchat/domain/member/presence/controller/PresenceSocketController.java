@@ -13,7 +13,7 @@ import triplestar.mixchat.global.security.CustomUserDetails;
 @Slf4j
 @Controller
 @RequiredArgsConstructor
-public class PresenceWebsocketController {
+public class PresenceSocketController {
 
     private final PresenceService presenceService;
 
@@ -26,7 +26,6 @@ public class PresenceWebsocketController {
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
 
         Long id = customUserDetails.getId();
-        log.debug("유저 heartbeat 정상 신호 : {}", id);
 
         presenceService.heartbeat(id);
     }

@@ -2,17 +2,14 @@ package triplestar.mixchat.domain.member.member.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
-import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
@@ -65,7 +62,7 @@ public interface ApiMemberController {
 
     // --- 5. 모든 회원 목록 조회 (GET /) ---
     @Operation(summary = "모든 회원 목록 조회", description = "채팅 상대로 추가할 수 있는 모든 회원 목록을 조회합니다. 자기 자신은 목록에서 제외됩니다.")
-    CustomResponse<Page<MemberSummaryResp>> getMembers(
+    CustomResponse<Page<MemberPresenceSummaryResp>> getMembers(
             @Parameter(hidden = true)
             CustomUserDetails userDetails,
             @Parameter(description = "페이지 정보")

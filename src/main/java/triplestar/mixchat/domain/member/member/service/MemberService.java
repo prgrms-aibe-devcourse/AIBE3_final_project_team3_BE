@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
-import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.presence.service.PresenceService;
@@ -52,12 +52,12 @@ public class MemberService {
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다."));
     }
 
-    public Page<MemberSummaryResp> findAllMembers(Long currentUserId, Pageable pageable) {
+    public Page<MemberPresenceSummaryResp> findAllMembers(Long currentUserId, Pageable pageable) {
         Page<Member> members = memberRepository.findAllByIdIsNot(currentUserId, pageable);
 
         return members.map(member -> {
             boolean isOnline = presenceService.isOnline(member.getId());
-            return MemberSummaryResp.from(member, isOnline);
+            return MemberPresenceSummaryResp.from(member, isOnline);
         });
     }
 

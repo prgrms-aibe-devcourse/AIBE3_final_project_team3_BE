@@ -1,6 +1,5 @@
 package triplestar.mixchat.domain.member.member.controller;
 
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,10 +14,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import triplestar.mixchat.domain.chat.find.service.FindService;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
-import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
 import triplestar.mixchat.domain.member.member.service.MemberService;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
@@ -75,12 +73,12 @@ public class ApiV1MemberController implements ApiMemberController {
     // TODO : 온라인 유저 표시
     @Override
     @GetMapping
-    public CustomResponse<Page<MemberSummaryResp>> getMembers(
+    public CustomResponse<Page<MemberPresenceSummaryResp>> getMembers(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        Long userId = userDetails.getId() != null ? userDetails.getId() : -1L;
-        Page<MemberSummaryResp> members = memberService.findAllMembers(userId, pageable);
+        Long userId = userDetails != null ? userDetails.getId() : -1L;
+        Page<MemberPresenceSummaryResp> members = memberService.findAllMembers(userId, pageable);
         return CustomResponse.ok("모든 회원 목록을 성공적으로 조회했습니다.", members);
     }
 

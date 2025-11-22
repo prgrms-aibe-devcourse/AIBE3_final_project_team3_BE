@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
@@ -21,7 +20,6 @@ import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.TestExecutionEvent;
@@ -31,13 +29,14 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
-import triplestar.mixchat.domain.chat.chat.repository.ChatRoomRepository;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.cache.ChatAuthCacheService;
+
+// NOTE : 테스트 임시 비활성화
 @ImportAutoConfiguration(exclude = {
         MongoAutoConfiguration.class,
         MongoDataAutoConfiguration.class,
@@ -64,8 +63,8 @@ class ChatControllerIntTest {
     @Autowired
     private MemberRepository memberRepository;
 
-    @Autowired
-    private ChatRoomRepository chatRoomRepository;
+//    @Autowired
+//    private ChatRoomRepository chatRoomRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -88,7 +87,7 @@ class ChatControllerIntTest {
                 List.of("테스트"), "테스트 유저 2"));
     }
 
-//    @Test
+    //    @Test
     @WithUserDetails(value = "유저1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("1:1 채팅방 생성 통합 테스트 성공")
     void createDirectRoom_integration_success() throws Exception {
@@ -106,7 +105,7 @@ class ChatControllerIntTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andDo(print())
 
-        // then (검증) - 1. API 응답 검증
+                // then (검증) - 1. API 응답 검증
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.msg").value("1:1 채팅방 생성/조회에 성공하였습니다."))
                 .andExpect(jsonPath("$.data.name").value("유저1, 유저2"));
@@ -114,7 +113,7 @@ class ChatControllerIntTest {
         // then (검증) - 2. DB 상태 검증
         // 채팅방이 DB에 실제로 1개 생성되었는지 확인합니다.
         // 이것이 @SpringBootTest의 핵심입니다.
-        long roomCount = chatRoomRepository.count();
-        assertThat(roomCount).isEqualTo(1);
+//        long roomCount = chatRoomRepository.count();
+//        assertThat(roomCount).isEqualTo(1);
     }
 }

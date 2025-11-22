@@ -7,9 +7,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
-import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
 import triplestar.mixchat.domain.member.auth.dto.LogInResp;
 import triplestar.mixchat.domain.member.auth.dto.LogInReq;
+import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
@@ -44,7 +45,7 @@ public class AuthService {
         member.updateProfileImageUrl(defaultProfileBaseURL);
 
         Member savedMember = memberRepository.save(member);
-        return new MemberSummaryResp(savedMember);
+        return MemberSummaryResp.from(savedMember);
     }
 
     private void validateJoinReq(SignUpReq req) {
