@@ -55,11 +55,14 @@ public class MemberService {
     public Page<MemberPresenceSummaryResp> findAllMembers(Long currentUserId, Pageable pageable) {
         Page<Member> members = memberRepository.findAllByIdIsNot(currentUserId, pageable);
 
+        // TODO : redis N번 호출 -> Mget으로 최적화 필요
         return members.map(member -> {
             boolean isOnline = presenceService.isOnline(member.getId());
             return MemberPresenceSummaryResp.from(member, isOnline);
         });
     }
+    
+    // TODO : online Id 조회 -> 해당 ID DB 좈회로 온라인 회원 목록 반환 기능 추가
 
     @Transactional
     public void updateInfo(Long memberId, MemberInfoModifyReq req) {

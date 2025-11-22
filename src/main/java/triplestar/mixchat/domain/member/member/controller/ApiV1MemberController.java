@@ -70,7 +70,6 @@ public class ApiV1MemberController implements ApiMemberController {
         return CustomResponse.ok("회원 상세 정보 조회에 성공했습니다.", memberDetails);
     }
 
-    // TODO : 온라인 유저 표시
     @Override
     @GetMapping
     public CustomResponse<Page<MemberPresenceSummaryResp>> getMembers(
