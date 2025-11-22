@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -27,7 +28,6 @@ import triplestar.mixchat.global.security.CustomUserDetails;
 public class ApiV1MemberController implements ApiMemberController {
 
     private final MemberService memberService;
-    private final FindService findService;
 
     @Override
     @PutMapping("/profile")
@@ -71,13 +71,23 @@ public class ApiV1MemberController implements ApiMemberController {
         return CustomResponse.ok("회원 상세 정보 조회에 성공했습니다.", memberDetails);
     }
 
+    // TODO : 온라인 유저 표시
     @Override
     @GetMapping
     public CustomResponse<List<MemberSummaryResp>> getMembers(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PageableDefault Pageable pageable
+            @PageableDefault(page = 0, size = 20) Pageable pageable
     ) {
         List<MemberSummaryResp> members = memberService.findAllMembers(userDetails.getId(), pageable);
         return CustomResponse.ok("모든 회원 목록을 성공적으로 조회했습니다.", members);
+    }
+
+    @Override
+    @DeleteMapping("/me")
+    public CustomResponse<Void> deleteMyAccount(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        memberService.deleteSoftly(customUserDetails.getId());
+        return CustomResponse.ok("회원 탈퇴에 성공했습니다.");
     }
 }

@@ -2,6 +2,8 @@ package triplestar.mixchat.domain.member.member.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -67,5 +69,14 @@ public interface ApiMemberController {
             CustomUserDetails userDetails,
             @Parameter(description = "페이지 정보")
             Pageable pageable
+    );
+
+    // --- 6. 회원 탈퇴 (DELETE /me) ---
+    @Operation(summary = "회원 탈퇴 (Soft Delete)",
+            description = "현재 로그인된 사용자의 계정을 비활성화(Soft Delete) 처리합니다.")
+    @SignInInRequireResponse
+    CustomResponse<Void> deleteMyAccount(
+            @Parameter(hidden = true)
+            CustomUserDetails customUserDetails
     );
 }
