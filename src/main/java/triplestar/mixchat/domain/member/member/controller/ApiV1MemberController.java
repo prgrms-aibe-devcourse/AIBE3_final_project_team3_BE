@@ -76,7 +76,7 @@ public class ApiV1MemberController implements ApiMemberController {
     @GetMapping
     public CustomResponse<List<MemberSummaryResp>> getMembers(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PageableDefault(page = 0, size = 20) Pageable pageable
+            @PageableDefault(size = 20) Pageable pageable
     ) {
         List<MemberSummaryResp> members = memberService.findAllMembers(userDetails.getId(), pageable);
         return CustomResponse.ok("모든 회원 목록을 성공적으로 조회했습니다.", members);
