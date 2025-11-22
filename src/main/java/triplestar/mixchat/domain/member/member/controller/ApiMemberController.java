@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
@@ -61,8 +62,10 @@ public interface ApiMemberController {
 
     // --- 5. 모든 회원 목록 조회 (GET /) ---
     @Operation(summary = "모든 회원 목록 조회", description = "채팅 상대로 추가할 수 있는 모든 회원 목록을 조회합니다. 자기 자신은 목록에서 제외됩니다.")
-    CustomResponse<List<MemberSummaryResp>> findAllMembers(
+    CustomResponse<List<MemberSummaryResp>> getMembers(
             @Parameter(hidden = true)
-            CustomUserDetails userDetails
+            CustomUserDetails userDetails,
+            @Parameter(description = "페이지 정보")
+            Pageable pageable
     );
 }

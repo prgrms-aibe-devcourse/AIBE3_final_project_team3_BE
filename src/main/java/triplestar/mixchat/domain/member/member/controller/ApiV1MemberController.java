@@ -2,6 +2,8 @@ package triplestar.mixchat.domain.member.member.controller;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,9 +14,9 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.chat.find.service.FindService;
-import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
-import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
+import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
+import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.service.MemberService;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
@@ -26,15 +28,6 @@ public class ApiV1MemberController implements ApiMemberController {
 
     private final MemberService memberService;
     private final FindService findService;
-
-    @Override
-    @GetMapping
-    public CustomResponse<List<MemberSummaryResp>> findAllMembers(
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        List<MemberSummaryResp> members = findService.findAllMembers(userDetails.getId());
-        return CustomResponse.ok("모든 회원 목록을 성공적으로 조회했습니다.", members);
-    }
 
     @Override
     @PutMapping("/profile")
@@ -61,7 +54,8 @@ public class ApiV1MemberController implements ApiMemberController {
     public CustomResponse<MemberDetailResp> getMyProfile(
             @AuthenticationPrincipal CustomUserDetails customUserDetails
     ) {
-        MemberDetailResp memberProfile = memberService.getMemberDetails(customUserDetails.getId(), customUserDetails.getId());
+        MemberDetailResp memberProfile = memberService.getMemberDetails(customUserDetails.getId(),
+                customUserDetails.getId());
         return CustomResponse.ok("내 정보를 성공적으로 조회했습니다.", memberProfile);
     }
 
@@ -75,5 +69,15 @@ public class ApiV1MemberController implements ApiMemberController {
 
         MemberDetailResp memberDetails = memberService.getMemberDetails(signInId, id);
         return CustomResponse.ok("회원 상세 정보 조회에 성공했습니다.", memberDetails);
+    }
+
+    @Override
+    @GetMapping
+    public CustomResponse<List<MemberSummaryResp>> getMembers(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PageableDefault Pageable pageable
+    ) {
+        List<MemberSummaryResp> members = memberService.findAllMembers(userDetails.getId(), pageable);
+        return CustomResponse.ok("모든 회원 목록을 성공적으로 조회했습니다.", members);
     }
 }
