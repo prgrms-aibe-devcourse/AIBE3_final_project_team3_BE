@@ -1,4 +1,4 @@
-package triplestar.mixchat.global.security.redis;
+package triplestar.mixchat.domain.member.auth.repository;
 
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,13 +8,13 @@ import org.springframework.stereotype.Repository;
 // Redis를 이용한 Refresh Token 저장소
 // Redis에 Member ID를 키로, Refresh Token을 값으로 저장
 @Repository
-public class RedisTokenRepository {
+public class RefreshTokenRepository {
 
     private final String prefix;
     private final int expirationSeconds;
     private final StringRedisTemplate redisTemplate;
 
-    public RedisTokenRepository(
+    public RefreshTokenRepository(
             @Value("${redis.prefix.refresh-token}")
             String prefix,
             @Value("${jwt.refresh-token-expiration-seconds}")

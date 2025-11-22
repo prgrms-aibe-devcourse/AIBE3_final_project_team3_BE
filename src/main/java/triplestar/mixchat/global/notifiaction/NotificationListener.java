@@ -25,7 +25,7 @@ public class NotificationListener {
         // DB에 알림 저장
         NotificationResp notification = notificationService.createNotification(event);
 
-        String destination = "/queue/notifications/";
+        String destination = "/queue/notifications";
 
         try {
             // 개인 사용자에게 웹소켓 알림 전송

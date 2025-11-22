@@ -4,13 +4,17 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
+import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
+import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.domain.member.presence.service.PresenceService;
 import triplestar.mixchat.global.s3.S3Uploader;
 
 @Service
@@ -20,6 +24,7 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final S3Uploader s3Uploader;
+    private final PresenceService presenceService;
 
     @Qualifier("defaultProfileImageUrl")
     private final String defaultProfileBaseURL;
@@ -32,6 +37,32 @@ public class MemberService {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다."));
     }
+
+    public MemberDetailResp getMemberDetails(Long signInId, Long memberId) {
+        // 비회원이 조회하는 경우
+        // isFriend, isPendingRequest는 모두 false로 반환
+        if (signInId == null) {
+            Member member = findMemberById(memberId);
+            return MemberDetailResp.forAnonymousViewer(member);
+        }
+
+        // 회원이 조회하는 경우
+        // 친구 관계 및 친구 신청 상태를 함께 조회
+        return memberRepository.findByIdWithFriendInfo(signInId, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다."));
+    }
+
+    public Page<MemberPresenceSummaryResp> findAllMembers(Long currentUserId, Pageable pageable) {
+        Page<Member> members = memberRepository.findAllByIdIsNot(currentUserId, pageable);
+
+        // TODO : redis N번 호출 -> Mget으로 최적화 필요
+        return members.map(member -> {
+            boolean isOnline = presenceService.isOnline(member.getId());
+            return MemberPresenceSummaryResp.from(member, isOnline);
+        });
+    }
+    
+    // TODO : online Id 조회 -> 해당 ID DB 좈회로 온라인 회원 목록 반환 기능 추가
 
     @Transactional
     public void updateInfo(Long memberId, MemberInfoModifyReq req) {
@@ -68,17 +99,9 @@ public class MemberService {
         member.updateProfileImageUrl(url);
     }
 
-    public MemberDetailResp getMemberDetails(Long signInId, Long memberId) {
-        // 비회원이 조회하는 경우
-        // isFriend, isPendingRequest는 모두 false로 반환
-        if (signInId == null) {
-            Member member = findMemberById(memberId);
-            return MemberDetailResp.forAnonymousViewer(member);
-        }
-
-        // 회원이 조회하는 경우
-        // 친구 관계 및 친구 신청 상태를 함께 조회
-        return memberRepository.findByIdWithFriendInfo(signInId, memberId)
-                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다."));
+    @Transactional
+    public void deleteSoftly(Long memberId) {
+        Member member = findMemberById(memberId);
+        member.deleteSoftly();
     }
 }

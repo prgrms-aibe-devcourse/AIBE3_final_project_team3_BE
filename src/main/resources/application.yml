@@ -21,6 +21,11 @@ spring:
     mongodb:
       uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/${MONGO_DB}?authSource=admin
 
+    web:
+      pageable:
+        one-indexed-parameters: true
+        max-page-size: 100
+
 swagger:
   redirect:
     # "/"로 들어왔을 때 최종적으로 리다이렉트될 Swagger UI 경로

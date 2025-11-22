@@ -1,11 +1,13 @@
 package triplestar.mixchat.global.exceptionHandler;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import jakarta.persistence.EntityNotFoundException;
+import java.nio.file.AccessDeniedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -117,6 +119,19 @@ public class GlobalExceptionHandler {
                         "사용자 인증에 실패했습니다."
                 ),
                 UNAUTHORIZED
+        );
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<CustomResponse<Void>> handle(AccessDeniedException e) {
+        commonExceptionLog(e);
+
+        return new ResponseEntity<>(
+                new CustomResponse<>(
+                        FORBIDDEN.value(),
+                        "접근 권한이 없습니다."
+                ),
+                FORBIDDEN
         );
     }
 

@@ -160,4 +160,37 @@ class ApiV1MemberControllerTest {
                 .andExpect(handler().methodName("getMemberDetail"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("회원 목록 조회 성공")
+    @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void list_members_success() throws Exception {
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/v1/members")
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(ApiV1MemberController.class))
+                .andExpect(handler().methodName("getMembers"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("회원 목록 조회 - 비회원 성공")
+    void list_members_as_guest_success() throws Exception {
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/v1/members")
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(ApiV1MemberController.class))
+                .andExpect(handler().methodName("getMembers"))
+                .andExpect(status().isOk());
+    }
 }

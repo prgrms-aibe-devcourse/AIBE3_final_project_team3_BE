@@ -10,10 +10,10 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
@@ -177,5 +177,14 @@ public class Member extends BaseEntity {
 
     public void changeMembershipGrade(MembershipGrade grade) {
         this.membershipGrade = grade;
+    }
+
+    public void deleteSoftly() {
+        this.email = UUID.randomUUID().toString() + "@deleted.user";
+        this.password = Password.deleteDummy();
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
+        this.profileImageUrl = null;
+        this.description = "탈퇴한 회원입니다.";
     }
 }
