@@ -46,7 +46,7 @@ public class GroupChatRoomService {
     @Transactional
     public GroupChatRoomResp createGroupRoom(CreateGroupChatReq request, Long creatorId) {
         Member creator = findMemberById(creatorId);
-        GroupChatRoom newRoom = GroupChatRoom.create(request.roomName(), null, null);
+        GroupChatRoom newRoom = GroupChatRoom.create(request.roomName(), request.description(), request.topic(), request.password());
 
         List<Member> members = memberRepository.findAllById(request.memberIds());
         if (!members.contains(creator)) {
@@ -73,6 +73,7 @@ public class GroupChatRoomService {
         return roomDto;
     }
 
+    // 사용자가 속해있는 그룹채팅방 조회(chat 페이지 용도)
     @Transactional(readOnly = true)
     public List<GroupChatRoomResp> getRoomsForUser(Long currentUserId) {
         Member currentUser = findMemberById(currentUserId);
@@ -85,8 +86,16 @@ public class GroupChatRoomService {
                 .collect(Collectors.toList());
     }
 
-    public GroupChatRoom getGroupRoom(Long id) {
-        return groupChatRoomRepository.findById(id).orElseThrow(() -> new RuntimeException("그룹 채팅방 없음"));
+    // 기존에 만들어진 그룹채팅방 조회(find 페이지의 Groups 탭 용도)
+    @Transactional(readOnly = true)
+    public List<GroupChatRoomResp> getGroupPublicRooms() {
+        List<GroupChatRoom> rooms = groupChatRoomRepository.findAll();
+        return rooms.stream()
+            .map(room -> {
+                List<ChatMember> chatMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(room.getId(), ChatMessage.chatRoomType.GROUP);
+                return GroupChatRoomResp.from(room, chatMembers);
+            })
+            .collect(Collectors.toList());
     }
 
     @Transactional

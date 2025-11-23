@@ -12,7 +12,7 @@ import java.util.List; // List import 추가
 @Repository
 public interface GroupChatRoomRepository extends JpaRepository<GroupChatRoom, Long> {
     // 특정 멤버가 속한 그룹 채팅방 목록 조회
-    @Query("SELECT gcr FROM GroupChatRoom gcr JOIN ChatMember cm WHERE cm.chatRoomId = gcr.id AND cm.member = :member AND cm.chatRoomType = 'GROUP'")
+    @Query("SELECT gcr FROM GroupChatRoom gcr WHERE gcr.id IN (SELECT cm.chatRoomId FROM ChatMember cm WHERE cm.member = :member AND cm.chatRoomType = 'GROUP')")
     List<GroupChatRoom> findAllByMember(@Param("member") Member member);
 }
 
