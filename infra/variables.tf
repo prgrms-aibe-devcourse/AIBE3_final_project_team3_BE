@@ -10,7 +10,7 @@ variable "prefix" {
 
 variable "app_2_domain" {
   description = "staging server domain"
-  default     = "staging.yhcho.com"
+  default     = "staging.mixchat.yhcho.com"
 }
 
 variable "app_1_domain" {
