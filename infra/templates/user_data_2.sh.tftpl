@@ -65,4 +65,3 @@ echo "${github_access_token_1}" | docker login ghcr.io -u ${github_access_token_
 cd /opt/mixchat
 docker compose -f docker-compose-staging.yml --env-file .env.staging.properties pull
 docker compose -f docker-compose-staging.yml --env-file .env.staging.properties up -d
-

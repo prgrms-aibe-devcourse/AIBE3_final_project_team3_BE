@@ -13,6 +13,8 @@ RUN gradle dependencies --no-daemon
 
 # 소스 코드 복사
 COPY .env .
+COPY .env.prod.properties .
+COPY .env.staging.properties .
 COPY src src
 
 # 애플리케이션 빌드
@@ -27,6 +29,8 @@ WORKDIR /app
 # 첫 번째 스테이지에서 빌드된 JAR 파일 복사
 COPY --from=builder /app/build/libs/*.jar app.jar
 COPY --from=builder /app/.env .env
+COPY --from=builder /app/.env.prod.properties .env.prod.properties
+COPY --from=builder /app/.env.staging.properties .env.staging.properties
 
-# 실행할 JAR 파일 지정
+# 실행할 JAR 파일 지정 (스테이징 서버에서는 변경 필요)
 ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
