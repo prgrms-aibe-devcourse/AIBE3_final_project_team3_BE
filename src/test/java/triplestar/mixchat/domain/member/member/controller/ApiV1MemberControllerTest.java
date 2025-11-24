@@ -1,6 +1,7 @@
 package triplestar.mixchat.domain.member.member.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -19,12 +20,14 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.member.service.MemberService;
+import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.testutils.TestMemberFactory;
 
 @ActiveProfiles("test")
@@ -40,6 +43,8 @@ class ApiV1MemberControllerTest {
     private MemberService memberService;
     @Autowired
     private MemberRepository memberRepository;
+    @MockitoBean
+    private S3Uploader s3Uploader;
 
     Member member;
 
@@ -191,6 +196,78 @@ class ApiV1MemberControllerTest {
         resultActions
                 .andExpect(handler().handlerType(ApiV1MemberController.class))
                 .andExpect(handler().methodName("getMembers"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("내 정보 조회 성공")
+    @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void get_my_profile_success() throws Exception {
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/v1/members/me")
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(ApiV1MemberController.class))
+                .andExpect(handler().methodName("getMyProfile"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴 성공")
+    @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void delete_my_account_success() throws Exception {
+        ResultActions resultActions = mvc
+                .perform(
+                        delete("/api/v1/members/me/delete")
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(ApiV1MemberController.class))
+                .andExpect(handler().methodName("deleteMyAccount"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴 - 이미 탈퇴한 회원 실패")
+    @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void delete_my_account_already_deleted_fail() throws Exception {
+        // 먼저 회원 탈퇴 수행
+        memberService.deleteSoftly(member.getId());
+
+        // 다시 탈퇴 시도
+        ResultActions resultActions = mvc
+                .perform(
+                        delete("/api/v1/members/me")
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(ApiV1MemberController.class))
+                .andExpect(handler().methodName("deleteMyAccount"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("온라인 회원 목록 조회 성공")
+    @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void list_online_members_success() throws Exception {
+        ResultActions resultActions = mvc
+                .perform(
+                        get("/api/v1/members/online")
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print());
+
+        resultActions
+                .andExpect(handler().handlerType(ApiV1MemberController.class))
+                .andExpect(handler().methodName("getOnlineMembers"))
                 .andExpect(status().isOk());
     }
 }
