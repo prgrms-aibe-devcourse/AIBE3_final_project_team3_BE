@@ -73,7 +73,7 @@ public class S3Uploader {
 
     public void deleteFileByUrl(String profileImageUrl) {
         s3Client.deleteObject(builder -> builder.bucket(bucket)
-                .key((profileImageUrl))
+                .key(profileImageUrl)
                 .build());
     }
 }

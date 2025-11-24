@@ -181,13 +181,14 @@ public class Member extends BaseEntity {
 
     public void deleteSoftly() {
         if (this.isDeleted) {
-            throw new IllegalStateException("이미 탈퇴한 회원입니다.");
+            throw new IllegalStateException("이미 삭제된 회원입니다.");
         }
         this.email = UUID.randomUUID() + "@deleted.user";
+        this.name = "삭제된 회원";
+        this.nickname = "삭제된 회원";
         this.password = Password.deleteDummy();
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
-        this.profileImageUrl = null;
-        this.description = "탈퇴한 회원입니다.";
+        this.description = "삭제된 회원입니다.";
     }
 }

@@ -26,7 +26,7 @@ public class Password {
         return new Password(encoder.encode(raw));
     }
 
-    public static Password deleteDummy() {
+    protected static Password deleteDummy() {
         return new Password("DELETED_MEMBER_PASSWORD");
     }
 

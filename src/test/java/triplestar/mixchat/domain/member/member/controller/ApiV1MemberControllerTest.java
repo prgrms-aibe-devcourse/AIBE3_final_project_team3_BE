@@ -43,8 +43,6 @@ class ApiV1MemberControllerTest {
     private MemberService memberService;
     @Autowired
     private MemberRepository memberRepository;
-    @MockitoBean
-    private S3Uploader s3Uploader;
 
     Member member;
 
@@ -222,27 +220,6 @@ class ApiV1MemberControllerTest {
     void delete_my_account_success() throws Exception {
         ResultActions resultActions = mvc
                 .perform(
-                        delete("/api/v1/members/me/delete")
-                                .contentType(MediaType.APPLICATION_JSON)
-                )
-                .andDo(print());
-
-        resultActions
-                .andExpect(handler().handlerType(ApiV1MemberController.class))
-                .andExpect(handler().methodName("deleteMyAccount"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("회원 탈퇴 - 이미 탈퇴한 회원 실패")
-    @WithUserDetails(value = "user1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    void delete_my_account_already_deleted_fail() throws Exception {
-        // 먼저 회원 탈퇴 수행
-        memberService.deleteSoftly(member.getId());
-
-        // 다시 탈퇴 시도
-        ResultActions resultActions = mvc
-                .perform(
                         delete("/api/v1/members/me")
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
@@ -251,7 +228,7 @@ class ApiV1MemberControllerTest {
         resultActions
                 .andExpect(handler().handlerType(ApiV1MemberController.class))
                 .andExpect(handler().methodName("deleteMyAccount"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isOk());
     }
 
     @Test

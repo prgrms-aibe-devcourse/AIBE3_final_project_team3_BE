@@ -40,7 +40,7 @@ class PresenceServiceTest extends RedisTestContainer {
         presenceRepository = new PresenceRepository(
                 stringRedisTemplate,
                 "test:presence-user:",
-                3
+                2
         );
         presenceService = new PresenceService(presenceRepository);
     }
@@ -68,7 +68,7 @@ class PresenceServiceTest extends RedisTestContainer {
         presenceService.heartbeat(memberId);
 
         // when
-        Thread.sleep(4000); // TTL(3초) 이후 대기
+        Thread.sleep(3000); // TTL(3초) 이후 대기
 
         // then
         String key = "test:presence-user:" + memberId;

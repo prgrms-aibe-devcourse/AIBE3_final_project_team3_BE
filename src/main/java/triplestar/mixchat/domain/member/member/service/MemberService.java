@@ -113,6 +113,8 @@ public class MemberService {
     public void deleteSoftly(Long memberId) {
         Member member = findMemberById(memberId);
         s3Uploader.deleteFileByUrl(member.getProfileImageUrl());
+
         member.deleteSoftly();
+        member.updateProfileImageUrl(defaultProfileBaseURL);
     }
 }

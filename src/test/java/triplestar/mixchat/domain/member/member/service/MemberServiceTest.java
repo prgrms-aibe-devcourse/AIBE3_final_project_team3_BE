@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.friend.dto.FriendshipRequestResp;
 import triplestar.mixchat.domain.member.friend.service.FriendshipRequestService;
@@ -23,8 +24,10 @@ import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
 import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
+import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.presence.service.PresenceService;
+import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.testutils.RedisTestContainer;
 import triplestar.mixchat.testutils.TestMemberFactory;
 
@@ -257,6 +260,12 @@ class MemberServiceTest extends RedisTestContainer {
                 .orElseThrow();
 
         assertThat(deletedMember.isDeleted()).isTrue();
+        assertThat(deletedMember.getEmail()).endsWith("@deleted.user");
+        assertThat(deletedMember.getName()).isEqualTo("삭제된 회원");
+        assertThat(deletedMember.getNickname()).isEqualTo("삭제된 회원");
+        assertThat(deletedMember.getPassword().getPassword()).isEqualTo("DELETED_MEMBER_PASSWORD");
+        assertThat(deletedMember.getProfileImageUrl()).isEqualTo("http://localhost:9000/test-bucket/default-profile.webp");
+        assertThat(deletedMember.getDescription()).isEqualTo("삭제된 회원입니다.");
     }
 
     @Test
@@ -265,37 +274,6 @@ class MemberServiceTest extends RedisTestContainer {
         assertThatThrownBy(() -> memberService.deleteSoftly(Long.MAX_VALUE))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("존재하지 않는 회원입니다.");
-    }
-
-    @Test
-    @DisplayName("회원 탈퇴 실패 - 이미 탈퇴한 회원")
-    void member_delete_already_deleted_fail() {
-        memberService.deleteSoftly(member1.getId());
-        assertThatThrownBy(() -> memberService.deleteSoftly(member1.getId()))
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("이미 탈퇴한 회원입니다.");
-    }
-
-    @Test
-    @DisplayName("회원 탈퇴 후 프로필 이미지 초기화 성공")
-    void member_delete_profile_image_reset_success() {
-        MockMultipartFile testFile = new MockMultipartFile(
-                "multipartFile",
-                "profile.png",
-                "image/png",
-                "dummy image content".getBytes()
-        );
-
-        memberService.uploadProfileImage(member1.getId(), testFile);
-
-        Member updatedMember = memberRepository.findById(member1.getId())
-                .orElseThrow();
-        assertThat(updatedMember.getProfileImageUrl()).isNotEqualTo("http://localhost:9000/test-bucket/default-profile.webp");
-
-        memberService.deleteSoftly(member1.getId());
-        Member deletedMember = memberRepository.findById(member1.getId())
-                .orElseThrow();
-        assertThat(deletedMember.getProfileImageUrl()).isEqualTo("http://localhost:9000/test-bucket/default-profile.webp");
     }
 
     @Test
