@@ -146,21 +146,8 @@ public class GroupChatRoomService {
             throw new IllegalStateException("이미 참가한 채팅방입니다.");
         }
 
-        // 3. 비밀번호 검증 (비밀번호가 설정된 방인 경우)
-        boolean roomHasPassword = room.getPassword() != null && !room.getPassword().trim().isEmpty();
-
-        if (roomHasPassword) {
-            // 사용자가 비밀번호를 입력했는지 확인
-            boolean userProvidedPassword = password != null && !password.trim().isEmpty();
-
-            if (!userProvidedPassword) {
-                throw new AccessDeniedException("채팅방 비밀번호가 필요합니다.");
-            }
-
-            if (!room.getPassword().equals(password.trim())) {
-                throw new AccessDeniedException("채팅방 비밀번호가 올바르지 않습니다.");
-            }
-        }
+        // 3. 비밀번호 검증
+        room.verifyPassword(password);
 
         // 4. 회원 조회
         Member member = findMemberById(userId);

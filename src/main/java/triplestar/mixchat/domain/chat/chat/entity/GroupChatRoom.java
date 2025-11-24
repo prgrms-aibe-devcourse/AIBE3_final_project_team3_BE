@@ -59,4 +59,24 @@ public class GroupChatRoom extends BaseEntity {
     public boolean isOwner(Member member) {
         return this.owner.equals(member);
     }
+
+    // 비밀번호 설정 여부 확인
+    public boolean hasPassword() {
+        return this.password != null && !this.password.trim().isEmpty();
+    }
+
+    // 비밀번호 검증
+    public void verifyPassword(String inputPassword) {
+        if (!hasPassword()) {
+            return; // 비밀번호가 설정되지 않은 방은 검증 생략
+        }
+
+        if (inputPassword == null || inputPassword.trim().isEmpty()) {
+            throw new IllegalArgumentException("채팅방 비밀번호가 필요합니다.");
+        }
+
+        if (!this.password.equals(inputPassword.trim())) {
+            throw new IllegalArgumentException("채팅방 비밀번호가 올바르지 않습니다.");
+        }
+    }
 }
