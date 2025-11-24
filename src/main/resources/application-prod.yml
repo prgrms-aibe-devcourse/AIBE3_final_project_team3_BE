@@ -10,8 +10,8 @@ spring:
         format_sql: true
         show_sql: true
   data:
-    #    mongodb:
-    #      uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/${MONGO_DB}
+    mongodb:
+      uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/${MONGO_DB}
     redis:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}

@@ -397,35 +397,6 @@ resource "aws_instance" "ec2_2" {
   user_data_base64 = local.ec2_2_user_data_base64
 }
 
-resource "aws_instance" "ec2_3" {
-  # 사용할 AMI ID
-  ami = data.aws_ami.latest_amazon_linux.id
-  # EC2 인스턴스 유형
-  instance_type = "t3.micro"
-  # 사용할 서브넷 ID
-  subnet_id = aws_subnet.subnet_4.id
-  # 적용할 보안 그룹 ID
-  vpc_security_group_ids = [aws_security_group.sg_1.id]
-  # 퍼블릭 IP 연결 설정
-  associate_public_ip_address = true
-
-  # 인스턴스에 IAM 역할 연결
-  iam_instance_profile = aws_iam_instance_profile.instance_profile_1.name
-
-  # 인스턴스에 태그 설정
-  tags = {
-    Name = "${var.prefix}-ec2-production-2"
-  }
-
-  # 루트 볼륨 설정
-  root_block_device {
-    volume_type = "gp3"
-    volume_size = 30 # 볼륨 크기를 12GB로 설정
-  }
-
-  user_data_base64 = local.ec2_1_user_data_base64
-}
-
 resource "aws_db_subnet_group" "app_1" {
   name       = "${var.prefix}-rds-subnet-group"
   subnet_ids = [aws_subnet.subnet_5.id, aws_subnet.subnet_6.id]

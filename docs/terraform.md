@@ -4,7 +4,7 @@ MixChat 서비스의 AWS 인프라를 구성하는 Terraform 코드(`infra/`)를
 
 ## 1. 개요
 - 기본 리전은 `ap-northeast-2`, 모든 리소스는 `var.prefix`(기본값 `team3`) 접두사를 씁니다.
-- 하나의 VPC에 4개의 퍼블릭 서브넷(EC2), 2개의 프라이빗 서브넷(RDS), 인터넷 게이트웨이, 퍼블릭/프라이빗 라우트 테이블을 둡니다.
+- 하나의 VPC에 3개의 퍼블릭 서브넷(프로덕션/스테이징/일반 EC2), 2개의 프라이빗 서브넷(RDS), 인터넷 게이트웨이, 퍼블릭/프라이빗 라우트 테이블을 둡니다.
 - EC2는 Amazon Linux 2023 AMI를 사용하며, `templates/user_data*.tftpl`에서 렌더링한 gzip 압축 user data로 부트스트랩합니다.
 - 지속 데이터는 MySQL RDS와 프로덕션/스테이징용 S3 버킷에 저장됩니다.
 
@@ -37,15 +37,14 @@ MixChat 서비스의 AWS 인프라를 구성하는 Terraform 코드(`infra/`)를
 | 리소스 | CIDR | AZ | 퍼블릭 IP | 용도 |
 | --- | --- | --- | --- | --- |
 | `subnet_1` | `10.0.0.0/24` | `${region}a` | 예 | 퍼블릭 워크로드 일반용. |
-| `subnet_2` | `10.0.1.0/24` | `${region}b` | 예 | 프로덕션 EC2 #1. |
+| `subnet_2` | `10.0.1.0/24` | `${region}b` | 예 | 프로덕션 EC2. |
 | `subnet_3` | `10.0.2.0/24` | `${region}c` | 예 | 스테이징 EC2. |
-| `subnet_4` | `10.0.3.0/24` | `${region}d` | 예 | 프로덕션 EC2 #2. |
 | `subnet_5` | `10.0.4.0/24` | `${region}a` | 아니오 | RDS 프라이빗 서브넷. |
 | `subnet_6` | `10.0.5.0/24` | `${region}c` | 아니오 | RDS 프라이빗 서브넷. |
 
 ### 3.3 인터넷 및 라우팅
 - `aws_internet_gateway.igw_1`: VPC 외부 연결 제공.
-- `aws_route_table.rt_1`: `0.0.0.0/0` → IGW 경로. `association_1`~`association_4`로 퍼블릭 서브넷에 연결.
+- `aws_route_table.rt_1`: `0.0.0.0/0` → IGW 경로. `association_1`~`association_3`로 퍼블릭 서브넷에 연결.
 - `aws_route_table.rt_private`: 인터넷 경로 없음. `association_5`, `association_6`를 통해 DB 서브넷을 완전 프라이빗으로 유지.
 
 ## 4. 보안
@@ -67,9 +66,8 @@ MixChat 서비스의 AWS 인프라를 구성하는 Terraform 코드(`infra/`)를
 ### 5.2 EC2 인스턴스
 | 리소스 | 서브넷 | 목적 | 비고 |
 | --- | --- | --- | --- |
-| `aws_instance.ec2_1` | `subnet_2` | 프로덕션 1번 노드 | `t3.micro`, 30GB gp3, 공인 IP. |
-| `aws_instance.ec2_3` | `subnet_4` | 프로덕션 2번 노드 | `ec2_1`과 동일 설정. |
-| `aws_instance.ec2_2` | `subnet_3` | 스테이징 노드 | 동일 IAM/보안그룹/부트스트랩.
+| `aws_instance.ec2_1` | `subnet_2` | 프로덕션 노드 | `t3.micro`, 30GB gp3, 공인 IP. |
+| `aws_instance.ec2_2` | `subnet_3` | 스테이징 노드 | 동일 IAM/보안그룹/부트스트랩. |
 
 공통 사항:
 - `sg_1`과 `instance_profile_1` 적용.
@@ -80,7 +78,7 @@ MixChat 서비스의 AWS 인프라를 구성하는 Terraform 코드(`infra/`)를
 - `local.compose_support_files`: `docker/config`의 Redis/Mongo 스크립트를 base64로 인코딩하여 EC2에 재생성.
 - `local.docker_compose_prod_b64`, `local.app_env_*`: `docker-compose-prod.yml`, `.env`, `.env.prod.properties`, `.env.staging.properties` 내용을 base64로 포함.
 - `templatefile()`로 user data 템플릿 렌더링:
-  - `user_data.sh.tftpl`: 프로덕션 인스턴스(`ec2_1`, `ec2_3`).
+  - `user_data.sh.tftpl`: 단일 프로덕션 인스턴스(`ec2_1`).
   - `user_data_2.sh.tftpl`: 스테이징 인스턴스.
 - 렌더링 결과는 `base64gzip`으로 압축/인코딩해 EC2 제한을 우회하고 전송 안정성 확보.
 
