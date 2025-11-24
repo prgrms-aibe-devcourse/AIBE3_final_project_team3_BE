@@ -14,6 +14,10 @@ public interface AIChatRoomRepository extends JpaRepository<AIChatRoom, Long> {
     // AI 채팅방 관련 쿼리 메서드는 추후 구현 예정
 
     // 특정 멤버가 속한 AI 채팅방 목록 조회
-    @Query("SELECT ar FROM AIChatRoom ar JOIN ChatMember cm WHERE cm.chatRoomId = ar.id AND cm.member = :member AND cm.chatRoomType = 'AI'")
+    @Query("""
+        SELECT ar FROM AIChatRoom ar
+        JOIN ChatMember cm ON cm.chatRoomId = ar.id
+        WHERE cm.member = :member AND cm.chatRoomType = 'AI'
+        """)
     List<AIChatRoom> findAllByMember(@Param("member") Member member);
 }

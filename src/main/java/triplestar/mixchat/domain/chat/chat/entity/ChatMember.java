@@ -12,7 +12,12 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Table(name = "chat_members")
+@Table(name = "chat_members",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_chat_member",
+        columnNames = {"member_id", "chat_room_id", "chat_room_type"}
+    )
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatMember extends BaseEntity {
 

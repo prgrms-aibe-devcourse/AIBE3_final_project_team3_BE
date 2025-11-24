@@ -3,8 +3,8 @@ package triplestar.mixchat.domain.chat.chat.service;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.Collections; // 추가
-import java.util.Map; // 추가
+import java.util.Collections;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -45,7 +45,6 @@ public class GroupChatRoomService {
                 .orElseThrow(() -> new AccessDeniedException("사용자를 찾을 수 없습니다. ID: " + memberId));
     }
 
-    // 방 조회 공통 기능
     @Transactional
     public GroupChatRoomResp createGroupRoom(CreateGroupChatReq request, Long creatorId) {
         Member creator = findMemberById(creatorId);
@@ -75,20 +74,6 @@ public class GroupChatRoomService {
         });
 
         return roomDto;
-    }
-
-    // 사용자가 속해있는 그룹채팅방 조회(chat 페이지 용도)
-    @Transactional(readOnly = true)
-    public List<GroupChatRoomResp> getRoomsForUser(Long currentUserId) {
-        List<GroupChatRoom> rooms = groupChatRoomRepository.findAllByMemberId(currentUserId);
-        return convertToRoomResponses(rooms);
-    }
-
-    // 기존에 만들어진 그룹채팅방 조회(find 페이지의 Groups 탭 용도)
-    @Transactional(readOnly = true)
-    public List<GroupChatRoomResp> getGroupPublicRooms(Long currentUserId) {
-        List<GroupChatRoom> rooms = groupChatRoomRepository.findPublicRoomsExcludingMemberId(currentUserId);
-        return convertToRoomResponses(rooms);
     }
 
     @Transactional
@@ -203,6 +188,19 @@ public class GroupChatRoomService {
         return roomDto;
     }
 
+    // 사용자가 속해있는 그룹채팅방 조회(chat 페이지 용도)
+    @Transactional(readOnly = true)
+    public List<GroupChatRoomResp> getRoomsForUser(Long currentUserId) {
+        List<GroupChatRoom> rooms = groupChatRoomRepository.findAllByMemberId(currentUserId);
+        return convertToRoomResponses(rooms);
+    }
+
+    // 기존에 만들어진 그룹채팅방 조회(find 페이지의 Groups 탭 용도)
+    @Transactional(readOnly = true)
+    public List<GroupChatRoomResp> getGroupPublicRooms(Long currentUserId) {
+        List<GroupChatRoom> rooms = groupChatRoomRepository.findPublicRoomsExcludingMemberId(currentUserId);
+        return convertToRoomResponses(rooms);
+    }
     //그룹 채팅방 목록을 DTO로 변환
     private List<GroupChatRoomResp> convertToRoomResponses(List<GroupChatRoom> rooms) {
         if (rooms.isEmpty()) {

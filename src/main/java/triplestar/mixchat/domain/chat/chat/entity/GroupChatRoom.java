@@ -16,6 +16,7 @@ public class GroupChatRoom extends BaseEntity {
     @Column(nullable = false)
     private String name; // 채팅방 이름
 
+    // todo: 암호화
     private String password; // 채팅방 비밀번호 (선택)
 
     @Column(length = 500)
