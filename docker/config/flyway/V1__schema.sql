@@ -153,6 +153,72 @@ CREATE TABLE IF NOT EXISTS `reports` (
     KEY `idx_reports_status_created` (`status`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 채팅 테이블
+CREATE TABLE IF NOT EXISTS `ai_chat_rooms` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `modified_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    `name` VARCHAR(255) NOT NULL,
+    `ai_model_id` VARCHAR(255) NOT NULL,
+    `ai_persona` VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `chat_members` (
+                                              `id` BIGINT NOT NULL AUTO_INCREMENT,
+                                              `created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `modified_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+
+    `member_id` BIGINT NOT NULL,
+    `chat_room_id` BIGINT NOT NULL,
+    `chat_room_type` VARCHAR(50) NOT NULL,
+    `user_type` VARCHAR(50) NOT NULL,
+    `last_read_at` DATETIME(6),
+    `chat_notification_setting` VARCHAR(50) NOT NULL,
+
+    PRIMARY KEY (`id`),
+
+    KEY `idx_chat_members_member_id` (`member_id`),
+    CONSTRAINT `fk_chat_members_member`
+    FOREIGN KEY (`member_id`) REFERENCES `members` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `direct_chat_rooms` (
+                                                   `id` BIGINT NOT NULL AUTO_INCREMENT,
+                                                   `created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `modified_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+
+    `user1_id` BIGINT NOT NULL,
+    `user2_id` BIGINT NOT NULL,
+
+    PRIMARY KEY (`id`),
+
+    UNIQUE KEY `uk_user1_user2` (`user1_id`, `user2_id`),
+
+    KEY `idx_direct_chat_user1` (`user1_id`),
+    KEY `idx_direct_chat_user2` (`user2_id`),
+
+    CONSTRAINT `fk_direct_chat_user1`
+    FOREIGN KEY (`user1_id`) REFERENCES `members` (`id`),
+
+    CONSTRAINT `fk_direct_chat_user2`
+    FOREIGN KEY (`user2_id`) REFERENCES `members` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `group_chat_rooms` (
+    `id`          BIGINT       NOT NULL AUTO_INCREMENT,
+    `created_at`  DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `modified_at` DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+    ON UPDATE CURRENT_TIMESTAMP(6),
+
+    `name`        VARCHAR(255) NOT NULL,
+    `description` VARCHAR(500)     NULL,
+    `topic`       VARCHAR(50)      NULL,
+
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
