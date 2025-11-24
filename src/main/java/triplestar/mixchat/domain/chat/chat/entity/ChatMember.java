@@ -28,10 +28,6 @@ public class ChatMember extends BaseEntity {
     @Column(name = "chat_room_type", nullable = false)
     private ChatMessage.chatRoomType chatRoomType;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserType userType;
-
     private LocalDateTime lastReadAt;
 
     @Enumerated(EnumType.STRING)
@@ -39,7 +35,7 @@ public class ChatMember extends BaseEntity {
     private ChatNotificationSetting chatNotificationSetting;
 
     // 생성자로 chatRoom 대신 chatRoomId와 chatRoomType
-    public ChatMember(Member member, Long chatRoomId, ChatMessage.chatRoomType chatRoomType, UserType userType) {
+    public ChatMember(Member member, Long chatRoomId, ChatMessage.chatRoomType chatRoomType) {
         if (member == null) {
             throw new IllegalArgumentException("member는 null일 수 없습니다.");
         }
@@ -49,22 +45,14 @@ public class ChatMember extends BaseEntity {
         if (chatRoomType == null) {
             throw new IllegalArgumentException("chatRoomType은 null일 수 없습니다.");
         }
-        if (userType == null) {
-            throw new IllegalArgumentException("userType은 null일 수 없습니다.");
-        }
 
         this.member = member;
         this.chatRoomId = chatRoomId;
         this.chatRoomType = chatRoomType;
-        this.userType = userType;
         // 기본 알림 설정은 ALWAYS로 설정
         this.chatNotificationSetting = ChatNotificationSetting.ALWAYS;
-        
-        //lastReadAt은 채팅 읽은 사람 수 기능 구현시 추가 예정
-    }
 
-    public enum UserType {
-        ROOM_MEMBER, ROOM_OWNER
+        //lastReadAt은 채팅 읽은 사람 수 기능 구현시 추가 예정
     }
 
     public boolean isNotificationAlways() {

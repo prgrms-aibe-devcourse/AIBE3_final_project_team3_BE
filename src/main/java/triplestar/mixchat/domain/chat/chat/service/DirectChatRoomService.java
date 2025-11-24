@@ -59,8 +59,8 @@ public class DirectChatRoomService {
                     DirectChatRoom savedRoom = directChatRoomRepository.save(newRoom);
 
                     // ChatMember 생성 및 저장
-                    chatRoomMemberRepository.save(new ChatMember(member1, savedRoom.getId(), ChatMessage.chatRoomType.DIRECT, ChatMember.UserType.ROOM_MEMBER));
-                    chatRoomMemberRepository.save(new ChatMember(member2, savedRoom.getId(), ChatMessage.chatRoomType.DIRECT, ChatMember.UserType.ROOM_MEMBER));
+                    chatRoomMemberRepository.save(new ChatMember(member1, savedRoom.getId(), ChatMessage.chatRoomType.DIRECT));
+                    chatRoomMemberRepository.save(new ChatMember(member2, savedRoom.getId(), ChatMessage.chatRoomType.DIRECT));
 
                     // 캐시 관리
                     chatAuthCacheService.addMember(savedRoom.getId(), member1Id);

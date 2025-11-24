@@ -41,7 +41,7 @@ public class AIChatRoomService {
         AIChatRoom newRoom = AIChatRoom.create("AI Chat", "gpt-4", "Friendly Assistant"); // Example values
         AIChatRoom savedRoom = aiChatRoomRepository.save(newRoom);
 
-        ChatMember chatMember = new ChatMember(creator, savedRoom.getId(), ChatMessage.chatRoomType.AI, ChatMember.UserType.ROOM_OWNER);
+        ChatMember chatMember = new ChatMember(creator, savedRoom.getId(), ChatMessage.chatRoomType.AI);
         chatRoomMemberRepository.save(chatMember);
 
         chatAuthCacheService.addMember(savedRoom.getId(), creatorId);
