@@ -98,9 +98,11 @@ public class ApiV1ChatController implements ApiChatController {
     }
 
     @GetMapping("/rooms/group/public")
-    public CustomResponse<List<GroupChatRoomResp>> getGroupChatPublicRooms() {
-        List<GroupChatRoomResp> rooms = groupChatRoomService.getGroupPublicRooms();
-        return CustomResponse.ok("전체 그룹 채팅방 목록 조회에 성공하였습니다.", rooms);
+    public CustomResponse<List<GroupChatRoomResp>> getPublicGroupChatRooms(
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        List<GroupChatRoomResp> rooms = groupChatRoomService.getGroupPublicRooms(currentUser.getId());
+        return CustomResponse.ok("공개 그룹 채팅방 목록 조회에 성공하였습니다.", rooms);
     }
 
     @Override

@@ -3,6 +3,8 @@ package triplestar.mixchat.domain.chat.chat.service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Collections; // 추가
+import java.util.Map; // 추가
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -43,6 +45,7 @@ public class GroupChatRoomService {
                 .orElseThrow(() -> new AccessDeniedException("사용자를 찾을 수 없습니다. ID: " + memberId));
     }
 
+    // 방 조회 공통 기능
     @Transactional
     public GroupChatRoomResp createGroupRoom(CreateGroupChatReq request, Long creatorId) {
         Member creator = findMemberById(creatorId);
@@ -76,26 +79,15 @@ public class GroupChatRoomService {
     // 사용자가 속해있는 그룹채팅방 조회(chat 페이지 용도)
     @Transactional(readOnly = true)
     public List<GroupChatRoomResp> getRoomsForUser(Long currentUserId) {
-        Member currentUser = findMemberById(currentUserId);
-        List<GroupChatRoom> rooms = groupChatRoomRepository.findAllByMember(currentUser);
-        return rooms.stream()
-                .map(room -> {
-                    List<ChatMember> chatMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(room.getId(), ChatMessage.chatRoomType.GROUP);
-                    return GroupChatRoomResp.from(room, chatMembers);
-                })
-                .collect(Collectors.toList());
+        List<GroupChatRoom> rooms = groupChatRoomRepository.findAllByMemberId(currentUserId);
+        return convertToRoomResponses(rooms);
     }
 
     // 기존에 만들어진 그룹채팅방 조회(find 페이지의 Groups 탭 용도)
     @Transactional(readOnly = true)
-    public List<GroupChatRoomResp> getGroupPublicRooms() {
-        List<GroupChatRoom> rooms = groupChatRoomRepository.findAll();
-        return rooms.stream()
-            .map(room -> {
-                List<ChatMember> chatMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(room.getId(), ChatMessage.chatRoomType.GROUP);
-                return GroupChatRoomResp.from(room, chatMembers);
-            })
-            .collect(Collectors.toList());
+    public List<GroupChatRoomResp> getGroupPublicRooms(Long currentUserId) {
+        List<GroupChatRoom> rooms = groupChatRoomRepository.findPublicRoomsExcludingMemberId(currentUserId);
+        return convertToRoomResponses(rooms);
     }
 
     @Transactional
@@ -111,5 +103,32 @@ public class GroupChatRoomService {
     @Transactional
     public void reportUser(Long roomId, Long currentUserId, Long reportedUserId, String reason) {
         chatInteractionService.reportUser(currentUserId, reportedUserId, roomId, ChatMessage.chatRoomType.GROUP, reason);
+    }
+
+    //그룹 채팅방 목록을 DTO로 변환
+    private List<GroupChatRoomResp> convertToRoomResponses(List<GroupChatRoom> rooms) {
+        if (rooms.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 1. 모든 방의 ID 수집
+        List<Long> roomIds = rooms.stream()
+                .map(GroupChatRoom::getId)
+                .collect(Collectors.toList());
+
+        // 2. 모든 방의 멤버를 한 번의 쿼리로 조회
+        List<ChatMember> allMembers = chatRoomMemberRepository.findAllByRoomIdsWithMember(roomIds);
+
+        // 3. roomId를 키로 하는 Map으로 그룹화
+        Map<Long, List<ChatMember>> membersByRoom = allMembers.stream()
+                .collect(Collectors.groupingBy(ChatMember::getChatRoomId));
+
+        // 4. DTO 변환
+        return rooms.stream()
+                .map(room -> GroupChatRoomResp.from(
+                        room,
+                        membersByRoom.getOrDefault(room.getId(), Collections.emptyList())
+                ))
+                .collect(Collectors.toList());
     }
 }

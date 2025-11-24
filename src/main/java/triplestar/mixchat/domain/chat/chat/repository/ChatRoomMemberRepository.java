@@ -55,4 +55,10 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long
      * @return 해당 멤버가 속한 ChatMember 목록
      */
     List<ChatMember> findByMemberAndChatRoomType(Member member, ChatMessage.chatRoomType chatRoomType);
+
+    // 방 ID 목록에 해당하는 모든 ChatMember 엔티티를 멤버 정보와 함께 조회
+    @Query("SELECT cm FROM ChatMember cm " +
+           "JOIN FETCH cm.member " +
+           "WHERE cm.chatRoomId IN :roomIds AND cm.chatRoomType = 'GROUP'")
+    List<ChatMember> findAllByRoomIdsWithMember(@Param("roomIds") List<Long> roomIds);
 }
