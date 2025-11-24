@@ -69,7 +69,17 @@ public interface ApiMemberController {
             Pageable pageable
     );
 
-    // --- 6. 회원 탈퇴 (DELETE /me) ---
+    // --- 6. 온라인 회원 목록 조회 (GET /online) ---
+    @Operation(summary = "온라인 회원 목록 조회",
+            description = "현재 Heartbeat를 보내 온라인 상태로 확인된 회원 목록을 페이지로 조회합니다. 로그인 여부와 무관하게 조회 가능합니다.")
+    CustomResponse<Page<MemberPresenceSummaryResp>> getOnlineMembers(
+            @Parameter(hidden = true)
+            CustomUserDetails userDetails,
+            @Parameter(description = "페이지 정보 (size=20 기본값)")
+            Pageable pageable
+    );
+
+    // --- 7. 회원 탈퇴 (DELETE /me) ---
     @Operation(summary = "회원 탈퇴 (Soft Delete)",
             description = "현재 로그인된 사용자의 계정을 비활성화(Soft Delete) 처리합니다.")
     @SignInInRequireResponse

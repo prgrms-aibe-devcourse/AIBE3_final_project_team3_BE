@@ -180,7 +180,10 @@ public class Member extends BaseEntity {
     }
 
     public void deleteSoftly() {
-        this.email = UUID.randomUUID().toString() + "@deleted.user";
+        if (this.isDeleted) {
+            throw new IllegalStateException("이미 탈퇴한 회원입니다.");
+        }
+        this.email = UUID.randomUUID() + "@deleted.user";
         this.password = Password.deleteDummy();
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();

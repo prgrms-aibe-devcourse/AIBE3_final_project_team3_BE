@@ -70,4 +70,10 @@ public class S3Uploader {
             throw new IllegalArgumentException("잘못된 형식의 파일입니다: " + fileName);
         }
     }
+
+    public void deleteFileByUrl(String profileImageUrl) {
+        s3Client.deleteObject(builder -> builder.bucket(bucket)
+                .key((profileImageUrl))
+                .build());
+    }
 }

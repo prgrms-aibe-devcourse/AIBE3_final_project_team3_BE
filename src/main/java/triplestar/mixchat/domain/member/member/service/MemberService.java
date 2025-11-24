@@ -1,6 +1,8 @@
 package triplestar.mixchat.domain.member.member.service;
 
 import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -52,17 +54,25 @@ public class MemberService {
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다."));
     }
 
+    // NOTE : 현재 로그인한 사용자를 제외한 모든 회원 조회 -> 추후 로그인 사용자도 포함시킬지 검토 필요
     public Page<MemberPresenceSummaryResp> findAllMembers(Long currentUserId, Pageable pageable) {
         Page<Member> members = memberRepository.findAllByIdIsNot(currentUserId, pageable);
 
-        // TODO : redis N번 호출 -> Mget으로 최적화 필요
+        List<Long> ids = members.stream().map(Member::getId).toList();
+        Map<Long, Boolean> onlineBulk = presenceService.isOnlineBulk(ids);
         return members.map(member -> {
-            boolean isOnline = presenceService.isOnline(member.getId());
+            Boolean isOnline = onlineBulk.getOrDefault(member.getId(), false);
             return MemberPresenceSummaryResp.from(member, isOnline);
         });
     }
-    
-    // TODO : online Id 조회 -> 해당 ID DB 좈회로 온라인 회원 목록 반환 기능 추가
+
+    // NOTE : 현재 로그인한 사용자를 제외한 모든 회원 조회 -> 추후 로그인 사용자도 포함시킬지 검토 필요
+    public Page<MemberPresenceSummaryResp> findOnlineMembers(Long currentUserId, Pageable pageable) {
+        List<Long> onlineMemberIds = presenceService.getOnlineMemberIds(pageable.getOffset(), pageable.getPageSize());
+        Page<Member> members = memberRepository.findByIds(currentUserId, onlineMemberIds, pageable);
+
+        return members.map(member -> MemberPresenceSummaryResp.from(member, true));
+    }
 
     @Transactional
     public void updateInfo(Long memberId, MemberInfoModifyReq req) {
@@ -102,6 +112,7 @@ public class MemberService {
     @Transactional
     public void deleteSoftly(Long memberId) {
         Member member = findMemberById(memberId);
+        s3Uploader.deleteFileByUrl(member.getProfileImageUrl());
         member.deleteSoftly();
     }
 }

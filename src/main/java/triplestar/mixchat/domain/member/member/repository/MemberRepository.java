@@ -66,4 +66,11 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
             WHERE m.id <> :id AND m.isDeleted = false AND m.isBlocked = false AND m.role = 'ROLE_MEMBER'
     """)
     Page<Member> findAllByIdIsNot(Long id, Pageable pageable);
+
+    @Query("""
+            SELECT m FROM Member m
+            WHERE m.id <> :currentUserId AND m.id IN :onlineMemberIds
+                AND m.isDeleted = false AND m.isBlocked = false AND m.role = 'ROLE_MEMBER'
+    """)
+    Page<Member> findByIds(Long currentUserId, List<Long> onlineMemberIds, Pageable pageable);
 }

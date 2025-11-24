@@ -78,7 +78,18 @@ public class ApiV1MemberController implements ApiMemberController {
     ) {
         Long userId = userDetails != null ? userDetails.getId() : -1L;
         Page<MemberPresenceSummaryResp> members = memberService.findAllMembers(userId, pageable);
-        return CustomResponse.ok("모든 회원 목록을 성공적으로 조회했습니다.", members);
+        return CustomResponse.ok("회원 목록을 성공적으로 조회했습니다.", members);
+    }
+
+    @Override
+    @GetMapping("/online")
+    public CustomResponse<Page<MemberPresenceSummaryResp>> getOnlineMembers(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        Long userId = userDetails != null ? userDetails.getId() : -1L;
+        Page<MemberPresenceSummaryResp> members = memberService.findOnlineMembers(userId, pageable);
+        return CustomResponse.ok("온라인 회원 목록을 성공적으로 조회했습니다.", members);
     }
 
     @Override

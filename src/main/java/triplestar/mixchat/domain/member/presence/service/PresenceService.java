@@ -1,5 +1,7 @@
 package triplestar.mixchat.domain.member.presence.service;
 
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.member.presence.repository.PresenceRepository;
@@ -14,11 +16,11 @@ public class PresenceService {
         presenceRepository.save(memberId);
     }
 
-    public boolean isOnline(Long memberId) {
-        return presenceRepository.isOnline(memberId);
+    public Map<Long, Boolean> isOnlineBulk(List<Long> memberIds) {
+        return presenceRepository.isOnlineBulk(memberIds);
     }
 
-    public void delete(Long memberId) {
-        presenceRepository.delete(memberId);
+    public List<Long> getOnlineMemberIds(long offset, long size) {
+        return presenceRepository.getOnlineMemberIds(offset, size);
     }
 }
