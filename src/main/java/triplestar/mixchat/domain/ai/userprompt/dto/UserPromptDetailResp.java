@@ -4,10 +4,10 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
-import triplestar.mixchat.domain.ai.userprompt.entity.Prompt;
+import triplestar.mixchat.domain.ai.userprompt.entity.UserPrompt;
 
 @Schema(description = "프롬프트 상세 응답 DTO")
-public record PromptDetailResp(
+public record UserPromptDetailResp(
         @Schema(description = "프롬프트 ID", example = "1", requiredMode = REQUIRED)
         Long id,
 
@@ -29,15 +29,15 @@ public record PromptDetailResp(
         @Schema(description = "멤버 ID", example = "1", requiredMode = REQUIRED)
         Long memberId
 ) {
-    public PromptDetailResp(Prompt prompt) {
+    public UserPromptDetailResp(UserPrompt userPrompt) {
         this(
-            prompt.getId(),
-            prompt.getTitle(),
-            prompt.getType().name(),
-            prompt.getContent(),
-            prompt.getCreatedAt(),
-            prompt.getModifiedAt(),
-            prompt.getMember().getId()
+            userPrompt.getId(),
+            userPrompt.getTitle(),
+            userPrompt.getType().name(),
+            userPrompt.getContent(),
+            userPrompt.getCreatedAt(),
+            userPrompt.getModifiedAt(),
+            userPrompt.getMember().getId()
         );
     }
 }

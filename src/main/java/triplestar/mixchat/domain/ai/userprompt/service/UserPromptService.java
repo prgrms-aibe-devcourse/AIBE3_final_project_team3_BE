@@ -3,15 +3,15 @@ package triplestar.mixchat.domain.ai.userprompt.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.ai.userprompt.entity.UserPrompt;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
-import triplestar.mixchat.domain.ai.userprompt.constant.PromptType;
-import triplestar.mixchat.domain.ai.userprompt.dto.PromptReq;
-import triplestar.mixchat.domain.ai.userprompt.dto.PromptListResp;
-import triplestar.mixchat.domain.ai.userprompt.dto.PromptDetailResp;
-import triplestar.mixchat.domain.ai.userprompt.entity.Prompt;
-import triplestar.mixchat.domain.ai.userprompt.repository.PromptRepository;
+import triplestar.mixchat.domain.ai.userprompt.constant.UserPromptType;
+import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptReq;
+import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptListResp;
+import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptDetailResp;
+import triplestar.mixchat.domain.ai.userprompt.repository.UserPromptRepository;
 
 import org.springframework.security.access.AccessDeniedException;
 import jakarta.persistence.EntityNotFoundException;
@@ -24,8 +24,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class PromptService {
-    private final PromptRepository promptRepository;
+public class UserPromptService {
+    private final UserPromptRepository userPromptRepository;
     private final MemberRepository memberRepository;
 
     private Member getMember(Long memberId) {
@@ -40,64 +40,64 @@ public class PromptService {
     }
 
     @Transactional
-    public PromptDetailResp create(Long memberId, PromptReq req) {
+    public UserPromptDetailResp create(Long memberId, UserPromptReq req) {
         Member member = getMember(memberId);
         checkPremium(member);
-        Prompt prompt = Prompt.create(member, req.title(), req.content(), req.promptType());
-        Prompt saved = promptRepository.save(prompt);
-        return new PromptDetailResp(saved);
+        UserPrompt userPrompt = UserPrompt.create(member, req.title(), req.content(), req.promptType());
+        UserPrompt saved = userPromptRepository.save(userPrompt);
+        return new UserPromptDetailResp(saved);
     }
 
-    private Prompt getPrompt(Long id) {
-        return promptRepository.findById(id)
+    private UserPrompt getPrompt(Long id) {
+        return userPromptRepository.findById(id)
                 .orElseThrow(EntityNotFoundException::new);
     }
 
     @Transactional
-    public void update(Long memberId, Long id, PromptReq req) {
+    public void update(Long memberId, Long id, UserPromptReq req) {
         Member member = getMember(memberId);
         checkPremium(member);
-        Prompt prompt = getPrompt(id);
-        if (prompt.isDefaultPrompt() || !prompt.getMember().getId().equals(member.getId())) {
+        UserPrompt userPrompt = getPrompt(id);
+        if (userPrompt.isDefaultPrompt() || !userPrompt.getMember().getId().equals(member.getId())) {
             throw new AccessDeniedException("본인 프롬프트가 아닙니다.");
         }
-        prompt.modify(req.title(), req.content(), req.promptType());
+        userPrompt.modify(req.title(), req.content(), req.promptType());
     }
 
     @Transactional
     public void delete(Long memberId, Long id) {
         Member member = getMember(memberId);
         checkPremium(member);
-        Prompt prompt = getPrompt(id);
-        if (prompt.getMember() == null || !prompt.getMember().getId().equals(member.getId())) {
+        UserPrompt userPrompt = getPrompt(id);
+        if (userPrompt.getMember() == null || !userPrompt.getMember().getId().equals(member.getId())) {
             throw new AccessDeniedException("본인 프롬프트가 아닙니다.");
         }
-        promptRepository.deleteById(id);
+        userPromptRepository.deleteById(id);
     }
 
     @Transactional(readOnly = true)
-    public List<PromptListResp> list(Long memberId) {
+    public List<UserPromptListResp> list(Long memberId) {
         Member member = getMember(memberId);
         MembershipGrade grade = member.getMembershipGrade();
-        List<Prompt> prompts;
+        List<UserPrompt> userPrompts;
         if (grade == MembershipGrade.PREMIUM) {
-            prompts = promptRepository.findForPremium(PromptType.PRE_SCRIPTED, PromptType.CUSTOM, member.getId());
+            userPrompts = userPromptRepository.findForPremium(UserPromptType.PRE_SCRIPTED, UserPromptType.CUSTOM, member.getId());
         } else {
-            prompts = promptRepository.findByType(PromptType.PRE_SCRIPTED);
+            userPrompts = userPromptRepository.findByType(UserPromptType.PRE_SCRIPTED);
         }
-        return prompts.stream().map(PromptListResp::new).collect(Collectors.toList());
+        return userPrompts.stream().map(UserPromptListResp::new).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public PromptDetailResp detail(Long memberId, Long id) {
+    public UserPromptDetailResp detail(Long memberId, Long id) {
         Member member = getMember(memberId);
         if (member.getMembershipGrade() != MembershipGrade.PREMIUM) {
             throw new AccessDeniedException("프리미엄 등급이 아닙니다.");
         }
-        Prompt prompt = getPrompt(id);
-        if (prompt.getType() != PromptType.CUSTOM || prompt.getMember() == null || !prompt.getMember().getId().equals(member.getId())) {
+        UserPrompt userPrompt = getPrompt(id);
+        if (userPrompt.getType() != UserPromptType.CUSTOM || userPrompt.getMember() == null || !userPrompt.getMember().getId().equals(member.getId())) {
             throw new AccessDeniedException("본인 프롬프트가 아닙니다.");
         }
-        return new PromptDetailResp(prompt);
+        return new UserPromptDetailResp(userPrompt);
     }
 }

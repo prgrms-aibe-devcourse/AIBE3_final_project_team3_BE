@@ -27,7 +27,8 @@ spring:
         max-page-size: 100
 
   ai:
-
+    openai:
+      api-key: ${OPENAI_API_KEY}
 
 swagger:
   redirect:

@@ -1,6 +1,6 @@
 package triplestar.mixchat.domain.ai.userprompt.constant;
 
-public enum PromptType {
+public enum UserPromptType {
     PRE_SCRIPTED,
     CUSTOM
 }
