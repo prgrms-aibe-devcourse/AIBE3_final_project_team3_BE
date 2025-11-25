@@ -32,5 +32,8 @@ COPY --from=builder /app/.env .env
 COPY --from=builder /app/.env.prod.properties .env.prod.properties
 COPY --from=builder /app/.env.staging.properties .env.staging.properties
 
+ARG SPRING_PROFILE=prod
+ENV SPRING_PROFILES_ACTIVE=$SPRING_PROFILE
+
 # 실행할 JAR 파일 지정 (스테이징 서버에서는 변경 필요)
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "java -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} -jar app.jar"]

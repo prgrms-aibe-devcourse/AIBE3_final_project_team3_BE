@@ -36,6 +36,7 @@ systemctl start docker
 install -d -m 0755 /opt/mixchat/docker/config/mysql
 install -d -m 0755 /opt/mixchat/docker/config/redis
 install -d -m 0755 /opt/mixchat/docker/config/mongo
+install -d -m 0755 /opt/mixchat/src/main/resources
 
 cat <<'EOF' | base64 -d > /opt/mixchat/docker-compose-staging.yml
 ${docker_compose_staging_b64}
@@ -53,12 +54,17 @@ cat <<'EOF' | base64 -d > /opt/mixchat/.env.staging.properties
 ${app_env_staging_properties_b64}
 EOF
 
+cat <<'EOF' | base64 -d > /opt/mixchat/src/main/resources/application-secret.yml
+${application_secret_yaml_b64}
+EOF
+
 sed -i "s|^SPRING_PROFILES_ACTIVE=.*|SPRING_PROFILES_ACTIVE=staging|" /opt/mixchat/.env.staging.properties
 sed -i "s|^AWS_S3_BUCKET=.*|AWS_S3_BUCKET=${app_2_s3_bucket}|" /opt/mixchat/.env.staging.properties
 
 chmod 600 /opt/mixchat/.env
 chmod 600 /opt/mixchat/.env.prod.properties
 chmod 600 /opt/mixchat/.env.staging.properties
+chmod 600 /opt/mixchat/src/main/resources/application-secret.yml
 
 # Docker Hub/GHCR 로그인 및 Compose 기동
 echo "${github_access_token_1}" | docker login ghcr.io -u ${github_access_token_1_owner} --password-stdin || true

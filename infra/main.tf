@@ -282,6 +282,7 @@ locals {
   app_env_prod_b64               = base64encode(file("${path.module}/../.env"))
   app_env_prod_properties_b64    = base64encode(file("${path.module}/../.env.prod.properties"))
   app_env_staging_properties_b64 = base64encode(file("${path.module}/../.env.staging.properties"))
+  application_secret_yaml_b64    = base64encode(file("${path.module}/../src/main/resources/application-secret.yml"))
 
   ec2_1_user_data_base = templatefile("${path.module}/templates/user_data.sh.tftpl", {
     password_1                  = var.password_1
@@ -295,11 +296,12 @@ locals {
     docker_compose_prod_b64     = local.docker_compose_prod_b64
     app_env_prod_b64            = local.app_env_prod_b64
     app_env_prod_properties_b64 = local.app_env_prod_properties_b64
-    compose_support_files = [for file in local.compose_support_files : {
+    compose_support_files       = [for file in local.compose_support_files : {
       path        = file.path
       content_b64 = file.content_b64
     }]
-    app_1_s3_bucket = aws_s3_bucket.prod_bucket.bucket
+    app_1_s3_bucket              = aws_s3_bucket.prod_bucket.bucket
+    application_secret_yaml_b64  = local.application_secret_yaml_b64
   })
 
   ec2_2_user_data_base = templatefile("${path.module}/templates/user_data_2.sh.tftpl", {
@@ -313,11 +315,12 @@ locals {
     app_env_prod_b64               = local.app_env_prod_b64
     app_env_prod_properties_b64    = local.app_env_prod_properties_b64
     app_env_staging_properties_b64 = local.app_env_staging_properties_b64
-    compose_support_files = [for file in local.compose_support_files : {
+    compose_support_files           = [for file in local.compose_support_files : {
       path        = file.path
       content_b64 = file.content_b64
     }]
-    app_2_s3_bucket = aws_s3_bucket.staging_bucket.bucket
+    app_2_s3_bucket             = aws_s3_bucket.staging_bucket.bucket
+    application_secret_yaml_b64 = local.application_secret_yaml_b64
   })
 
   ec2_1_user_data_base64 = base64gzip(local.ec2_1_user_data_base)
