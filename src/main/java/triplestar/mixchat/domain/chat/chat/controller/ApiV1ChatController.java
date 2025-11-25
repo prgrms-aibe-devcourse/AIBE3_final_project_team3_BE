@@ -16,10 +16,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.ChatRoomDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
-import triplestar.mixchat.domain.chat.chat.dto.ChatRoomDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.JoinGroupChatReq;
@@ -27,8 +27,8 @@ import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.TextMessageReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.service.AIChatRoomService;
+import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
-import triplestar.mixchat.domain.chat.chat.service.ChatInteractionService;
 import triplestar.mixchat.domain.chat.chat.service.DirectChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.GroupChatRoomService;
 import triplestar.mixchat.global.response.CustomResponse;
@@ -43,7 +43,7 @@ public class ApiV1ChatController implements ApiChatController {
     private final DirectChatRoomService directChatRoomService;
     private final GroupChatRoomService groupChatRoomService;
     private final AIChatRoomService aiChatRoomService;
-    private final ChatInteractionService chatInteractionService;
+    private final ChatMemberService chatMemberService;
     private final ChatMessageService chatMessageService;
     private final S3Uploader s3Uploader;
     private final SimpMessagingTemplate messagingTemplate;
@@ -198,7 +198,7 @@ public class ApiV1ChatController implements ApiChatController {
             @RequestParam ChatMessage.chatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        chatInteractionService.blockUser(currentUser.getId(), null, roomId, chatRoomType);
+        // chatMemberService.blockUser(currentUser.getId(), null, roomId, chatRoomType);
     }
 
     @Override
@@ -208,6 +208,6 @@ public class ApiV1ChatController implements ApiChatController {
             @RequestParam ChatMessage.chatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        chatInteractionService.reportUser(currentUser.getId(), null, roomId, chatRoomType, null);
+        // chatMemberService.reportUser(currentUser.getId(), null, roomId, chatRoomType, null);
     }
 }

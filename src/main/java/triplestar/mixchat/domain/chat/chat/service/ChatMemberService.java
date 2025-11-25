@@ -1,17 +1,10 @@
 package triplestar.mixchat.domain.chat.chat.service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
-import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
-import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.repository.AIChatRoomRepository;
@@ -26,7 +19,7 @@ import triplestar.mixchat.global.cache.ChatAuthCacheService;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class ChatInteractionService {
+public class ChatMemberService {
 
     private final MemberRepository memberRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
@@ -65,44 +58,46 @@ public class ChatInteractionService {
         chatAuthCacheService.addMember(roomId, memberId);
     }
 
-    //사용자 차단 (미구현)
+    // 읽음 처리
     @Transactional
-    public void blockUser(Long blockerId, Long blockedId, Long chatRoomId, ChatMessage.chatRoomType chatRoomType) {
-        // TODO: 사용자 차단 로직 구현
-        log.info("User {} blocked user {} in chatRoom {} (type {}).", blockerId, blockedId, chatRoomId, chatRoomType);
-        throw new UnsupportedOperationException("사용자 차단 기능은 아직 구현되지 않았습니다.");
+    public void updateLastReadSequence(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType, Long sequence) {
+        ChatMember member = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_Id(
+                roomId, chatRoomType, memberId
+        ).orElseThrow(() -> new SecurityException("해당 대화방에 속해있지 않습니다."));
+
+        member.updateLastReadSequence(sequence);
     }
 
-    //사용자/대화방 신고 (미구현)
+    // 채팅방 입장 시 자동 읽음 처리 (해당 방의 최신 sequence까지 읽음 처리)
     @Transactional
-    public void reportUser(Long reporterId, Long reportedId, Long chatRoomId, ChatMessage.chatRoomType chatRoomType, String reason) {
-        // TODO: 사용자/대화방 신고 로직 구현
-        log.info("User {} reported user {} or chatRoom {} (type {}) for reason: {}.", reporterId, reportedId, chatRoomId, chatRoomType, reason);
-        throw new UnsupportedOperationException("사용자/대화방 신고 기능은 아직 구현되지 않았습니다.");
+    public void markAsReadOnEnter(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType) {
+        ChatMember member = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_Id(
+                roomId, chatRoomType, memberId
+        ).orElseThrow(() -> new SecurityException("해당 대화방에 속해있지 않습니다."));
+
+        Long currentSequence = getCurrentSequence(roomId, chatRoomType);
+        if (currentSequence != null && currentSequence > 0) {
+            member.updateLastReadSequence(currentSequence);
+            log.debug("Marked as read on enter: memberId={}, roomId={}, sequence={}",
+                    memberId, roomId, currentSequence);
+        }
     }
 
-    //특정 대화방의 알림 설정 변경
-    @Transactional
-    public void updateNotificationSetting(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType, boolean enableNotifications) {
-        // TODO: ChatMember의 알림 설정 변경 로직 구현
-        log.warn("updateNotificationSetting 메서드는 아직 구현되지 않았습니다.");
-        throw new UnsupportedOperationException("알림 설정 변경 기능은 아직 구현되지 않았습니다.");
+    // 현재 채팅방의 최신 sequence 조회
+    private Long getCurrentSequence(Long roomId, ChatMessage.chatRoomType chatRoomType) {
+        if (chatRoomType == ChatMessage.chatRoomType.DIRECT) {
+            return directChatRoomRepository.findById(roomId)
+                    .map(room -> room.getCurrentSequence())
+                    .orElse(0L);
+        } else if (chatRoomType == ChatMessage.chatRoomType.GROUP) {
+            return groupChatRoomRepository.findById(roomId)
+                    .map(room -> room.getCurrentSequence())
+                    .orElse(0L);
+        }
+        return 0L;
     }
 
-    //특정 대화방에서 사용자의 마지막 읽은 메시지 업데이트 (미구현)
-    @Transactional
-    public void updateLastReadMessage(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType, String lastReadMessageId) {
-        // TODO: ChatMember의 lastReadAt 또는 lastReadMessageId 업데이트 로직 구현
-        log.warn("updateLastReadMessage 메서드는 아직 구현되지 않았습니다.");
-        throw new UnsupportedOperationException("마지막 읽은 메시지 업데이트 기능은 아직 구현되지 않았습니다.");
-    }
-
-    /**
-     * 대화방 나가기 로직
-     * @param memberId 나가는 사용자 ID
-     * @param roomId 대화방 ID
-     * @param chatRoomType 대화방 타입
-     */
+    // 대화방 나가기
     @Transactional
     public void leaveRoom(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType) {
         // 1. ChatMember 찾기 및 삭제
@@ -133,6 +128,18 @@ public class ChatInteractionService {
                     break;
             }
         }
+    }
+
+    // TODO: 채팅방에서 특정 사용자 차단 (해당 채팅방에서만 메시지 안 보이게)
+    @Transactional
+    public void blockUser(Long currentUserId, Long targetUserId, Long roomId, ChatMessage.chatRoomType chatRoomType) {
+        throw new UnsupportedOperationException("차단 기능은 아직 구현되지 않았습니다.");
+    }
+
+    // TODO: 채팅방에서 특정 사용자 신고
+    @Transactional
+    public void reportUser(Long currentUserId, Long targetUserId, Long roomId, ChatMessage.chatRoomType chatRoomType, String reason) {
+        throw new UnsupportedOperationException("신고 기능은 아직 구현되지 않았습니다.");
     }
 }
 

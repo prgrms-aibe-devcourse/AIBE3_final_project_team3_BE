@@ -32,7 +32,10 @@ public record MessageResp(
 
         @NotNull
         @Schema(description = "메시지 타입", example = "TALK", requiredMode = REQUIRED)
-        ChatMessage.MessageType messageType
+        ChatMessage.MessageType messageType,
+
+        @Schema(description = "읽지 않은 사람 수", example = "3")
+        Integer unreadCount
 ) {
     public static MessageResp from(ChatMessage entity, String senderName) {
         return new MessageResp(
@@ -41,7 +44,20 @@ public record MessageResp(
                 senderName,
                 entity.getContent(),
                 entity.getCreatedAt(),
-                entity.getMessageType()
+                entity.getMessageType(),
+                null
+        );
+    }
+
+    public static MessageResp from(ChatMessage entity, String senderName, int unreadCount) {
+        return new MessageResp(
+                entity.getId(),
+                entity.getSenderId(),
+                senderName,
+                entity.getContent(),
+                entity.getCreatedAt(),
+                entity.getMessageType(),
+                unreadCount
         );
     }
 }

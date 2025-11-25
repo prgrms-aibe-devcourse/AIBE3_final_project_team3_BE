@@ -29,7 +29,7 @@ public class AIChatRoomService {
     private final MemberRepository memberRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final ChatAuthCacheService chatAuthCacheService;
-    private final ChatInteractionService chatInteractionService;
+    private final ChatMemberService chatMemberService;
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
@@ -51,7 +51,7 @@ public class AIChatRoomService {
     }
 
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
-        chatInteractionService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.chatRoomType.AI);
+        chatMemberService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.chatRoomType.AI);
     }
 
     public List<AIChatRoomResp> getRoomsForUser(Long currentUserId) {
@@ -69,7 +69,7 @@ public class AIChatRoomService {
     // AI 채팅방 나가기
     @Transactional
     public void leaveAIChatRoom(Long roomId, Long currentUserId) {
-        chatInteractionService.leaveRoom(currentUserId, roomId, ChatMessage.chatRoomType.AI);
+        chatMemberService.leaveRoom(currentUserId, roomId, ChatMessage.chatRoomType.AI);
     }
 }
 

@@ -35,6 +35,8 @@ public class ChatMember extends BaseEntity {
 
     private LocalDateTime lastReadAt;
 
+    private Long lastReadSequence; // 마지막으로 읽은 메시지의 sequence
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ChatNotificationSetting chatNotificationSetting;
@@ -70,5 +72,20 @@ public class ChatMember extends BaseEntity {
 
     public void turnOnNotifications() {
         this.chatNotificationSetting = ChatNotificationSetting.ALWAYS;
+    }
+
+    // 읽은 메시지 sequence 업데이트 (뒤로 가지 않기 가드)
+    public void updateLastReadSequence(Long sequence) {
+        if (sequence == null) {
+            return;
+        }
+
+        // 현재 값보다 큰 경우에만 업데이트
+        if (this.lastReadSequence != null && sequence <= this.lastReadSequence) {
+            return;
+        }
+
+        this.lastReadSequence = sequence;
+        this.lastReadAt = LocalDateTime.now();
     }
 }

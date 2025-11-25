@@ -23,6 +23,9 @@ public class DirectChatRoom extends BaseEntity {
     @JoinColumn(name = "user2_id", nullable = false)
     private Member user2;
 
+    @Column(nullable = false)
+    private Long currentSequence = 0L; // 채팅방 메시지 순서 번호
+
     private DirectChatRoom(Member user1, Member user2) {
         if (user1 == null || user2 == null) {
             throw new IllegalArgumentException("두 참여자는 null일 수 없습니다.");
@@ -44,5 +47,10 @@ public class DirectChatRoom extends BaseEntity {
     //1:1 채팅방 생성용 정적 팩토리 메서드
     public static DirectChatRoom create(Member user1, Member user2) {
         return new DirectChatRoom(user1, user2);
+    }
+
+    // 다음 sequence 번호 생성
+    public synchronized Long generateNextSequence() {
+        return ++this.currentSequence;
     }
 }
