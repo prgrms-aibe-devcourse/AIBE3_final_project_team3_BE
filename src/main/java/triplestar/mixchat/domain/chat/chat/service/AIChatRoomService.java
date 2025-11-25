@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class AIChatRoomService {
 
     private final AIChatRoomRepository aiChatRoomRepository;
@@ -49,12 +50,10 @@ public class AIChatRoomService {
         return AIChatRoomResp.from(savedRoom);
     }
 
-    @Transactional(readOnly = true)
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
         chatInteractionService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.chatRoomType.AI);
     }
 
-    @Transactional(readOnly = true)
     public List<AIChatRoomResp> getRoomsForUser(Long currentUserId) {
         Member currentUser = findMemberById(currentUserId);
         List<AIChatRoom> rooms = aiChatRoomRepository.findAllByMember(currentUser);

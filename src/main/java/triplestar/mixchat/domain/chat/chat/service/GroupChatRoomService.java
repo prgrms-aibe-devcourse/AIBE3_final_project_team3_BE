@@ -25,6 +25,7 @@ import triplestar.mixchat.global.cache.ChatAuthCacheService;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class GroupChatRoomService {
 
     private final GroupChatRoomRepository groupChatRoomRepository;
@@ -34,7 +35,6 @@ public class GroupChatRoomService {
     private final ChatAuthCacheService chatAuthCacheService;
     private final ChatInteractionService chatInteractionService;
 
-    @Transactional(readOnly = true)
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
         chatInteractionService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.chatRoomType.GROUP);
     }
@@ -176,14 +176,12 @@ public class GroupChatRoomService {
     }
 
     // 사용자가 속해있는 그룹채팅방 조회(chat 페이지 용도)
-    @Transactional(readOnly = true)
     public List<GroupChatRoomResp> getRoomsForUser(Long currentUserId) {
         List<GroupChatRoom> rooms = groupChatRoomRepository.findAllByMemberId(currentUserId);
         return convertToRoomResponses(rooms);
     }
 
     // 기존에 만들어진 그룹채팅방 조회(find 페이지의 Groups 탭 용도)
-    @Transactional(readOnly = true)
     public List<GroupChatRoomResp> getGroupPublicRooms(Long currentUserId) {
         List<GroupChatRoom> rooms = groupChatRoomRepository.findPublicRoomsExcludingMemberId(currentUserId);
         return convertToRoomResponses(rooms);

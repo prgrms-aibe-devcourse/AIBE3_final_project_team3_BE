@@ -21,6 +21,7 @@ import triplestar.mixchat.global.cache.ChatAuthCacheService;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class DirectChatRoomService {
 
     private final DirectChatRoomRepository directChatRoomRepository;
@@ -38,7 +39,6 @@ public class DirectChatRoomService {
     }
 
     //사용자가 해당 1:1 채팅방의 멤버인지 확인 (ChatInteractionService로 위임)
-    @Transactional(readOnly = true)
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
         chatInteractionService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.chatRoomType.DIRECT);
     }
@@ -104,7 +104,6 @@ public class DirectChatRoomService {
     }
 
     // 사용자가 참여하고 있는 1:1 채팅방 목록 조회
-    @Transactional(readOnly = true)
     public List<DirectChatRoomResp> getRoomsForUser(Long currentUserId) {
         Member currentUser = findMemberById(currentUserId);
         // ChatMember 엔티티를 통해 사용자가 속한 1:1 채팅방 ID들을 조회
