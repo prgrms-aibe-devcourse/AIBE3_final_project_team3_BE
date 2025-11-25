@@ -15,10 +15,12 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long
     boolean existsByChatRoomIdAndChatRoomTypeAndMember_Id(Long chatRoomId, ChatMessage.chatRoomType chatRoomType, Long memberId);
 
     // 본인 제외 특정 대화방의 모든 멤버를 조회
-    @Query("SELECT cm FROM ChatMember cm " +
-           "WHERE cm.chatRoomId = :chatRoomId " +
-           "AND cm.chatRoomType = :chatRoomType " +
-           "AND cm.member.id <> :senderId")
+    @Query("""
+        SELECT cm FROM ChatMember cm
+        WHERE cm.chatRoomId = :chatRoomId
+        AND cm.chatRoomType = :chatRoomType
+        AND cm.member.id <> :senderId
+        """)
     List<ChatMember> findByChatRoomIdAndChatRoomTypeAndMember_IdNot(
             @Param("chatRoomId") Long chatRoomId,
             @Param("chatRoomType") ChatMessage.chatRoomType chatRoomType,
@@ -55,4 +57,12 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long
      * @return 해당 멤버가 속한 ChatMember 목록
      */
     List<ChatMember> findByMemberAndChatRoomType(Member member, ChatMessage.chatRoomType chatRoomType);
+
+    // 방 ID 목록에 해당하는 모든 ChatMember 엔티티를 멤버 정보와 함께 조회
+    @Query("""
+        SELECT cm FROM ChatMember cm
+        JOIN FETCH cm.member
+        WHERE cm.chatRoomId IN :roomIds AND cm.chatRoomType = 'GROUP'
+        """)
+    List<ChatMember> findAllByRoomIdsWithMember(@Param("roomIds") List<Long> roomIds);
 }

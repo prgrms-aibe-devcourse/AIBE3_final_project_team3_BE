@@ -17,6 +17,12 @@ public record CreateGroupChatReq(
         List<Long> memberIds,
 
         @Schema(description = "그룹 채팅방 비밀번호 (선택 사항)", example = "mysecretpass")
-        String password
+        String password,
+
+        @Schema(description = "그룹 채팅방 설명", example = "이 채팅방은 프로젝트를 위한 공간입니다.")
+        String description,
+
+        @Schema(description = "그룹 채팅방 주제", example = "IT")
+        String topic
 ) {
 }

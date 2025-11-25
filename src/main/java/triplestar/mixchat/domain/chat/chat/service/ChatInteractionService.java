@@ -25,6 +25,7 @@ import triplestar.mixchat.global.cache.ChatAuthCacheService;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class ChatInteractionService {
 
     private final MemberRepository memberRepository;
@@ -41,7 +42,6 @@ public class ChatInteractionService {
     }
 
     //사용자가 특정 대화방의 멤버인지 확인 (캐시 적용)
-    @Transactional(readOnly = true)
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType) {
         if (roomId == null || memberId == null || chatRoomType == null) {
             throw new AccessDeniedException("사용자, 대화방 정보 또는 대화 타입이 유효하지 않습니다.");

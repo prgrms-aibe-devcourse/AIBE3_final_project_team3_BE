@@ -22,6 +22,7 @@ import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.JoinGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.TextMessageReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
@@ -94,7 +95,27 @@ public class ApiV1ChatController implements ApiChatController {
         @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         List<GroupChatRoomResp> rooms = groupChatRoomService.getRoomsForUser(currentUser.getId());
-        return CustomResponse.ok("그룹 채팅방 목록 조회에 성공하였습니다.", rooms);
+        return CustomResponse.ok("사용자가 속한 그룹 채팅방 목록 조회에 성공하였습니다.", rooms);
+    }
+
+    // todo: 비밀번호 걸린 방도 public 조회는 혼동 여지 존재. 위를 me로 바꾸고 아래를 group으로 고려
+    @GetMapping("/rooms/group/public")
+    public CustomResponse<List<GroupChatRoomResp>> getPublicGroupChatRooms(
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        List<GroupChatRoomResp> rooms = groupChatRoomService.getGroupPublicRooms(currentUser.getId());
+        return CustomResponse.ok("공개 그룹 채팅방 목록 조회에 성공하였습니다.", rooms);
+    }
+
+    @PostMapping("/rooms/group/{roomId}/join")
+    public CustomResponse<GroupChatRoomResp> joinGroupRoom(
+            @PathVariable("roomId") Long roomId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @RequestBody(required = false) JoinGroupChatReq request
+    ) {
+        String password = request != null ? request.password() : null;
+        GroupChatRoomResp roomResp = groupChatRoomService.joinGroupRoom(roomId, currentUser.getId(), password);
+        return CustomResponse.ok("그룹 채팅방 참가에 성공하였습니다.", roomResp);
     }
 
     @Override
@@ -153,10 +174,10 @@ public class ApiV1ChatController implements ApiChatController {
     }
 
     @Override
-    @DeleteMapping("/rooms/{roomId}/leave")
+    @DeleteMapping("/rooms/{roomId}")
     public void leaveRoom(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.chatRoomType chatRoomType, // chatRoomType 추가
+            @RequestParam ChatMessage.chatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         if (chatRoomType == ChatMessage.chatRoomType.DIRECT) {
