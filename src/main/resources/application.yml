@@ -26,6 +26,9 @@ spring:
         one-indexed-parameters: true
         max-page-size: 100
 
+  ai:
+
+
 swagger:
   redirect:
     # "/"로 들어왔을 때 최종적으로 리다이렉트될 Swagger UI 경로

@@ -1,12 +1,12 @@
-package triplestar.mixchat.domain.prompt.prompt.controller;
+package triplestar.mixchat.domain.ai.userprompt.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import triplestar.mixchat.domain.prompt.prompt.dto.PromptReq;
-import triplestar.mixchat.domain.prompt.prompt.dto.PromptListResp;
-import triplestar.mixchat.domain.prompt.prompt.dto.PromptDetailResp;
-import triplestar.mixchat.domain.prompt.prompt.service.PromptService;
+import triplestar.mixchat.domain.ai.userprompt.dto.PromptReq;
+import triplestar.mixchat.domain.ai.userprompt.dto.PromptListResp;
+import triplestar.mixchat.domain.ai.userprompt.dto.PromptDetailResp;
+import triplestar.mixchat.domain.ai.userprompt.service.PromptService;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
 import java.util.List;

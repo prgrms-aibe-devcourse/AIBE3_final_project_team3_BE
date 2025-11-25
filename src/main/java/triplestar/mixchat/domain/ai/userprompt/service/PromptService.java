@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.prompt.prompt.service;
+package triplestar.mixchat.domain.ai.userprompt.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -6,12 +6,12 @@ import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
-import triplestar.mixchat.domain.prompt.prompt.constant.PromptType;
-import triplestar.mixchat.domain.prompt.prompt.dto.PromptReq;
-import triplestar.mixchat.domain.prompt.prompt.dto.PromptListResp;
-import triplestar.mixchat.domain.prompt.prompt.dto.PromptDetailResp;
-import triplestar.mixchat.domain.prompt.prompt.entity.Prompt;
-import triplestar.mixchat.domain.prompt.prompt.repository.PromptRepository;
+import triplestar.mixchat.domain.ai.userprompt.constant.PromptType;
+import triplestar.mixchat.domain.ai.userprompt.dto.PromptReq;
+import triplestar.mixchat.domain.ai.userprompt.dto.PromptListResp;
+import triplestar.mixchat.domain.ai.userprompt.dto.PromptDetailResp;
+import triplestar.mixchat.domain.ai.userprompt.entity.Prompt;
+import triplestar.mixchat.domain.ai.userprompt.repository.PromptRepository;
 
 import org.springframework.security.access.AccessDeniedException;
 import jakarta.persistence.EntityNotFoundException;

@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.prompt.prompt.controller;
+package triplestar.mixchat.domain.ai.userprompt.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,9 +11,9 @@ import triplestar.mixchat.global.springdoc.CommonBadResponse;
 import triplestar.mixchat.global.springdoc.SecurityRequireResponse;
 import triplestar.mixchat.global.springdoc.SignInInRequireResponse;
 import triplestar.mixchat.global.springdoc.SuccessResponse;
-import triplestar.mixchat.domain.prompt.prompt.dto.PromptReq;
-import triplestar.mixchat.domain.prompt.prompt.dto.PromptDetailResp;
-import triplestar.mixchat.domain.prompt.prompt.dto.PromptListResp;
+import triplestar.mixchat.domain.ai.userprompt.dto.PromptReq;
+import triplestar.mixchat.domain.ai.userprompt.dto.PromptDetailResp;
+import triplestar.mixchat.domain.ai.userprompt.dto.PromptListResp;
 import java.util.List;
 
 @Tag(name = "ApiPromptController", description = "프롬프트 관리 API")

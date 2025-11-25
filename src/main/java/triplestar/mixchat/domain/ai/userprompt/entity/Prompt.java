@@ -1,12 +1,11 @@
-package triplestar.mixchat.domain.prompt.prompt.entity;
+package triplestar.mixchat.domain.ai.userprompt.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
-import triplestar.mixchat.domain.prompt.prompt.constant.PromptType;
+import triplestar.mixchat.domain.ai.userprompt.constant.PromptType;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
 @Getter

@@ -1,10 +1,10 @@
-package triplestar.mixchat.domain.prompt.prompt.dto;
+package triplestar.mixchat.domain.ai.userprompt.dto;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
-import triplestar.mixchat.domain.prompt.prompt.entity.Prompt;
+import triplestar.mixchat.domain.ai.userprompt.entity.Prompt;
 
 @Schema(description = "프롬프트 상세 응답 DTO")
 public record PromptDetailResp(

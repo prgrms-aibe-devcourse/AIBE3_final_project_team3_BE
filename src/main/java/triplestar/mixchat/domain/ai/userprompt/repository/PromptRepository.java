@@ -1,10 +1,10 @@
-package triplestar.mixchat.domain.prompt.prompt.repository;
+package triplestar.mixchat.domain.ai.userprompt.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import triplestar.mixchat.domain.prompt.prompt.constant.PromptType;
-import triplestar.mixchat.domain.prompt.prompt.entity.Prompt;
+import triplestar.mixchat.domain.ai.userprompt.constant.PromptType;
+import triplestar.mixchat.domain.ai.userprompt.entity.Prompt;
 
 import java.util.List;
 

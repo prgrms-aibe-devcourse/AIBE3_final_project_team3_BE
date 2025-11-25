@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.prompt.prompt.controller;
+package triplestar.mixchat.domain.ai.userprompt.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -23,9 +23,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
-import triplestar.mixchat.domain.prompt.prompt.dto.PromptReq;
-import triplestar.mixchat.domain.prompt.prompt.entity.Prompt;
-import triplestar.mixchat.domain.prompt.prompt.repository.PromptRepository;
+import triplestar.mixchat.domain.ai.userprompt.dto.PromptReq;
+import triplestar.mixchat.domain.ai.userprompt.entity.Prompt;
+import triplestar.mixchat.domain.ai.userprompt.repository.PromptRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
