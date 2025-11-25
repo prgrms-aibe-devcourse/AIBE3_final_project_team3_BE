@@ -63,9 +63,13 @@ public class AiTranslationService {
                 {input}
                 """;
 
+        // TODO : 프롬프트 템플릿 엔진 도입 고려
         PromptTemplate promptTemplate = new PromptTemplate(systemPrompt);
         String render = promptTemplate.render(Map.of("input", req.message()));
         String call = chatModel.call(render);
+
+        // TODO : 응답 파싱 및 검증 로직 추가 필요
+        // TODO : Strict JSON Mode 설정, Function Calling 활용 등
 
         return new AiTranslationResp(call);
     }

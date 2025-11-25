@@ -14,13 +14,13 @@ import triplestar.mixchat.global.response.CustomResponse;
 
 // Temporary controller for AI chat functionality
 @RestController
-@RequestMapping("api/v1/auth")
+@RequestMapping("api/v1/ai")
 @RequiredArgsConstructor
 public class TempAiChatController {
 
     private final AiTranslationService aiTranslationService;
 
-    @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PostMapping(value = "/temp/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public CustomResponse<AiTranslationResp> chat (@RequestBody AiTranslationReq req) {
         AiTranslationResp resp = aiTranslationService.sendMessage(req);
         return CustomResponse.ok("AI chat response placeholder", resp);
