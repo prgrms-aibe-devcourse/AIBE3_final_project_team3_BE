@@ -9,7 +9,7 @@ spring:
     import: optional:file:.env.${spring.profiles.active}.properties
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
 
   datasource:
     url: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
@@ -28,7 +28,11 @@ spring:
 
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY}
+      base-url: https://ollama.yhcho.com/ # Ollama의 경우 v1 경로까지 명시
+      api-key: sk-ee38b71fef0344f4a3f1480fa7829dbf # 로컬은 키가 필요 없지만, 라이브러리 검증 통과용으로 입력
+      chat:
+        options:
+          model: llama3
 
 swagger:
   redirect:
