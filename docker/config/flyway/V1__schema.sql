@@ -155,41 +155,45 @@ CREATE TABLE IF NOT EXISTS `reports` (
 
 -- 채팅 테이블
 CREATE TABLE IF NOT EXISTS `ai_chat_rooms` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    `modified_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-    `name` VARCHAR(255) NOT NULL,
-    `ai_model_id` VARCHAR(255) NOT NULL,
-    `ai_persona` VARCHAR(255) NOT NULL,
+    `id`           BIGINT       NOT NULL AUTO_INCREMENT,
+    `created_at`   DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `modified_at`  DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+
+    `name`         VARCHAR(255) NOT NULL,
+    `ai_model_id`  VARCHAR(255) NOT NULL,
+    `ai_persona`   VARCHAR(255) NOT NULL,
+
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `chat_members` (
-                                              `id` BIGINT NOT NULL AUTO_INCREMENT,
-                                              `created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    `modified_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    `id`                        BIGINT       NOT NULL AUTO_INCREMENT,
+    `created_at`                DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `modified_at`               DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6)  ON UPDATE CURRENT_TIMESTAMP(6),
 
-    `member_id` BIGINT NOT NULL,
-    `chat_room_id` BIGINT NOT NULL,
-    `chat_room_type` VARCHAR(50) NOT NULL,
-    `user_type` VARCHAR(50) NOT NULL,
-    `last_read_at` DATETIME(6),
-    `chat_notification_setting` VARCHAR(50) NOT NULL,
+    `member_id`                 BIGINT       NOT NULL,
+    `chat_room_id`              BIGINT       NOT NULL,
+    `chat_room_type`            VARCHAR(50)  NOT NULL,
+    `user_type`                 VARCHAR(50)  NOT NULL,
+    `last_read_at`              DATETIME(6),
+    `chat_notification_setting` VARCHAR(50)  NOT NULL,
 
     PRIMARY KEY (`id`),
 
     KEY `idx_chat_members_member_id` (`member_id`),
+
     CONSTRAINT `fk_chat_members_member`
-    FOREIGN KEY (`member_id`) REFERENCES `members` (`id`)
+    FOREIGN KEY (`member_id`)
+    REFERENCES `members` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `direct_chat_rooms` (
-                                                   `id` BIGINT NOT NULL AUTO_INCREMENT,
-                                                   `created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    `modified_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    `id`           BIGINT       NOT NULL AUTO_INCREMENT,
+    `created_at`   DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `modified_at`  DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
 
-    `user1_id` BIGINT NOT NULL,
-    `user2_id` BIGINT NOT NULL,
+    `user1_id`     BIGINT       NOT NULL,
+    `user2_id`     BIGINT       NOT NULL,
 
     PRIMARY KEY (`id`),
 
@@ -199,26 +203,54 @@ CREATE TABLE IF NOT EXISTS `direct_chat_rooms` (
     KEY `idx_direct_chat_user2` (`user2_id`),
 
     CONSTRAINT `fk_direct_chat_user1`
-    FOREIGN KEY (`user1_id`) REFERENCES `members` (`id`),
+    FOREIGN KEY (`user1_id`)
+    REFERENCES `members` (`id`),
 
     CONSTRAINT `fk_direct_chat_user2`
-    FOREIGN KEY (`user2_id`) REFERENCES `members` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    FOREIGN KEY (`user2_id`)
+    REFERENCES `members` (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `group_chat_rooms` (
-    `id`          BIGINT       NOT NULL AUTO_INCREMENT,
-    `created_at`  DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    `modified_at` DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
-    ON UPDATE CURRENT_TIMESTAMP(6),
+    `id`           BIGINT       NOT NULL AUTO_INCREMENT,
+    `created_at`   DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `modified_at`  DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
 
-    `name`        VARCHAR(255) NOT NULL,
-    `description` VARCHAR(500)     NULL,
-    `topic`       VARCHAR(50)      NULL,
+    `name`         VARCHAR(255) NOT NULL,
+    `description`  VARCHAR(500),
+    `topic`        VARCHAR(50),
 
     PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
+CREATE TABLE IF NOT EXISTS `notifications` (
+    `id`           BIGINT       NOT NULL AUTO_INCREMENT,
+    `created_at`   DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `modified_at`  DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+
+    `receiver_id`  BIGINT       NOT NULL,
+    `sender_id`    BIGINT,
+    `type`         VARCHAR(50)  NOT NULL,
+    `content`      VARCHAR(255),
+    `is_read`      BOOLEAN      NOT NULL DEFAULT FALSE,
+
+    PRIMARY KEY (`id`),
+
+    KEY `idx_notifications_receiver` (`receiver_id`),
+    KEY `idx_notifications_sender`   (`sender_id`),
+    KEY `idx_notifications_type`     (`type`),
+
+    CONSTRAINT `fk_notifications_receiver`
+    FOREIGN KEY (`receiver_id`)
+    REFERENCES `members` (`id`)
+    ON DELETE CASCADE,
+
+    CONSTRAINT `fk_notifications_sender`
+    FOREIGN KEY (`sender_id`)
+    REFERENCES `members` (`id`)
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
