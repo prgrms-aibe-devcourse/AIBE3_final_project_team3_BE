@@ -28,8 +28,8 @@ spring:
 
   ai:
     openai:
-      base-url: https://ollama.yhcho.com/ollama # Ollama의 경우 v1 경로까지 명시
-      api-key: sk-abfcd29251e443709c5ceaa2655e00fc # 로컬은 키가 필요 없지만, 라이브러리 검증 통과용으로 입력
+      base-url: https://ollama.yhcho.com/ollama
+      api-key: ${OPENAI_API_KEY} # 로컬은 키가 필요 없지만, 라이브러리 검증 통과용으로 입력
       chat:
         options:
           model: exaone3.5:2.4b
