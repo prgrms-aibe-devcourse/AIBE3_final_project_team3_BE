@@ -13,8 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
-import triplestar.mixchat.domain.chat.chat.entity.DirectChatRoom;
-import triplestar.mixchat.domain.chat.chat.entity.GroupChatRoom;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.DirectChatRoomRepository;
@@ -57,12 +55,20 @@ public class ChatMessageService {
         memberIdsToMarkRead.add(senderId); // 발신자도 포함
 
         // 2. Redis에서 구독자 목록 조회 및 수집
+        Set<Long> subscribedMembers = new HashSet<>();
         Set<String> subscribers = subscriberCacheService.getSubscribers(roomId);
         if (subscribers != null && !subscribers.isEmpty()) {
             for (String subscriberIdStr : subscribers) {
                 try {
                     Long subscriberId = Long.parseLong(subscriberIdStr);
-                    memberIdsToMarkRead.add(subscriberId); // Set이므로 발신자 중복 자동 제거
+
+                    // 발신자 제외한 구독자만 subscribedMembers에 추가 (unreadCount 계산용)
+                    if (!subscriberId.equals(senderId)) {
+                        subscribedMembers.add(subscriberId);
+                    }
+
+                    // 읽음 처리 대상에는 모두 추가 (Set이므로 중복 자동 제거)
+                    memberIdsToMarkRead.add(subscriberId);
                 } catch (NumberFormatException e) {
                     log.error("Redis에 잘못된 구독자 ID가 저장되어 있습니다: {}", subscriberIdStr);
                 }
@@ -76,9 +82,9 @@ public class ChatMessageService {
             );
         }
 
-        // 4. unreadCount 계산: 전체 멤버 수 - 읽음 처리된 사람 수(발신자 포함)
+        // 4. unreadCount 계산: 전체 멤버 수 - 1(발신자) - 구독 중인 사람 수
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
-        int unreadCount = allMembers.size() - memberIdsToMarkRead.size();
+        int unreadCount = allMembers.size() - 1 - subscribedMembers.size();
 
         // 5. 알림 이벤트 (구독 중이지 않은 사람들에게만)
         List<ChatMember> roomMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_IdNot(roomId, chatRoomType, senderId);
@@ -141,19 +147,16 @@ public class ChatMessageService {
     }
 
     // Sequence 생성 (비관적 락으로 동시성 제어)
+    // Dirty Checking으로 트랜잭션 종료 시 자동 저장되므로 save 불필요
     private Long generateSequence(Long roomId, ChatMessage.chatRoomType chatRoomType) {
-        if (chatRoomType == ChatMessage.chatRoomType.DIRECT) {
-            DirectChatRoom room = directChatRoomRepository.findByIdWithLock(roomId)
-                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다."));
-            Long seq = room.generateNextSequence();
-            directChatRoomRepository.save(room);
-            return seq;
-        } else if (chatRoomType == ChatMessage.chatRoomType.GROUP) {
-            GroupChatRoom room = groupChatRoomRepository.findByIdWithLock(roomId)
-                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다."));
-            Long seq = room.generateNextSequence(); // save 불필요
-            return seq;
-        }
-        throw new UnsupportedOperationException("지원하지 않는 채팅방 타입입니다.");
+        return switch (chatRoomType) {
+            case DIRECT -> directChatRoomRepository.findByIdWithLock(roomId)
+                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
+                    .generateNextSequence();
+            case GROUP -> groupChatRoomRepository.findByIdWithLock(roomId)
+                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
+                    .generateNextSequence();
+            default -> throw new UnsupportedOperationException("지원하지 않는 채팅방 타입입니다: " + chatRoomType);
+        };
     }
 }
