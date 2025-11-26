@@ -10,11 +10,13 @@ import triplestar.mixchat.domain.member.member.entity.Member;
 
 // 친구 관계 요청 검증은 FriendshipRequestService가 처리
 @Service
-@Transactional
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class FriendshipService {
 
     private final FriendshipRepository friendshipRepository;
+
+    public
 
     public boolean isFriends(Long memberId1, Long memberId2) {
         Long smallerId = Math.min(memberId1, memberId2);
@@ -23,6 +25,7 @@ public class FriendshipService {
         return friendshipRepository.existsBySmallerMember_IdAndLargerMember_Id(smallerId, largerId);
     }
 
+    @Transactional
     public void createFriendship(Member member1, Member member2) {
         Member smallerMember = member1.getId() < member2.getId() ? member1 : member2;
         Member largerMember = member1.getId() < member2.getId() ? member2 : member1;
@@ -31,6 +34,7 @@ public class FriendshipService {
         friendshipRepository.save(friendship);
     }
 
+    @Transactional
     public void deleteFriendship(Long id1, Long id2) {
         // memberId에 대한 유효성 검사는 친구관계 성립시 이미 처리되었으므로 생략
         Long smallerId = Math.min(id1, id2);
