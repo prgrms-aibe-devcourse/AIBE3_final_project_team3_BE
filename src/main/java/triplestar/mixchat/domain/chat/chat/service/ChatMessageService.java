@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
 import triplestar.mixchat.global.notifiaction.NotificationEvent;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ChatMessageService {
@@ -49,35 +51,44 @@ public class ChatMessageService {
         ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType);
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
+        // AI 채팅방은 unreadCount 및 구독자 관리 불필요
+        if (chatRoomType == ChatMessage.chatRoomType.AI) {
+            return MessageResp.from(savedMessage, senderNickname, 0);
+        }
+
         // 1. 발신자의 lastReadSequence 자동 업데이트
         chatMemberService.updateLastReadSequence(senderId, roomId, chatRoomType, sequence);
 
-        // 2. 현재 채팅방에 구독 중인 사람들 자동 읽음 처리
+        // 2. 현재 채팅방에 구독 중인 사람들 자동 읽음 처리 (Bulk Update로 성능 최적화)
         Set<Long> subscribedMembers = new java.util.HashSet<>();
-        if (chatRoomType != ChatMessage.chatRoomType.AI) {
-            Set<String> subscribers = subscriberCacheService.getSubscribers(roomId);
-            System.out.println("[UnreadCount] roomId=" + roomId + ", subscribers from Redis: " + subscribers);
-            if (subscribers != null && !subscribers.isEmpty()) {
-                for (String subscriberIdStr : subscribers) {
+        Set<String> subscribers = subscriberCacheService.getSubscribers(roomId);
+        if (subscribers != null && !subscribers.isEmpty()) {
+            Set<Long> subscriberIds = new java.util.HashSet<>();
+            for (String subscriberIdStr : subscribers) {
+                try {
                     Long subscriberId = Long.parseLong(subscriberIdStr);
                     if (!subscriberId.equals(senderId)) {
-                        chatMemberService.updateLastReadSequence(subscriberId, roomId, chatRoomType, sequence);
-                        subscribedMembers.add(subscriberId);
-                        System.out.println("[UnreadCount] Auto-read for subscriberId=" + subscriberId);
+                        subscriberIds.add(subscriberId);
                     }
+                } catch (NumberFormatException e) {
+                    log.error("Invalid subscriber ID in Redis: {}", subscriberIdStr);
                 }
+            }
+
+            // Bulk Update: n명의 개별 UPDATE 쿼리 대신 1개의 UPDATE 쿼리로 처리
+            if (!subscriberIds.isEmpty()) {
+                chatRoomMemberRepository.bulkUpdateLastReadSequence(
+                    roomId, chatRoomType, subscriberIds, sequence, java.time.LocalDateTime.now()
+                );
+                subscribedMembers.addAll(subscriberIds);
             }
         }
 
         // 3. unreadCount 계산: 전체 멤버 수 - 1(발신자) - 구독 중인 사람 수
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
         int unreadCount = allMembers.size() - 1 - subscribedMembers.size();
-        System.out.println("[UnreadCount] roomId=" + roomId + ", senderId=" + senderId +
-                           ", totalMembers=" + allMembers.size() +
-                           ", subscribedMembers=" + subscribedMembers.size() +
-                           ", unreadCount=" + unreadCount);
 
-        // 5. 알림 이벤트 (구독 중이지 않은 사람들에게만)
+        // 4. 알림 이벤트 (구독 중이지 않은 사람들에게만)
         List<ChatMember> roomMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_IdNot(roomId, chatRoomType, senderId);
         for (ChatMember receiver : roomMembers) {
             if (subscriberCacheService.isSubscribed(roomId, receiver.getMember().getId())) {
@@ -117,7 +128,18 @@ public class ChatMessageService {
         Map<Long, String> senderNames = memberRepository.findAllById(senderIds).stream()
                 .collect(Collectors.toMap(Member::getId, Member::getNickname));
 
+        // AI 채팅방은 unreadCount 계산 불필요
+        if (chatRoomType == ChatMessage.chatRoomType.AI) {
+            return messages.stream()
+                    .map(message -> {
+                        String senderName = senderNames.getOrDefault(message.getSenderId(), "Unknown");
+                        return MessageResp.from(message, senderName, 0);
+                    })
+                    .collect(Collectors.toList());
+        }
+
         // 채팅방의 모든 멤버 조회 (읽음 상태 확인용)
+        // todo: 부하 심해지면 프론트에서 연산 고려? 하지만 신뢰성이 낮을듯
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
 
         return messages.stream()

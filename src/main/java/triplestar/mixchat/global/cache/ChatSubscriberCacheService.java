@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.util.Set;
 
 // 현재 채팅방에 WebSocket으로 구독 중인 사용자 관리
+// todo: redis를 회원 구조로 사용하는데, 세션 구조로 사용해야 한 유저가 동시에 여러 기기에서 접속해도 문제 없다고 함
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -25,18 +26,14 @@ public class ChatSubscriberCacheService {
     public void addSubscriber(Long roomId, Long memberId) {
         String key = getKey(roomId);
         redisTemplate.opsForSet().add(key, String.valueOf(memberId));
-        Set<String> currentSubscribers = redisTemplate.opsForSet().members(key);
-        log.info("[Redis] Added subscriber: roomId={}, memberId={}, totalSubscribers={}, subscribers={}",
-                roomId, memberId, currentSubscribers != null ? currentSubscribers.size() : 0, currentSubscribers);
+        log.debug("Added subscriber: roomId={}, memberId={}", roomId, memberId);
     }
 
     // 채팅방 구독 해제
     public void removeSubscriber(Long roomId, Long memberId) {
         String key = getKey(roomId);
         Long removed = redisTemplate.opsForSet().remove(key, String.valueOf(memberId));
-        Set<String> currentSubscribers = redisTemplate.opsForSet().members(key);
-        log.info("[Redis] Removed subscriber: roomId={}, memberId={}, removed={}, remainingSubscribers={}, subscribers={}",
-                roomId, memberId, removed, currentSubscribers != null ? currentSubscribers.size() : 0, currentSubscribers);
+        log.debug("Removed subscriber: roomId={}, memberId={}, removed={}", roomId, memberId, removed);
     }
 
     // 현재 구독 중인지 확인
