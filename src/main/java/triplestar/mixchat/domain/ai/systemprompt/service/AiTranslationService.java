@@ -1,10 +1,13 @@
 package triplestar.mixchat.domain.ai.systemprompt.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.stereotype.Service;
+import triplestar.mixchat.domain.ai.systemprompt.constant.PromptKey;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiTranslationReq;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiTranslationResp;
+import triplestar.mixchat.domain.ai.systemprompt.entity.SystemPrompt;
 import triplestar.mixchat.domain.ai.systemprompt.repository.SystemPromptRepository;
 
 @Service
@@ -14,8 +17,16 @@ public class AiTranslationService {
     private final OpenAiChatModel chatModel;
     private final SystemPromptRepository systemPromptRepository;
 
+    private SystemPrompt getPromptByKey(PromptKey key) {
+        return systemPromptRepository.findByPromptKey(key)
+                .orElseThrow(() -> new EntityNotFoundException("해당 이름의 프롬프트가 존재하지 않습니다." + key));
+    }
+
+
     public AiTranslationResp sendMessage(AiTranslationReq req) {
-        // 임시 프롬프트
+        // getPromptByKey(PromptKey.AI_TRANSLATION_PROMPT);
+        // TODO : DB에 초기 프롬프트 데이터를 넣고 프롬프트 불러와 조합하는 로직으로 변경 필요
+
         String systemPrompt = """
                 당신은 Mixchat의 영어 튜터입니다.
                 사용자가 입력한 문장을 분석하여 번역과 태그, 교정, 설명을 포함하여 JSON 형식으로 응답합니다.:

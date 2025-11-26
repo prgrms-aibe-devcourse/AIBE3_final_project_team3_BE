@@ -24,6 +24,7 @@ public class SystemPrompt extends BaseEntityNoModified {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    // AI 프롬프트는 버전 관리가 필요한 경우가 많아 버전 필드 추가
     @Column(nullable = false)
     private Integer version;
 
