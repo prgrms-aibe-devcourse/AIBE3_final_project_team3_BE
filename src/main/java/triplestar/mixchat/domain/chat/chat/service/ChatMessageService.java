@@ -1,5 +1,6 @@
 package triplestar.mixchat.domain.chat.chat.service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -52,24 +53,16 @@ public class ChatMessageService {
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
         // 1. 발신자 + 구독자 모두를 하나의 Set으로 수집 (읽음 처리 대상)
-        Set<Long> memberIdsToMarkRead = new java.util.HashSet<>();
+        Set<Long> memberIdsToMarkRead = new HashSet<>();
         memberIdsToMarkRead.add(senderId); // 발신자도 포함
 
         // 2. Redis에서 구독자 목록 조회 및 수집
-        Set<Long> subscribedMembers = new java.util.HashSet<>();
         Set<String> subscribers = subscriberCacheService.getSubscribers(roomId);
         if (subscribers != null && !subscribers.isEmpty()) {
             for (String subscriberIdStr : subscribers) {
                 try {
                     Long subscriberId = Long.parseLong(subscriberIdStr);
-
-                    // 발신자 제외한 구독자만 subscribedMembers에 추가 (unreadCount 계산용)
-                    if (!subscriberId.equals(senderId)) {
-                        subscribedMembers.add(subscriberId);
-                    }
-
-                    // 읽음 처리 대상에는 모두 추가 (Set이므로 중복 자동 제거)
-                    memberIdsToMarkRead.add(subscriberId);
+                    memberIdsToMarkRead.add(subscriberId); // Set이므로 발신자 중복 자동 제거
                 } catch (NumberFormatException e) {
                     log.error("Redis에 잘못된 구독자 ID가 저장되어 있습니다: {}", subscriberIdStr);
                 }
@@ -83,9 +76,9 @@ public class ChatMessageService {
             );
         }
 
-        // 4. unreadCount 계산: 전체 멤버 수 - 1(발신자) - 구독 중인 사람 수
+        // 4. unreadCount 계산: 전체 멤버 수 - 읽음 처리된 사람 수(발신자 포함)
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
-        int unreadCount = allMembers.size() - 1 - subscribedMembers.size();
+        int unreadCount = allMembers.size() - memberIdsToMarkRead.size();
 
         // 5. 알림 이벤트 (구독 중이지 않은 사람들에게만)
         List<ChatMember> roomMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_IdNot(roomId, chatRoomType, senderId);

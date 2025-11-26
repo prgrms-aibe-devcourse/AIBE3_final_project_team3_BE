@@ -95,18 +95,17 @@ public class ChatMemberService {
         return null;
     }
 
-    // 현재 채팅방의 최신 sequence 조회
+    // 현재 채팅방의 최신 sequence 조회 (DIRECT, GROUP만 사용)
     private Long getCurrentSequence(Long roomId, ChatMessage.chatRoomType chatRoomType) {
-        if (chatRoomType == ChatMessage.chatRoomType.DIRECT) {
-            return directChatRoomRepository.findById(roomId)
-                    .map(room -> room.getCurrentSequence())
-                    .orElse(0L);
-        } else if (chatRoomType == ChatMessage.chatRoomType.GROUP) {
-            return groupChatRoomRepository.findById(roomId)
-                    .map(room -> room.getCurrentSequence())
-                    .orElse(0L);
-        }
-        return 0L;
+        return switch (chatRoomType) {
+            case DIRECT -> directChatRoomRepository.findById(roomId)
+                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
+                    .getCurrentSequence();
+            case GROUP -> groupChatRoomRepository.findById(roomId)
+                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
+                    .getCurrentSequence();
+            default -> throw new UnsupportedOperationException("지원하지 않는 채팅방 타입입니다: " + chatRoomType);
+        };
     }
 
     // 대화방 나가기
