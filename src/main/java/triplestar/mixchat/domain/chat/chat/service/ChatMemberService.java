@@ -70,7 +70,7 @@ public class ChatMemberService {
 
     // 채팅방 입장 시 자동 읽음 처리 (해당 방의 최신 sequence까지 읽음 처리)
     @Transactional
-    public void markAsReadOnEnter(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType) {
+    public Long markAsReadOnEnter(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType) {
         ChatMember member = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_Id(
                 roomId, chatRoomType, memberId
         ).orElseThrow(() -> new SecurityException("해당 대화방에 속해있지 않습니다."));
@@ -80,7 +80,9 @@ public class ChatMemberService {
             member.updateLastReadSequence(currentSequence);
             log.debug("Marked as read on enter: memberId={}, roomId={}, sequence={}",
                     memberId, roomId, currentSequence);
+            return currentSequence;
         }
+        return 0L;
     }
 
     // 현재 채팅방의 최신 sequence 조회

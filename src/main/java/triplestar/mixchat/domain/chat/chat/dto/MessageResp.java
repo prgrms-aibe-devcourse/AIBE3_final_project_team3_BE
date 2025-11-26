@@ -34,6 +34,10 @@ public record MessageResp(
         @Schema(description = "메시지 타입", example = "TALK", requiredMode = REQUIRED)
         ChatMessage.MessageType messageType,
 
+        @NotNull
+        @Schema(description = "메시지 순서 번호", example = "5", requiredMode = REQUIRED)
+        Long sequence,
+
         @Schema(description = "읽지 않은 사람 수", example = "3")
         Integer unreadCount
 ) {
@@ -45,6 +49,7 @@ public record MessageResp(
                 entity.getContent(),
                 entity.getCreatedAt(),
                 entity.getMessageType(),
+                entity.getSequence(),
                 null
         );
     }
@@ -57,6 +62,7 @@ public record MessageResp(
                 entity.getContent(),
                 entity.getCreatedAt(),
                 entity.getMessageType(),
+                entity.getSequence(),
                 unreadCount
         );
     }

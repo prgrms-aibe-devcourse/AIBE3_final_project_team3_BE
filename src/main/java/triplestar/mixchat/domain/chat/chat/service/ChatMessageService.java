@@ -49,23 +49,35 @@ public class ChatMessageService {
         ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType);
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
-        // 발신자의 lastReadSequence 자동 업데이트
+        // 1. 발신자의 lastReadSequence 자동 업데이트
         chatMemberService.updateLastReadSequence(senderId, roomId, chatRoomType, sequence);
 
-        // 현재 채팅방에 구독 중인 사람들 자동 읽음 처리
+        // 2. 현재 채팅방에 구독 중인 사람들 자동 읽음 처리
+        Set<Long> subscribedMembers = new java.util.HashSet<>();
         if (chatRoomType != ChatMessage.chatRoomType.AI) {
             Set<String> subscribers = subscriberCacheService.getSubscribers(roomId);
+            System.out.println("[UnreadCount] roomId=" + roomId + ", subscribers from Redis: " + subscribers);
             if (subscribers != null && !subscribers.isEmpty()) {
                 for (String subscriberIdStr : subscribers) {
                     Long subscriberId = Long.parseLong(subscriberIdStr);
                     if (!subscriberId.equals(senderId)) {
                         chatMemberService.updateLastReadSequence(subscriberId, roomId, chatRoomType, sequence);
+                        subscribedMembers.add(subscriberId);
+                        System.out.println("[UnreadCount] Auto-read for subscriberId=" + subscriberId);
                     }
                 }
             }
         }
 
-        // 알림 이벤트 (구독 중이지 않은 사람들에게만)
+        // 3. unreadCount 계산: 전체 멤버 수 - 1(발신자) - 구독 중인 사람 수
+        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
+        int unreadCount = allMembers.size() - 1 - subscribedMembers.size();
+        System.out.println("[UnreadCount] roomId=" + roomId + ", senderId=" + senderId +
+                           ", totalMembers=" + allMembers.size() +
+                           ", subscribedMembers=" + subscribedMembers.size() +
+                           ", unreadCount=" + unreadCount);
+
+        // 5. 알림 이벤트 (구독 중이지 않은 사람들에게만)
         List<ChatMember> roomMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_IdNot(roomId, chatRoomType, senderId);
         for (ChatMember receiver : roomMembers) {
             if (subscriberCacheService.isSubscribed(roomId, receiver.getMember().getId())) {
@@ -83,14 +95,6 @@ public class ChatMessageService {
             }
         }
 
-        // unreadCount 계산 (lastReadSequence 기준으로 일관성 유지)
-        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
-        int unreadCount = (int) allMembers.stream()
-                .filter(member -> !member.getMember().getId().equals(senderId))
-                .filter(member -> member.getLastReadSequence() == null ||
-                                member.getLastReadSequence() < sequence)
-                .count();
-
         return MessageResp.from(savedMessage, senderNickname, unreadCount);
     }
 
@@ -102,7 +106,7 @@ public class ChatMessageService {
         return saveMessage(roomId, senderId, senderNickname, fileUrl, messageType, chatRoomType);
     }
 
-    public List<MessageResp> getMessagesWithSenderInfo(Long roomId, ChatMessage.chatRoomType chatRoomType) {
+    public List<MessageResp> getMessagesWithSenderInfo(Long roomId, ChatMessage.chatRoomType chatRoomType, Long requesterId) {
         List<ChatMessage> messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeOrderByCreatedAtAsc(roomId, chatRoomType);
 
         // 발신자 이름 조회
@@ -120,12 +124,17 @@ public class ChatMessageService {
                 .map(message -> {
                     String senderName = senderNames.getOrDefault(message.getSenderId(), "Unknown");
 
-                    // 읽지 않은 사람 수 계산 (발신자 제외)
-                    int unreadCount = (int) allMembers.stream()
-                            .filter(member -> !member.getMember().getId().equals(message.getSenderId()))
-                            .filter(member -> member.getLastReadSequence() == null ||
-                                            member.getLastReadSequence() < message.getSequence())
-                            .count();
+                    // unreadCount는 본인이 보낸 메시지에만 의미있음
+                    int unreadCount = 0;
+                    if (message.getSenderId().equals(requesterId)) {
+                        // 본인이 보낸 메시지: 다른 사람 중 안 읽은 사람 수 계산
+                        unreadCount = (int) allMembers.stream()
+                                .filter(member -> !member.getMember().getId().equals(message.getSenderId()))
+                                .filter(member -> member.getLastReadSequence() == null ||
+                                                member.getLastReadSequence() < message.getSequence())
+                                .count();
+                    }
+                    // 다른 사람이 보낸 메시지: unreadCount는 항상 0 (본인에게는 의미없음)
 
                     return MessageResp.from(message, senderName, unreadCount);
                 })

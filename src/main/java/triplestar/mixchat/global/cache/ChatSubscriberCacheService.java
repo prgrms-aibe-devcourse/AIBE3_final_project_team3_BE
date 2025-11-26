@@ -25,14 +25,18 @@ public class ChatSubscriberCacheService {
     public void addSubscriber(Long roomId, Long memberId) {
         String key = getKey(roomId);
         redisTemplate.opsForSet().add(key, String.valueOf(memberId));
-        log.debug("Added subscriber: roomId={}, memberId={}", roomId, memberId);
+        Set<String> currentSubscribers = redisTemplate.opsForSet().members(key);
+        log.info("[Redis] Added subscriber: roomId={}, memberId={}, totalSubscribers={}, subscribers={}",
+                roomId, memberId, currentSubscribers != null ? currentSubscribers.size() : 0, currentSubscribers);
     }
 
     // 채팅방 구독 해제
     public void removeSubscriber(Long roomId, Long memberId) {
         String key = getKey(roomId);
-        redisTemplate.opsForSet().remove(key, String.valueOf(memberId));
-        log.debug("Removed subscriber: roomId={}, memberId={}", roomId, memberId);
+        Long removed = redisTemplate.opsForSet().remove(key, String.valueOf(memberId));
+        Set<String> currentSubscribers = redisTemplate.opsForSet().members(key);
+        log.info("[Redis] Removed subscriber: roomId={}, memberId={}, removed={}, remainingSubscribers={}, subscribers={}",
+                roomId, memberId, removed, currentSubscribers != null ? currentSubscribers.size() : 0, currentSubscribers);
     }
 
     // 현재 구독 중인지 확인

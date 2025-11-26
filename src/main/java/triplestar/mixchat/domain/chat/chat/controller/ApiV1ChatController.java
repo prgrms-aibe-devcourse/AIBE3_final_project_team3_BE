@@ -145,9 +145,10 @@ public class ApiV1ChatController implements ApiChatController {
     @GetMapping("/rooms/{roomId}/messages")
     public CustomResponse<ChatRoomDataResp> getMessages(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.chatRoomType chatRoomType
+            @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        List<MessageResp> messageResps = chatMessageService.getMessagesWithSenderInfo(roomId, chatRoomType);
+        List<MessageResp> messageResps = chatMessageService.getMessagesWithSenderInfo(roomId, chatRoomType, currentUser.getId());
         ChatRoomDataResp responseData = new ChatRoomDataResp(chatRoomType, messageResps);
         return CustomResponse.ok("메시지 목록과 대화 타입 조회에 성공하였습니다.", responseData);
     }
