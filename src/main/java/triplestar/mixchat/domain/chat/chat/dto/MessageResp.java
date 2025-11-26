@@ -54,7 +54,7 @@ public record MessageResp(
         );
     }
 
-    public static MessageResp from(ChatMessage entity, String senderName, int unreadCount) {
+    public static MessageResp withUnreadCount(ChatMessage entity, String senderName, int unreadCount) {
         return new MessageResp(
                 entity.getId(),
                 entity.getSenderId(),

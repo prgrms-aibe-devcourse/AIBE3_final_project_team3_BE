@@ -50,6 +50,6 @@ public class ApiV1ChatSocketController {
 
         String destination = "/topic/" + messageReq.chatRoomType().name().toLowerCase() + "/rooms/" + messageReq.roomId();
         messagingTemplate.convertAndSend(destination, messageResp);
-        log.debug("Message sent to room {}: {}", messageReq.roomId(), messageResp.content());
+        log.debug("채팅방 {}에 메시지 전송 완료: {}", messageReq.roomId(), messageResp.content());
     }
 }

@@ -54,7 +54,7 @@ public class ChatMemberService {
         }
 
         // 3. DB에 존재하면, 그 결과를 캐시에 저장 (다음 조회를 위해)
-        log.debug("DB check passed for user {} in room {} (type {}). Caching the result.", memberId, roomId, chatRoomType);
+        log.debug("사용자(ID:{})의 대화방(ID:{}, 타입:{}) 멤버십 DB 확인 완료. 캐시에 저장합니다.", memberId, roomId, chatRoomType);
         chatAuthCacheService.addMember(roomId, memberId);
     }
 
@@ -82,13 +82,13 @@ public class ChatMemberService {
 
             // 이미 모든 메시지를 읽은 상태면 null 반환 (READ 이벤트 브로드캐스트 하지 않음)
             if (lastReadSequence != null && lastReadSequence >= currentSequence) {
-                log.debug("Already read all messages: memberId={}, roomId={}, lastRead={}, current={}",
+                log.debug("이미 모든 메시지를 읽은 상태입니다: memberId={}, roomId={}, lastRead={}, current={}",
                         memberId, roomId, lastReadSequence, currentSequence);
                 return null;
             }
 
             member.updateLastReadSequence(currentSequence);
-            log.debug("Marked as read on enter: memberId={}, roomId={}, sequence={}, previous={}",
+            log.debug("채팅방 입장 시 읽음 처리 완료: memberId={}, roomId={}, sequence={}, previous={}",
                     memberId, roomId, currentSequence, lastReadSequence);
             return currentSequence;
         }

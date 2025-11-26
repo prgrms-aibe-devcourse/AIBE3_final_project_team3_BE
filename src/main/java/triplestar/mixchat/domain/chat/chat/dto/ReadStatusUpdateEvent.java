@@ -10,14 +10,10 @@ public record ReadStatusUpdateEvent(
         Long readerId,
 
         @NotNull
-        @Schema(description = "읽은 메시지의 Sequence", example = "5")
-        Long readSequence,
-
-        @NotNull
-        @Schema(description = "이벤트 타입", example = "READ")
-        String eventType
+        @Schema(description = "읽은 사람 수 계산을 위해 유저가 마지막으로 읽은 LastReadSequence와 지속적으로 증가하는 Sequence를 두어 비교하는 데에 사용", example = "5")
+        Long readSequence
 ) {
     public static ReadStatusUpdateEvent of(Long readerId, Long readSequence) {
-        return new ReadStatusUpdateEvent(readerId, readSequence, "READ");
+        return new ReadStatusUpdateEvent(readerId, readSequence);
     }
 }

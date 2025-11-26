@@ -51,11 +51,6 @@ public class ChatMessageService {
         ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType);
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
-        // AI 채팅방은 unreadCount 및 구독자 관리 불필요
-        if (chatRoomType == ChatMessage.chatRoomType.AI) {
-            return MessageResp.from(savedMessage, senderNickname, 0);
-        }
-
         // 1. 발신자 + 구독자 모두를 하나의 Set으로 수집 (읽음 처리 대상)
         Set<Long> memberIdsToMarkRead = new java.util.HashSet<>();
         memberIdsToMarkRead.add(senderId); // 발신자도 포함
@@ -76,7 +71,7 @@ public class ChatMessageService {
                     // 읽음 처리 대상에는 모두 추가 (Set이므로 중복 자동 제거)
                     memberIdsToMarkRead.add(subscriberId);
                 } catch (NumberFormatException e) {
-                    log.error("Invalid subscriber ID in Redis: {}", subscriberIdStr);
+                    log.error("Redis에 잘못된 구독자 ID가 저장되어 있습니다: {}", subscriberIdStr);
                 }
             }
         }
@@ -110,7 +105,7 @@ public class ChatMessageService {
             }
         }
 
-        return MessageResp.from(savedMessage, senderNickname, unreadCount);
+        return MessageResp.withUnreadCount(savedMessage, senderNickname, unreadCount);
     }
 
     @Transactional
@@ -132,16 +127,6 @@ public class ChatMessageService {
         Map<Long, String> senderNames = memberRepository.findAllById(senderIds).stream()
                 .collect(Collectors.toMap(Member::getId, Member::getNickname));
 
-        // AI 채팅방은 unreadCount 계산 불필요
-        if (chatRoomType == ChatMessage.chatRoomType.AI) {
-            return messages.stream()
-                    .map(message -> {
-                        String senderName = senderNames.getOrDefault(message.getSenderId(), "Unknown");
-                        return MessageResp.from(message, senderName, 0);
-                    })
-                    .collect(Collectors.toList());
-        }
-
         // 채팅방의 모든 멤버 조회 (읽음 상태 확인용)
         // todo: 부하 심해지면 프론트에서 연산 고려? 하지만 신뢰성이 낮을듯
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
@@ -157,7 +142,7 @@ public class ChatMessageService {
                                             member.getLastReadSequence() < message.getSequence())
                             .count();
 
-                    return MessageResp.from(message, senderName, unreadCount);
+                    return MessageResp.withUnreadCount(message, senderName, unreadCount);
                 })
                 .collect(Collectors.toList());
     }

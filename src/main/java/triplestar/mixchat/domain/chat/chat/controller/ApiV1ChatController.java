@@ -149,10 +149,7 @@ public class ApiV1ChatController implements ApiChatController {
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         // 메시지 조회 전에 읽음 처리 (채팅방 입장 시 자동 읽음)
-        // AI 채팅방이 아닌 경우에만 읽음 처리
-        if (chatRoomType != ChatMessage.chatRoomType.AI) {
-            chatMemberService.markAsReadOnEnter(currentUser.getId(), roomId, chatRoomType);
-        }
+        chatMemberService.markAsReadOnEnter(currentUser.getId(), roomId, chatRoomType);
 
         List<MessageResp> messageResps = chatMessageService.getMessagesWithSenderInfo(roomId, chatRoomType, currentUser.getId());
         ChatRoomDataResp responseData = new ChatRoomDataResp(chatRoomType, messageResps);
