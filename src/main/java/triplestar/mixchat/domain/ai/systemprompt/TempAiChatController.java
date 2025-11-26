@@ -2,13 +2,12 @@ package triplestar.mixchat.domain.ai.systemprompt;
 
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import triplestar.mixchat.domain.ai.systemprompt.dto.AiTranslationReq;
-import triplestar.mixchat.domain.ai.systemprompt.dto.AiTranslationResp;
+import triplestar.mixchat.domain.ai.systemprompt.dto.TempAiReq;
+import triplestar.mixchat.domain.ai.systemprompt.dto.TempAiResp;
 import triplestar.mixchat.domain.ai.systemprompt.service.AiTranslationService;
 import triplestar.mixchat.global.response.CustomResponse;
 
@@ -21,8 +20,8 @@ public class TempAiChatController {
     private final AiTranslationService aiTranslationService;
 
     @PostMapping(value = "/temp/chat")
-    public CustomResponse<AiTranslationResp> chat (@RequestBody AiTranslationReq req) {
-        AiTranslationResp resp = aiTranslationService.sendMessage(req);
+    public CustomResponse<TempAiResp> chat (@RequestBody TempAiReq req) {
+        TempAiResp resp = aiTranslationService.sendMessage(req);
         return CustomResponse.ok("AI chat response placeholder", resp);
     }
 }

@@ -1,6 +1,6 @@
 package triplestar.mixchat.domain.ai.systemprompt.dto;
 
-public record AiTranslationReq(
+public record TempAiResp(
         String message
 ){
 }
