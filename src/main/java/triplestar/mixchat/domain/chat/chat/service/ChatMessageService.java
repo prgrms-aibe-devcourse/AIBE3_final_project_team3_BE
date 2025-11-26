@@ -124,17 +124,12 @@ public class ChatMessageService {
                 .map(message -> {
                     String senderName = senderNames.getOrDefault(message.getSenderId(), "Unknown");
 
-                    // unreadCount는 본인이 보낸 메시지에만 의미있음
-                    int unreadCount = 0;
-                    if (message.getSenderId().equals(requesterId)) {
-                        // 본인이 보낸 메시지: 다른 사람 중 안 읽은 사람 수 계산
-                        unreadCount = (int) allMembers.stream()
-                                .filter(member -> !member.getMember().getId().equals(message.getSenderId()))
-                                .filter(member -> member.getLastReadSequence() == null ||
-                                                member.getLastReadSequence() < message.getSequence())
-                                .count();
-                    }
-                    // 다른 사람이 보낸 메시지: unreadCount는 항상 0 (본인에게는 의미없음)
+                    // unreadCount 계산: 발신자를 제외한 멤버 중 안 읽은 사람 수
+                    int unreadCount = (int) allMembers.stream()
+                            .filter(member -> !member.getMember().getId().equals(message.getSenderId()))
+                            .filter(member -> member.getLastReadSequence() == null ||
+                                            member.getLastReadSequence() < message.getSequence())
+                            .count();
 
                     return MessageResp.from(message, senderName, unreadCount);
                 })

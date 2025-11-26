@@ -69,6 +69,7 @@ public class ChatMemberService {
     }
 
     // 채팅방 입장 시 자동 읽음 처리 (해당 방의 최신 sequence까지 읽음 처리)
+    // 반환값: 실제로 새로 읽은 메시지가 있으면 currentSequence, 없으면 null
     @Transactional
     public Long markAsReadOnEnter(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType) {
         ChatMember member = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_Id(
@@ -77,12 +78,21 @@ public class ChatMemberService {
 
         Long currentSequence = getCurrentSequence(roomId, chatRoomType);
         if (currentSequence != null && currentSequence > 0) {
+            Long lastReadSequence = member.getLastReadSequence();
+
+            // 이미 모든 메시지를 읽은 상태면 null 반환 (READ 이벤트 브로드캐스트 하지 않음)
+            if (lastReadSequence != null && lastReadSequence >= currentSequence) {
+                log.debug("Already read all messages: memberId={}, roomId={}, lastRead={}, current={}",
+                        memberId, roomId, lastReadSequence, currentSequence);
+                return null;
+            }
+
             member.updateLastReadSequence(currentSequence);
-            log.debug("Marked as read on enter: memberId={}, roomId={}, sequence={}",
-                    memberId, roomId, currentSequence);
+            log.debug("Marked as read on enter: memberId={}, roomId={}, sequence={}, previous={}",
+                    memberId, roomId, currentSequence, lastReadSequence);
             return currentSequence;
         }
-        return 0L;
+        return null;
     }
 
     // 현재 채팅방의 최신 sequence 조회

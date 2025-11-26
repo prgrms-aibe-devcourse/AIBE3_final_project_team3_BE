@@ -143,13 +143,16 @@ public class WebSocketEventListener {
         // 채팅방 입장 시 해당 방의 모든 메시지를 읽음 처리
         Long readSequence = chatMemberService.markAsReadOnEnter(memberId, roomId, chatRoomType);
 
-        // 읽음 이벤트를 채팅방의 모든 구독자에게 브로드캐스트
+        // 실제로 새로 읽은 메시지가 있을 때만 읽음 이벤트를 브로드캐스트
+        // readSequence가 null이면 이미 모든 메시지를 읽은 상태 (새로고침 등)
         if (readSequence != null && readSequence > 0) {
             ReadStatusUpdateEvent readEvent = ReadStatusUpdateEvent.of(memberId, readSequence);
             String broadcastDestination = "/topic/" + typeString.toLowerCase() + "/rooms/" + roomId;
             messagingTemplate.convertAndSend(broadcastDestination, readEvent);
             log.info("Broadcasted read event: memberId={}, roomId={}, readSequence={}",
                     memberId, roomId, readSequence);
+        } else {
+            log.debug("No new messages to mark as read: memberId={}, roomId={}", memberId, roomId);
         }
 
         log.info("User subscribed and marked as read: memberId={}, roomId={}, type={}, sessionId={}",
