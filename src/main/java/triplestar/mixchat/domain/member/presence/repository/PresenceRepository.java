@@ -73,4 +73,8 @@ public class PresenceRepository {
 
         redisTemplate.opsForZSet().removeRangeByScore(key, 0, threshold);
     }
+
+    public void remove(Long memberId) {
+        redisTemplate.opsForZSet().remove(key, memberId.toString());
+    }
 }

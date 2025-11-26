@@ -25,6 +25,10 @@ public class PresenceService {
         return presenceRepository.getOnlineMemberIds(offset, size);
     }
 
+    public void disconnect(Long memberId) {
+        presenceRepository.remove(memberId);
+    }
+
     @Scheduled(fixedRateString = "${presence.scheduled.cleanup-rate-ms}")
     public void removeExpiredEntries() {
         presenceRepository.cleanupExpired();
