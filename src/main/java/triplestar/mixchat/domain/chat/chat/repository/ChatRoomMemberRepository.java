@@ -77,6 +77,7 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long
         WHERE cm.chatRoomId = :roomId
         AND cm.chatRoomType = :chatRoomType
         AND cm.member.id IN :memberIds
+        AND (cm.lastReadSequence IS NULL OR cm.lastReadSequence < :sequence)
         """)
     void bulkUpdateLastReadSequence(
         @Param("roomId") Long roomId,

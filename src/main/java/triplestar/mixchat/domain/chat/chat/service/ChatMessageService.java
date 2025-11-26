@@ -56,39 +56,43 @@ public class ChatMessageService {
             return MessageResp.from(savedMessage, senderNickname, 0);
         }
 
-        // 1. 발신자의 lastReadSequence 자동 업데이트
-        chatMemberService.updateLastReadSequence(senderId, roomId, chatRoomType, sequence);
+        // 1. 발신자 + 구독자 모두를 하나의 Set으로 수집 (읽음 처리 대상)
+        Set<Long> memberIdsToMarkRead = new java.util.HashSet<>();
+        memberIdsToMarkRead.add(senderId); // 발신자도 포함
 
-        // 2. 현재 채팅방에 구독 중인 사람들 자동 읽음 처리 (Bulk Update로 성능 최적화)
+        // 2. Redis에서 구독자 목록 조회 및 수집
         Set<Long> subscribedMembers = new java.util.HashSet<>();
         Set<String> subscribers = subscriberCacheService.getSubscribers(roomId);
         if (subscribers != null && !subscribers.isEmpty()) {
-            Set<Long> subscriberIds = new java.util.HashSet<>();
             for (String subscriberIdStr : subscribers) {
                 try {
                     Long subscriberId = Long.parseLong(subscriberIdStr);
+
+                    // 발신자 제외한 구독자만 subscribedMembers에 추가 (unreadCount 계산용)
                     if (!subscriberId.equals(senderId)) {
-                        subscriberIds.add(subscriberId);
+                        subscribedMembers.add(subscriberId);
                     }
+
+                    // 읽음 처리 대상에는 모두 추가 (Set이므로 중복 자동 제거)
+                    memberIdsToMarkRead.add(subscriberId);
                 } catch (NumberFormatException e) {
                     log.error("Invalid subscriber ID in Redis: {}", subscriberIdStr);
                 }
             }
-
-            // Bulk Update: n명의 개별 UPDATE 쿼리 대신 1개의 UPDATE 쿼리로 처리
-            if (!subscriberIds.isEmpty()) {
-                chatRoomMemberRepository.bulkUpdateLastReadSequence(
-                    roomId, chatRoomType, subscriberIds, sequence, java.time.LocalDateTime.now()
-                );
-                subscribedMembers.addAll(subscriberIds);
-            }
         }
 
-        // 3. unreadCount 계산: 전체 멤버 수 - 1(발신자) - 구독 중인 사람 수
+        // 3. Bulk Update: 발신자 + 구독자 모두 한 번에 처리 (쿼리 통합)
+        if (!memberIdsToMarkRead.isEmpty()) {
+            chatRoomMemberRepository.bulkUpdateLastReadSequence(
+                roomId, chatRoomType, memberIdsToMarkRead, sequence, java.time.LocalDateTime.now()
+            );
+        }
+
+        // 4. unreadCount 계산: 전체 멤버 수 - 1(발신자) - 구독 중인 사람 수
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
         int unreadCount = allMembers.size() - 1 - subscribedMembers.size();
 
-        // 4. 알림 이벤트 (구독 중이지 않은 사람들에게만)
+        // 5. 알림 이벤트 (구독 중이지 않은 사람들에게만)
         List<ChatMember> roomMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_IdNot(roomId, chatRoomType, senderId);
         for (ChatMember receiver : roomMembers) {
             if (subscriberCacheService.isSubscribed(roomId, receiver.getMember().getId())) {
@@ -169,8 +173,7 @@ public class ChatMessageService {
         } else if (chatRoomType == ChatMessage.chatRoomType.GROUP) {
             GroupChatRoom room = groupChatRoomRepository.findByIdWithLock(roomId)
                     .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다."));
-            Long seq = room.generateNextSequence();
-            groupChatRoomRepository.save(room);
+            Long seq = room.generateNextSequence(); // save 불필요
             return seq;
         }
         throw new UnsupportedOperationException("지원하지 않는 채팅방 타입입니다.");

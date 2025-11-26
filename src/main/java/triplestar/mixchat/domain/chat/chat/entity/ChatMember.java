@@ -74,7 +74,7 @@ public class ChatMember extends BaseEntity {
         this.chatNotificationSetting = ChatNotificationSetting.ALWAYS;
     }
 
-    // 읽은 메시지 sequence 업데이트 (뒤로 가지 않기 가드)
+    // 읽은 메시지 sequence 업데이트 (뒤로 가지 않기 가드, 데이터 정합성 보장)
     public void updateLastReadSequence(Long sequence) {
         if (sequence == null) {
             return;

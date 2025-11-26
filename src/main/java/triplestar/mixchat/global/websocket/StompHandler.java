@@ -125,12 +125,7 @@ public class StompHandler implements ExecutorChannelInterceptor {
             throw new IllegalArgumentException("구독 목적지가 없습니다.");
         }
 
-        // TODO : subsrbie 임시 허용중!
-        if (true) {
-            log.info("SUBSCRIBE (임시 허용): memberId={} destination={}", userDetails.getId(), destination);
-            return;
-        }
-
+        // 채팅방 구독 시 멤버십 검증
         Matcher matcher = ROOM_DESTINATION_PATTERN.matcher(destination);
         if (matcher.matches()) {
             String typeString = matcher.group(1).toUpperCase();
@@ -138,20 +133,19 @@ public class StompHandler implements ExecutorChannelInterceptor {
             ChatMessage.chatRoomType chatRoomType =
                     ChatMessage.chatRoomType.valueOf(typeString);
 
+            // 멤버십 검증 (캐시 사용으로 성능 최적화)
             chatMemberService.verifyUserIsMemberOfRoom(
                     userDetails.getId(), roomId, chatRoomType);
-            log.info(
-                    "SUBSCRIBE (Room): memberId={} destination={}", userDetails.getId(), destination);
+            log.info("SUBSCRIBE (Room): memberId={} roomId={} type={} destination={}",
+                    userDetails.getId(), roomId, chatRoomType, destination);
             return;
         }
 
         // 사용자별 목적지 구독 확인 (표준 방식)
         // /user/ 로 시작하는 모든 구독은 스프링이 현재 사용자의 세션에만 연결해주므로 안전함.
         if (destination.startsWith("/user/")) {
-            log.info(
-                    "SUBSCRIBE (User Destination): memberId={} destination={}",
-                    userDetails.getId(),
-                    destination);
+            log.info("SUBSCRIBE (User Destination): memberId={} destination={}",
+                    userDetails.getId(), destination);
             return;
         }
 

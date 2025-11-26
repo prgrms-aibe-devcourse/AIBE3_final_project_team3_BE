@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Set;
 
-// 현재 채팅방에 WebSocket으로 구독 중인 사용자 관리
+// 현재 채팅방에 WebSocket으로 구독 중인 사용자 관리(하나의 회원이 여러 기기에서 같은 방에 접속해도 1명으로 취급)
 // todo: redis를 회원 구조로 사용하는데, 세션 구조로 사용해야 한 유저가 동시에 여러 기기에서 접속해도 문제 없다고 함
 @Service
 @RequiredArgsConstructor
