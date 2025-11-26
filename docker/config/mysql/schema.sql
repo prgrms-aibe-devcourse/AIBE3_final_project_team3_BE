@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS `translation_tags` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 # 프롬프트 테이블
-CREATE TABLE IF NOT EXISTS `prompts` (
+CREATE TABLE IF NOT EXISTS `userPrompts` (
                                          `id`            BIGINT       NOT NULL AUTO_INCREMENT,
                                          `created_at`    DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
                                          `modified_at`   DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),

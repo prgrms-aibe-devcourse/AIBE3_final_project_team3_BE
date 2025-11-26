@@ -1,12 +1,12 @@
-package triplestar.mixchat.domain.prompt.prompt.controller;
+package triplestar.mixchat.domain.ai.userprompt.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import triplestar.mixchat.domain.prompt.prompt.dto.PromptReq;
-import triplestar.mixchat.domain.prompt.prompt.dto.PromptListResp;
-import triplestar.mixchat.domain.prompt.prompt.dto.PromptDetailResp;
-import triplestar.mixchat.domain.prompt.prompt.service.PromptService;
+import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptReq;
+import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptListResp;
+import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptDetailResp;
+import triplestar.mixchat.domain.ai.userprompt.service.UserPromptService;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
 import java.util.List;
@@ -15,14 +15,14 @@ import java.util.List;
 @RequestMapping("/api/v1/prompt")
 @RequiredArgsConstructor
 public class ApiV1PromptController implements ApiPromptController {
-    private final PromptService promptService;
+    private final UserPromptService userPromptService;
 
     @Override
     @PostMapping("/create")
     public CustomResponse<Void> create(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                       @RequestBody PromptReq req) {
+                                       @RequestBody UserPromptReq req) {
         Long memberId = userDetails.getId();
-        promptService.create(memberId, req);
+        userPromptService.create(memberId, req);
         return CustomResponse.ok("프롬프트가 생성되었습니다.");
     }
 
@@ -30,9 +30,9 @@ public class ApiV1PromptController implements ApiPromptController {
     @PutMapping("/{id}")
     public CustomResponse<Void> update(@AuthenticationPrincipal CustomUserDetails userDetails,
                                        @PathVariable Long id,
-                                       @RequestBody PromptReq req) {
+                                       @RequestBody UserPromptReq req) {
         Long memberId = userDetails.getId();
-        promptService.update(memberId, id, req);
+        userPromptService.update(memberId, id, req);
         return CustomResponse.ok("프롬프트가 수정되었습니다.");
     }
 
@@ -41,24 +41,24 @@ public class ApiV1PromptController implements ApiPromptController {
     public CustomResponse<Void> delete(@AuthenticationPrincipal CustomUserDetails userDetails,
                                        @PathVariable Long id) {
         Long memberId = userDetails.getId();
-        promptService.delete(memberId, id);
+        userPromptService.delete(memberId, id);
         return CustomResponse.ok("프롬프트가 삭제되었습니다.");
     }
 
     @Override
     @GetMapping()
-    public CustomResponse<List<PromptListResp>> list(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public CustomResponse<List<UserPromptListResp>> list(@AuthenticationPrincipal CustomUserDetails userDetails) {
         Long memberId = userDetails.getId();
-        List<PromptListResp> resp = promptService.list(memberId);
+        List<UserPromptListResp> resp = userPromptService.list(memberId);
         return CustomResponse.ok("프롬프트 목록 조회 성공", resp);
     }
 
     @Override
     @GetMapping("/{id}")
-    public CustomResponse<PromptDetailResp> detail(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                   @PathVariable Long id) {
+    public CustomResponse<UserPromptDetailResp> detail(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                       @PathVariable Long id) {
         Long memberId = userDetails.getId();
-        PromptDetailResp resp = promptService.detail(memberId, id);
+        UserPromptDetailResp resp = userPromptService.detail(memberId, id);
         return CustomResponse.ok("프롬프트 상세 조회 성공", resp);
     }
 }
