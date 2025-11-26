@@ -2,6 +2,8 @@ package triplestar.mixchat.domain.member.member.repository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -59,5 +61,16 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     """)
     Optional<MemberDetailResp> findByIdWithFriendInfo(Long signInId, Long memberId);
 
-    List<Member> findAllByIdIsNot(Long id);
+    @Query("""
+            SELECT m FROM Member m
+            WHERE m.id <> :id AND m.isDeleted = false AND m.isBlocked = false AND m.role = 'ROLE_MEMBER'
+    """)
+    Page<Member> findAllByIdIsNot(Long id, Pageable pageable);
+
+    @Query("""
+            SELECT m FROM Member m
+            WHERE m.id <> :currentUserId AND m.id IN :onlineMemberIds
+                AND m.isDeleted = false AND m.isBlocked = false AND m.role = 'ROLE_MEMBER'
+    """)
+    Page<Member> findByIds(Long currentUserId, List<Long> onlineMemberIds, Pageable pageable);
 }

@@ -10,8 +10,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.friend.dto.FriendshipRequestResp;
 import triplestar.mixchat.domain.member.friend.service.FriendshipRequestService;
@@ -19,18 +22,26 @@ import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
+import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
+import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.domain.member.presence.service.PresenceService;
+import triplestar.mixchat.global.s3.S3Uploader;
+import triplestar.mixchat.testutils.RedisTestContainer;
 import triplestar.mixchat.testutils.TestMemberFactory;
 
 @Transactional
 @ActiveProfiles("test")
 @SpringBootTest
 @DisplayName("회원 - 멤버 서비스")
-class MemberServiceTest {
+class MemberServiceTest extends RedisTestContainer {
 
     @Autowired
     MemberService memberService;
+
+    @Autowired
+    PresenceService presenceService;
 
     @Autowired
     MemberRepository memberRepository;
@@ -236,5 +247,63 @@ class MemberServiceTest {
         assertThatThrownBy(() -> memberService.getMemberDetails(member1.getId(), Long.MAX_VALUE))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("존재하지 않는 회원입니다.");
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴 성공")
+    void member_delete_success() {
+        Long memberId = member1.getId();
+
+        memberService.deleteSoftly(memberId);
+
+        Member deletedMember = memberRepository.findById(memberId)
+                .orElseThrow();
+
+        assertThat(deletedMember.isDeleted()).isTrue();
+        assertThat(deletedMember.getEmail()).endsWith("@deleted.user");
+        assertThat(deletedMember.getName()).isEqualTo("삭제된 회원");
+        assertThat(deletedMember.getNickname()).isEqualTo("삭제된 회원");
+        assertThat(deletedMember.getPassword().getPassword()).isEqualTo("DELETED_MEMBER_PASSWORD");
+        assertThat(deletedMember.getProfileImageUrl()).isEqualTo("http://localhost:9000/test-bucket/default-profile.webp");
+        assertThat(deletedMember.getDescription()).isEqualTo("삭제된 회원입니다.");
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴 실패 - 존재하지 않는 회원")
+    void member_delete_not_found_fail() {
+        assertThatThrownBy(() -> memberService.deleteSoftly(Long.MAX_VALUE))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("존재하지 않는 회원입니다.");
+    }
+
+    @Test
+    @DisplayName("온라인 회원 목록 조회 성공")
+    void find_online_members_success() {
+        // 온라인 상태인 회원 3명 생성
+        Member onlineMember1 = memberRepository.save(TestMemberFactory.createMember("online1"));
+        Member onlineMember2 = memberRepository.save(TestMemberFactory.createMember("online2"));
+        Member onlineMember3 = memberRepository.save(TestMemberFactory.createMember("online3"));
+
+        // 온라인 상태로 설정
+        presenceService.heartbeat(onlineMember1.getId());
+        presenceService.heartbeat(onlineMember2.getId());
+        presenceService.heartbeat(onlineMember3.getId());
+
+        // 오프라인 상태인 회원 2명 생성
+        memberRepository.save(TestMemberFactory.createMember("offline1"));
+        memberRepository.save(TestMemberFactory.createMember("offline2"));
+
+        // 온라인 회원 목록 조회
+        PageRequest pageable = PageRequest.of(0, 10);
+        Page<MemberPresenceSummaryResp> onlineMembers = memberService.findOnlineMembers(-1L, pageable);
+
+        assertThat(onlineMembers.getTotalElements()).isEqualTo(3);
+        assertThat(onlineMembers.getContent())
+                .extracting("id")
+                .containsExactlyInAnyOrder(
+                        onlineMember1.getId(),
+                        onlineMember2.getId(),
+                        onlineMember3.getId()
+                );
     }
 }

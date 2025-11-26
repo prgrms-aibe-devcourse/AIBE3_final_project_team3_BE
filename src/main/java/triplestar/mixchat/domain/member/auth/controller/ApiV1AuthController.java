@@ -10,11 +10,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
-import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
 import triplestar.mixchat.domain.member.auth.dto.LogInResp;
 import triplestar.mixchat.domain.member.auth.dto.LogInReq;
 import triplestar.mixchat.domain.member.auth.service.AuthService;
 import triplestar.mixchat.domain.member.auth.util.CookieHelper;
+import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.global.response.CustomResponse;
 
 @RestController

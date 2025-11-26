@@ -1,6 +1,8 @@
 package triplestar.mixchat.testutils;
 
 import org.junit.jupiter.api.TestInstance;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.GenericContainer;
@@ -21,5 +23,12 @@ public abstract class RedisTestContainer {
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port",
                 () -> String.valueOf(redis.getMappedPort(6379)));
+    }
+
+    protected RedisConnectionFactory redisConnectionFactory() {
+        return new LettuceConnectionFactory(
+                redis.getHost(),
+                redis.getMappedPort(6379)
+        );
     }
 }

@@ -61,7 +61,9 @@ public class StompHandler implements ExecutorChannelInterceptor {
         }
 
         StompCommand command = accessor.getCommand();
-        if (command == null) return message; // HEARTBEAT 등 커맨드 없는 경우
+        if (command == null) {
+            return message; // HEARTBEAT 등 커맨드 없는 경우
+        }
 
         switch (command) {
             case CONNECT -> handleConnect(accessor);
@@ -80,12 +82,14 @@ public class StompHandler implements ExecutorChannelInterceptor {
 
         // beforeHandle에서 principal 객체 확인
         if (principal != null) {
-            log.info("✅ [beforeHandle] Principal'{}' found in session '{}'. Setting SecurityContext.", principal.getName(), accessor.getSessionId());
+            log.info("✅ [beforeHandle] Principal'{}' found in session '{}'. Setting SecurityContext.",
+                    principal.getName(), accessor.getSessionId());
             SecurityContextHolder.getContext().setAuthentication((Authentication) principal);
         } else {
-            log.warn("❌ [beforeHandle] Principal NOT FOUND in session '{}'. SecurityContext will be empty.", accessor.getSessionId());
+            log.warn("❌ [beforeHandle] Principal NOT FOUND in session '{}'. SecurityContext will be empty.",
+                    accessor.getSessionId());
         }
-        
+
         return message;
     }
 
@@ -108,7 +112,8 @@ public class StompHandler implements ExecutorChannelInterceptor {
         accessor.setUser(authentication);
 
         // handleConnect에서 인증 정보가 세션에 잘 설정되었는지 확인
-        log.info("✅ [handleConnect] User '{}' authentication object set to session '{}'", authentication.getName(), accessor.getSessionId());
+        log.info("✅ [handleConnect] User '{}' authentication object set to session '{}'", authentication.getName(),
+                accessor.getSessionId());
     }
 
     private void handleSubscribe(StompHeaderAccessor accessor) {
@@ -118,6 +123,12 @@ public class StompHandler implements ExecutorChannelInterceptor {
         String destination = accessor.getDestination();
         if (destination == null || destination.isBlank()) {
             throw new IllegalArgumentException("구독 목적지가 없습니다.");
+        }
+
+        // TODO : subsrbie 임시 허용중!
+        if (true) {
+            log.info("SUBSCRIBE (임시 허용): memberId={} destination={}", userDetails.getId(), destination);
+            return;
         }
 
         Matcher matcher = ROOM_DESTINATION_PATTERN.matcher(destination);

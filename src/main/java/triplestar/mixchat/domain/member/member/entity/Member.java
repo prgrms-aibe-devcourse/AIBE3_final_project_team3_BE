@@ -10,10 +10,10 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
@@ -177,5 +177,18 @@ public class Member extends BaseEntity {
 
     public void changeMembershipGrade(MembershipGrade grade) {
         this.membershipGrade = grade;
+    }
+
+    public void deleteSoftly() {
+        if (this.isDeleted) {
+            throw new IllegalStateException("이미 삭제된 회원입니다.");
+        }
+        this.email = UUID.randomUUID() + "@deleted.user";
+        this.name = "삭제된 회원";
+        this.nickname = "삭제된 회원";
+        this.password = Password.deleteDummy();
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
+        this.description = "삭제된 회원입니다.";
     }
 }

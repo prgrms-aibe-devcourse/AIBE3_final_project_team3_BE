@@ -4,11 +4,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
-import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
+import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
@@ -61,8 +62,29 @@ public interface ApiMemberController {
 
     // --- 5. 모든 회원 목록 조회 (GET /) ---
     @Operation(summary = "모든 회원 목록 조회", description = "채팅 상대로 추가할 수 있는 모든 회원 목록을 조회합니다. 자기 자신은 목록에서 제외됩니다.")
-    CustomResponse<List<MemberSummaryResp>> findAllMembers(
+    CustomResponse<Page<MemberPresenceSummaryResp>> getMembers(
             @Parameter(hidden = true)
-            CustomUserDetails userDetails
+            CustomUserDetails userDetails,
+            @Parameter(description = "페이지 정보")
+            Pageable pageable
+    );
+
+    // --- 6. 온라인 회원 목록 조회 (GET /online) ---
+    @Operation(summary = "온라인 회원 목록 조회",
+            description = "현재 Heartbeat를 보내 온라인 상태로 확인된 회원 목록을 페이지로 조회합니다. 로그인 여부와 무관하게 조회 가능합니다.")
+    CustomResponse<Page<MemberPresenceSummaryResp>> getOnlineMembers(
+            @Parameter(hidden = true)
+            CustomUserDetails userDetails,
+            @Parameter(description = "페이지 정보 (size=20 기본값)")
+            Pageable pageable
+    );
+
+    // --- 7. 회원 탈퇴 (DELETE /me) ---
+    @Operation(summary = "회원 탈퇴 (Soft Delete)",
+            description = "현재 로그인된 사용자의 계정을 비활성화(Soft Delete) 처리합니다.")
+    @SignInInRequireResponse
+    CustomResponse<Void> deleteMyAccount(
+            @Parameter(hidden = true)
+            CustomUserDetails customUserDetails
     );
 }

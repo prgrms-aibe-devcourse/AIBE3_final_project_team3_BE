@@ -26,6 +26,10 @@ public class Password {
         return new Password(encoder.encode(raw));
     }
 
+    protected static Password deleteDummy() {
+        return new Password("DELETED_MEMBER_PASSWORD");
+    }
+
     public boolean matches(String raw, PasswordEncoder encoder) {
         return encoder.matches(raw, this.password);
     }
