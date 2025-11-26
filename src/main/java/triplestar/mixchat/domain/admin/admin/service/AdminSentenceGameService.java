@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateReq;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameNoteResp;
+import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameResp;
+import triplestar.mixchat.domain.admin.admin.exception.DuplicateSentenceGameException;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
 import triplestar.mixchat.domain.miniGame.sentenceGame.entity.SentenceGame;
@@ -28,7 +30,7 @@ public class AdminSentenceGameService {
         );
 
         if (duplicated) {
-            throw new IllegalArgumentException("이미 등록된 문장입니다.");
+            throw new DuplicateSentenceGameException();
         }
 
         SentenceGame game = SentenceGame.createSentenceGame(
@@ -44,5 +46,21 @@ public class AdminSentenceGameService {
         Page<LearningNote> notes = learningNoteRepository.findAll(pageable);
 
         return notes.map(AdminSentenceGameNoteResp::from);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AdminSentenceGameResp> getSentenceGameList(Pageable pageable) {
+
+        Page<SentenceGame> games = sentenceGameRepository.findAll(pageable);
+
+        return games.map(AdminSentenceGameResp::from);
+    }
+
+    @Transactional
+    public void deleteSentenceGame(Long sentenceGameId) {
+        SentenceGame game = sentenceGameRepository.findById(sentenceGameId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 문장을 찾을 수 없습니다. id=" + sentenceGameId));
+
+        sentenceGameRepository.delete(game);
     }
 }
