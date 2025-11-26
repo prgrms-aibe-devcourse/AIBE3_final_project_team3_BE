@@ -8,10 +8,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.PathVariable;
 import triplestar.mixchat.domain.admin.admin.dto.AdminReportListResp;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateReq;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateResp;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameNoteResp;
+import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameResp;
 import triplestar.mixchat.domain.report.report.dto.ReportStatusUpdateReq;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
@@ -49,11 +51,27 @@ public interface ApiAdminController {
             @Valid AdminSentenceGameCreateReq req
     );
 
-    // --- 4. 학습노트 조회 (GET /sentence-game) ---
+    // --- 4. 학습노트 조회 (GET /sentence-game/notes) ---
     @Operation(summary = "문장 등록을 위한 학습노트 조회", description = "관리자가 문장 등록을 위한 학습노트 목록을 조회합니다.")
     @SecurityRequireResponse
     CustomResponse<Page<AdminSentenceGameNoteResp>> getSentenceGameNoteList(
             @Parameter(description = "페이지 정보")
             Pageable pageable
+    );
+
+    // --- 5. 문장게임 조회 (GET / sentence-game) ---
+    @Operation(summary = "게임 관리를 위한 문장 목록 조회", description = "관리자가 게임 관리를 위한 문장 목록을 조회합니다.")
+    @SecurityRequireResponse
+    CustomResponse<Page<AdminSentenceGameResp>> getSentenceGameList(
+            @Parameter(description = "페이지 정보")
+            Pageable pageable
+    );
+
+    // --- 6. 문장 게임 삭제 (DELETE / sentence-game/{id}) ---
+    @Operation(summary = "문장 게임 삭제", description = "관리자가 문장게임에 있는 문장을 삭제합니다.")
+    @SecurityRequireResponse
+    CustomResponse<Void> deleteSentenceGame(
+            @Parameter(description = "삭제할 문장게임 ID")
+            @PathVariable Long sentenceGameId
     );
 }
