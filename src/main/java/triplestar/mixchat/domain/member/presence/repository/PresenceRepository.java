@@ -50,7 +50,6 @@ public class PresenceRepository {
         );
     }
 
-    // Redis set을 사용하여 온라인 멤버 ID 목록을 가져오는 메서드
     public List<Long> getOnlineMemberIds(long offset, long size) {
         long now = System.currentTimeMillis() / 1000;
         long threshold = now - expirationSeconds;
