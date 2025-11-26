@@ -39,15 +39,18 @@ public class PresenceRepository {
         long now = System.currentTimeMillis() / 1000;
         long threshold = now - expirationSeconds;
 
-        return memberIds.stream().collect(
-                Collectors.toMap(
-                        id -> id,
-                        id -> {
-                            Double score = redisTemplate.opsForZSet().score(key, id.toString());
-                            return score != null && score >= threshold;
-                        }
-                )
-        );
+        Map<Long, Boolean> result = new HashMap<>();
+        Set<String> allOnlineIds = redisTemplate.opsForZSet().rangeByScore(key, threshold, Double.MAX_VALUE);
+
+        if (allOnlineIds == null) {
+            return memberIds.stream().collect(Collectors.toMap(id -> id, id -> false));
+        }
+
+        for (Long memberId : memberIds) {
+            boolean isOnline = allOnlineIds.contains(memberId.toString());
+            result.put(memberId, isOnline);
+        }
+        return result;
     }
 
     public List<Long> getOnlineMemberIds(long offset, long size) {

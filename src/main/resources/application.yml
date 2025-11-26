@@ -23,7 +23,6 @@ spring:
 
     web:
       pageable:
-        one-indexed-parameters: true
         max-page-size: 100
 
 swagger:
