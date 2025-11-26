@@ -5,12 +5,14 @@ import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiTranslationReq;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiTranslationResp;
+import triplestar.mixchat.domain.ai.systemprompt.repository.SystemPromptRepository;
 
 @Service
 @RequiredArgsConstructor
 public class AiTranslationService {
 
     private final OpenAiChatModel chatModel;
+    private final SystemPromptRepository systemPromptRepository;
 
     public AiTranslationResp sendMessage(AiTranslationReq req) {
         // 임시 프롬프트
