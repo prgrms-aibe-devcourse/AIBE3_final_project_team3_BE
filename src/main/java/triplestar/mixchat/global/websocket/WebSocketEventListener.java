@@ -49,21 +49,28 @@ public class WebSocketEventListener {
     private static class SessionSubscription {
         private final Long memberId;
         private final Set<Long> roomIds = ConcurrentHashMap.newKeySet();
+        private final Set<String> subscriptionIds = ConcurrentHashMap.newKeySet(); // 메모리 누수 방지
 
         public SessionSubscription(Long memberId) {
             this.memberId = memberId;
         }
 
-        public void addRoom(Long roomId) {
+        public void addRoom(Long roomId, String subscriptionId) {
             roomIds.add(roomId);
+            subscriptionIds.add(subscriptionId);
         }
 
-        public void removeRoom(Long roomId) {
+        public void removeRoom(Long roomId, String subscriptionId) {
             roomIds.remove(roomId);
+            subscriptionIds.remove(subscriptionId);
         }
 
         public Set<Long> getRoomIds() {
             return roomIds;
+        }
+
+        public Set<String> getSubscriptionIds() {
+            return subscriptionIds;
         }
 
         public Long getMemberId() {
@@ -135,7 +142,7 @@ public class WebSocketEventListener {
 
         // 세션별 구독 방 추적 (disconnect 시 사용)
         sessionSubscriptions.computeIfAbsent(sessionId, k -> new SessionSubscription(memberId))
-                .addRoom(roomId);
+                .addRoom(roomId, subscriptionId);
 
         // subscriptionId와 roomId 매핑 저장 (unsubscribe 시 사용)
         subscriptionIdToRoomInfo.put(subscriptionId, new RoomSubscriptionInfo(roomId, memberId, sessionId));
@@ -185,7 +192,7 @@ public class WebSocketEventListener {
         // 세션별 구독 방 목록에서도 제거
         SessionSubscription sessionSubscription = sessionSubscriptions.get(sessionId);
         if (sessionSubscription != null) {
-            sessionSubscription.removeRoom(roomId);
+            sessionSubscription.removeRoom(roomId, subscriptionId);
         }
 
         log.info("User unsubscribed: memberId={}, roomId={}, sessionId={}", memberId, roomId, sessionId);
@@ -209,13 +216,19 @@ public class WebSocketEventListener {
 
         Long memberId = subscription.getMemberId();
         Set<Long> roomIds = subscription.getRoomIds();
+        Set<String> subscriptionIds = subscription.getSubscriptionIds();
 
         // 실제 구독한 방만 Redis에서 제거
         for (Long roomId : roomIds) {
             subscriberCacheService.removeSubscriber(roomId, memberId);
         }
 
-        log.info("User disconnected: memberId={}, sessionId={}, removed from {} rooms",
-                memberId, sessionId, roomIds.size());
+        // [중요] subscriptionIdToRoomInfo 맵에서도 제거 (메모리 누수 방지)
+        for (String subId : subscriptionIds) {
+            subscriptionIdToRoomInfo.remove(subId);
+        }
+
+        log.info("User disconnected: memberId={}, sessionId={}, removed from {} rooms, cleaned {} subscriptions",
+                memberId, sessionId, roomIds.size(), subscriptionIds.size());
     }
 }
