@@ -65,4 +65,7 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long
         WHERE cm.chatRoomId IN :roomIds AND cm.chatRoomType = 'GROUP'
         """)
     List<ChatMember> findAllByRoomIdsWithMember(@Param("roomIds") List<Long> roomIds);
+
+    // 방 ID와 대화방 타입으로 해당 방 정보 삭제
+    void deleteAllByChatRoomIdAndChatRoomType(Long roomId, ChatMessage.chatRoomType roomType);
 }
