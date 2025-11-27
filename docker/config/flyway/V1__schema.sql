@@ -188,13 +188,14 @@ CREATE TABLE IF NOT EXISTS `chat_members` (
     `member_id`                 BIGINT       NOT NULL,
     `chat_room_id`              BIGINT       NOT NULL,
     `chat_room_type`            VARCHAR(50)  NOT NULL,
-    `user_type`                 VARCHAR(50)  NOT NULL,
     `last_read_at`              DATETIME(6),
+    `last_read_sequence`        BIGINT,
     `chat_notification_setting` VARCHAR(50)  NOT NULL,
 
     PRIMARY KEY (`id`),
 
     KEY `idx_chat_members_member_id` (`member_id`),
+    KEY `idx_chat_members_room` (`chat_room_id`, `chat_room_type`),
 
     CONSTRAINT `fk_chat_members_member`
     FOREIGN KEY (`member_id`)
@@ -208,6 +209,7 @@ CREATE TABLE IF NOT EXISTS `direct_chat_rooms` (
 
     `user1_id`     BIGINT       NOT NULL,
     `user2_id`     BIGINT       NOT NULL,
+    `current_sequence` BIGINT   NOT NULL DEFAULT 0,
 
     PRIMARY KEY (`id`),
 
@@ -233,8 +235,17 @@ CREATE TABLE IF NOT EXISTS `group_chat_rooms` (
     `name`         VARCHAR(255) NOT NULL,
     `description`  VARCHAR(500),
     `topic`        VARCHAR(50),
+    `owner_id`     BIGINT       NOT NULL,
+    `password`     VARCHAR(255),
+    `current_sequence` BIGINT   NOT NULL DEFAULT 0,
 
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`id`),
+
+    KEY `idx_group_chat_owner` (`owner_id`),
+
+    CONSTRAINT `fk_group_chat_owner`
+    FOREIGN KEY (`owner_id`)
+    REFERENCES `members` (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET SQL_MODE=@OLD_SQL_MODE;
