@@ -40,13 +40,3 @@ swagger:
   redirect:
     # "/"로 들어왔을 때 최종적으로 리다이렉트될 Swagger UI 경로
     path: /swagger-ui/index.html
-
-#pr전 아래 전체 삭제
-logging:
-  level:
-    org.hibernate.SQL: off
-    org.hibernate.orm.jdbc.bind: off
-    org.hibernate.orm.jdbc.extract: off
-    org.hibernate.orm.sql.exec: off
-    org.hibernate.engine.jdbc.spi.SqlStatementLogger: off
-    org.hibernate.orm.jdbc: off

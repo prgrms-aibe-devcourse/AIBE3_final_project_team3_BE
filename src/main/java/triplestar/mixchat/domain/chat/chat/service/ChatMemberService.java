@@ -54,12 +54,11 @@ public class ChatMemberService {
         boolean isMember = chatRoomMemberRepository.existsByChatRoomIdAndChatRoomTypeAndMember_Id(
                 roomId, chatRoomType, memberId);
         if (!isMember) {
-            log.warn("인가 거부: 사용자(ID:{})가 대화방(ID:{}, 타입:{})의 멤버가 아닙니다.", memberId, roomId, chatRoomType);
+            log.warn("채팅방 접근 거부 - memberId: {}, roomId: {}, type: {}", memberId, roomId, chatRoomType);
             throw new AccessDeniedException("해당 대화방에 접근할 권한이 없습니다.");
         }
 
         // 3. DB에 존재하면, 그 결과를 캐시에 저장 (다음 조회를 위해)
-        log.debug("사용자(ID:{})의 대화방(ID:{}, 타입:{}) 멤버십 DB 확인 완료. 캐시에 저장합니다.", memberId, roomId, chatRoomType);
         chatAuthCacheService.addMember(roomId, memberId);
     }
 
@@ -87,14 +86,10 @@ public class ChatMemberService {
 
             // 이미 모든 메시지를 읽은 상태면 null 반환 (READ 이벤트 브로드캐스트 하지 않음)
             if (lastReadSequence != null && lastReadSequence >= currentSequence) {
-                log.debug("이미 모든 메시지를 읽은 상태입니다: memberId={}, roomId={}, lastRead={}, current={}",
-                        memberId, roomId, lastReadSequence, currentSequence);
                 return null;
             }
 
             member.updateLastReadSequence(currentSequence);
-            log.info("✅ [markAsReadOnEnter] 읽음 처리 완료: memberId={}, roomId={}, readSequence={}, previous={}",
-                    memberId, roomId, currentSequence, lastReadSequence);
             return currentSequence;
         }
         return null;

@@ -69,7 +69,7 @@ public class StompHandler implements ExecutorChannelInterceptor {
             case CONNECT -> handleConnect(accessor);
             case SUBSCRIBE -> handleSubscribe(accessor);
             case SEND -> { /* preSend에서는 특별한 작업을 하지 않음. beforeHandle에서 처리. */ }
-            case DISCONNECT -> log.info("STOMP DISCONNECT: sessionId={}", accessor.getSessionId());
+            case DISCONNECT -> { /* 연결 종료는 WebSocketEventListener에서 처리 */ }
             default -> { /* NO-OP */ }
         }
         return message;
@@ -91,14 +91,7 @@ public class StompHandler implements ExecutorChannelInterceptor {
 
         // beforeHandle에서 principal 객체 확인
         if (principal != null) {
-            // 너무 많은 로그를 남기므로 주석 처리. 연결 시 로그만으로 충분.
-            // log.info("✅ [beforeHandle] Principal'{}' found in session '{}'. Setting SecurityContext.",
-            //         principal.getName(), accessor.getSessionId());
             SecurityContextHolder.getContext().setAuthentication((Authentication) principal);
-        } else {
-            // 이 로그도 너무 자주 발생할 수 있으므로 주석 처리.
-            // log.warn("❌ [beforeHandle] Principal NOT FOUND in session '{}'. SecurityContext will be empty.",
-            //         accessor.getSessionId());
         }
 
         return message;
@@ -122,9 +115,7 @@ public class StompHandler implements ExecutorChannelInterceptor {
                 userDetails, null, userDetails.getAuthorities());
         accessor.setUser(authentication);
 
-        // handleConnect에서 인증 정보가 세션에 잘 설정되었는지 확인
-        log.info("✅ [handleConnect] User '{}' authentication object set to session '{}'", authentication.getName(),
-                accessor.getSessionId());
+        log.info("WebSocket 연결 성공 - memberId: {}, sessionId: {}", member.getId(), accessor.getSessionId());
     }
 
     private void handleSubscribe(StompHeaderAccessor accessor) {
@@ -147,16 +138,12 @@ public class StompHandler implements ExecutorChannelInterceptor {
             // 멤버십 검증 (캐시 사용으로 성능 최적화)
             chatMemberService.verifyUserIsMemberOfRoom(
                     userDetails.getId(), roomId, chatRoomType);
-            log.info("SUBSCRIBE (Room): memberId={} roomId={} type={} destination={}",
-                    userDetails.getId(), roomId, chatRoomType, destination);
             return;
         }
 
         // 사용자별 목적지 구독 확인 (표준 방식)
         // /user/ 로 시작하는 모든 구독은 스프링이 현재 사용자의 세션에만 연결해주므로 안전함.
         if (destination.startsWith("/user/")) {
-            log.info("SUBSCRIBE (User Destination): memberId={} destination={}",
-                    userDetails.getId(), destination);
             return;
         }
 

@@ -152,8 +152,6 @@ public class WebSocketEventListener {
 
         // Redis에 구독자 추가 (세션 ID 포함)
         subscriberCacheService.addSubscriber(roomId, memberId, sessionId);
-        log.info("[Subscribe] Added to Redis: roomId={}, memberId={}, sessionId={}, subscriptionId={}",
-                roomId, memberId, sessionId, subscriptionId);
 
         // 세션별 구독 방 추적 (disconnect 시 사용)
         sessionSubscriptions.computeIfAbsent(sessionId, k -> new SessionSubscription(memberId))
@@ -174,26 +172,12 @@ public class WebSocketEventListener {
             if (!updates.isEmpty()) {
                 UnreadCountUpdateEventDto updateEvent = UnreadCountUpdateEventDto.from(updates);
                 String broadcastDestination = "/topic/" + typeString.toLowerCase() + "/rooms/" + roomId;
-
-                log.info("🔔 [UNREAD COUNT UPDATE] Broadcasting to ALL subscribers: destination={}, updatedCount={}, readerId={}, readSequence={}",
-                        broadcastDestination, updates.size(), memberId, readSequence);
-
                 messagingTemplate.convertAndSend(broadcastDestination, updateEvent);
-
-                log.info("✅ [UNREAD COUNT UPDATE] Broadcast completed: destination={}, {} messages updated",
-                        broadcastDestination, updates.size());
-            } else {
-                log.info("⏭️ [UNREAD COUNT UPDATE] No messages to update for roomId={}", roomId);
             }
-        } else {
-            log.info("⏭️ [UNREAD COUNT UPDATE] Skipped (already read all): memberId={}, roomId={}", memberId, roomId);
         }
 
         // 구독자 수 변경 브로드캐스트
         broadcastSubscriberCount(roomId, chatRoomType);
-
-        log.info("User subscribed and marked as read: memberId={}, roomId={}, type={}, sessionId={}",
-                memberId, roomId, chatRoomType, sessionId);
     }
 
     // 채팅방 구독 해제
@@ -209,16 +193,13 @@ public class WebSocketEventListener {
         // subscriptionId로 방 정보 조회 및 제거
         RoomSubscriptionInfo roomInfo = subscriptionIdToRoomInfo.remove(subscriptionId);
         if (roomInfo == null) {
-            log.warn("[Unsubscribe] No room info found for subscriptionId={}", subscriptionId);
+            log.warn("구독 해제 실패 - 구독 정보 없음: subscriptionId={}", subscriptionId);
             return;
         }
 
         Long roomId = roomInfo.getRoomId();
         Long memberId = roomInfo.getMemberId();
         String sessionId = roomInfo.getSessionId();
-
-        log.info("[Unsubscribe] Removing from Redis: roomId={}, memberId={}, sessionId={}, subscriptionId={}",
-                roomId, memberId, sessionId, subscriptionId);
 
         // Redis에서 구독자 제거 (세션 ID 포함)
         subscriberCacheService.removeSubscriber(roomId, memberId, sessionId);
@@ -232,8 +213,6 @@ public class WebSocketEventListener {
         // 구독자 수 변경 브로드캐스트
         ChatMessage.chatRoomType chatRoomType = roomInfo.getChatRoomType();
         broadcastSubscriberCount(roomId, chatRoomType);
-
-        log.info("User unsubscribed: memberId={}, roomId={}, sessionId={}", memberId, roomId, sessionId);
     }
 
     // WebSocket 세션 종료 - 해당 세션이 구독한 방만 제거 (KEYS 사용 방지)
@@ -249,16 +228,13 @@ public class WebSocketEventListener {
         // 세션별 구독 정보 조회 및 제거
         SessionSubscription subscription = sessionSubscriptions.remove(sessionId);
         if (subscription == null) {
-            log.warn("[Disconnect] No subscription info found for sessionId={}", sessionId);
+            log.warn("WebSocket 연결 종료 - 세션 정보 없음: sessionId={}", sessionId);
             return;
         }
 
         Long memberId = subscription.getMemberId();
         Set<Long> roomIds = subscription.getRoomIds();
         Set<String> subscriptionIds = subscription.getSubscriptionIds();
-
-        log.info("[Disconnect] Cleaning up session: sessionId={}, memberId={}, roomCount={}, subscriptionCount={}",
-                sessionId, memberId, roomIds.size(), subscriptionIds.size());
 
         // 실제 구독한 방만 Redis에서 제거 및 구독자 수 브로드캐스트
         // SessionSubscription에서 직접 roomId와 chatRoomType을 가져와서 처리 (subscriptionIdToRoomInfo에 의존하지 않음)
@@ -267,9 +243,6 @@ public class WebSocketEventListener {
             if (chatRoomType == null || chatRoomType == ChatMessage.chatRoomType.AI) {
                 continue; // AI 채팅방은 제외
             }
-
-            log.info("[Disconnect] Removing from Redis: roomId={}, memberId={}, sessionId={}",
-                    roomId, memberId, sessionId);
 
             subscriberCacheService.removeSubscriber(roomId, memberId, sessionId);
 
@@ -281,9 +254,6 @@ public class WebSocketEventListener {
         for (String subId : subscriptionIds) {
             subscriptionIdToRoomInfo.remove(subId);
         }
-
-        log.info("User disconnected: memberId={}, sessionId={}, removed from {} rooms, cleaned {} subscriptions",
-                memberId, sessionId, roomIds.size(), subscriptionIds.size());
     }
 
     // 구독자 수 변경 브로드캐스트 헬퍼 메서드
@@ -303,8 +273,5 @@ public class WebSocketEventListener {
         SubscriberCountUpdateResp resp = SubscriberCountUpdateResp.of(subscriberCount, totalMemberCount);
         String destination = "/topic/" + chatRoomType.name().toLowerCase() + "/rooms/" + roomId;
         messagingTemplate.convertAndSend(destination, resp);
-
-        log.info("Broadcasted subscriber count: roomId={}, type={}, subscriberCount={}, totalMemberCount={}",
-                roomId, chatRoomType, subscriberCount, totalMemberCount);
     }
 }

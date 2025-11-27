@@ -32,16 +32,16 @@ public class ChatSubscriberCacheService {
             Set<String> keys = redisTemplate.keys("chat:subscribers:room:*");
             if (keys != null && !keys.isEmpty()) {
                 redisTemplate.delete(keys);
-                log.info("서버 재시작 시 구독자 키 초기화 {}", keys.size());
+                log.info("서버 시작 - 구독자 캐시 초기화 완료: {}개 키 삭제", keys.size());
             }
 
             Set<String> sessionKeys = redisTemplate.keys("session:member:*");
             if (sessionKeys != null && !sessionKeys.isEmpty()) {
                 redisTemplate.delete(sessionKeys);
-                log.info("서버 재시작 시 세션 매핑 키 초기화 {}", sessionKeys.size());
+                log.info("서버 시작 - 세션 매핑 캐시 초기화 완료: {}개 키 삭제", sessionKeys.size());
             }
         } catch (Exception e) {
-            log.error("초기화 실패", e);
+            log.error("Redis 캐시 초기화 실패", e);
         }
     }
 
@@ -81,8 +81,6 @@ public class ChatSubscriberCacheService {
 
         // 3. 멤버별 집계에 추가 (Set이므로 중복 자동 제거)
         redisTemplate.opsForSet().add(membersKey, String.valueOf(memberId));
-
-        log.debug("Added subscriber: roomId={}, memberId={}, sessionId={}", roomId, memberId, sessionId);
     }
 
     /**
@@ -106,13 +104,9 @@ public class ChatSubscriberCacheService {
         redisTemplate.delete(mappingKey);
 
         // 4. 모든 세션이 해제되었으면 members Set에서도 제거
-        Long removedMember = null;
         if (!hasOtherSessions) {
-            removedMember = redisTemplate.opsForSet().remove(membersKey, String.valueOf(memberId));
+            redisTemplate.opsForSet().remove(membersKey, String.valueOf(memberId));
         }
-
-        log.info("Removed subscriber: roomId={}, memberId={}, sessionId={}, removedSession={}, removedMember={}, hasOtherSessions={}",
-                  roomId, memberId, sessionId, removedSession, removedMember, hasOtherSessions);
     }
 
     /**
@@ -157,10 +151,7 @@ public class ChatSubscriberCacheService {
         String sessionsKey = getSessionsKey(roomId);
         Set<String> allSessions = redisTemplate.opsForSet().members(sessionsKey);
 
-        log.info("[DEBUG checkOtherSessions] roomId={}, memberId={}, allSessions={}", roomId, memberId, allSessions);
-
         if (allSessions == null || allSessions.isEmpty()) {
-            log.info("[DEBUG checkOtherSessions] No sessions found, returning false");
             return false;
         }
 
@@ -169,16 +160,11 @@ public class ChatSubscriberCacheService {
             String mappingKey = getSessionMappingKey(sessionId);
             String sessionMemberId = redisTemplate.opsForValue().get(mappingKey);
 
-            log.info("[DEBUG checkOtherSessions] Checking sessionId={}, mappingKey={}, sessionMemberId={}",
-                    sessionId, mappingKey, sessionMemberId);
-
             if (sessionMemberId != null && sessionMemberId.equals(String.valueOf(memberId))) {
-                log.info("[DEBUG checkOtherSessions] Found matching session! Returning true");
                 return true; // 같은 회원의 다른 세션 발견
             }
         }
 
-        log.info("[DEBUG checkOtherSessions] No matching sessions found, returning false");
         return false;
     }
 
