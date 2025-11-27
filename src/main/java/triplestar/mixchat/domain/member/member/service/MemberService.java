@@ -61,7 +61,7 @@ public class MemberService {
         List<Long> ids = members.stream().map(Member::getId).toList();
         Map<Long, Boolean> onlineBulk = presenceService.isOnlineBulk(ids);
         return members.map(member -> {
-            Boolean isOnline = onlineBulk.getOrDefault(member.getId(), false);
+            boolean isOnline = onlineBulk.getOrDefault(member.getId(), false);
             return MemberPresenceSummaryResp.from(member, isOnline);
         });
     }

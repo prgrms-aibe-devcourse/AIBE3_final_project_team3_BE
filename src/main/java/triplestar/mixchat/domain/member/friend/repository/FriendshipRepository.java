@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import triplestar.mixchat.domain.member.friend.dto.FriendDetailResp;
 import triplestar.mixchat.domain.member.friend.entity.Friendship;
+import triplestar.mixchat.domain.member.member.entity.Member;
 
 @Repository
 public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
@@ -17,16 +18,18 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
 
     // 특정 멤버의 친구 id 목록 조회
     @Query("""
-                SELECT 
-                    CASE 
-                        WHEN f.smallerMember.id = :memberId THEN f.largerMember.id
-                        ELSE f.smallerMember.id
-                    END
+                SELECT m
                 FROM Friendship f
-                WHERE f.smallerMember.id = :memberId
-                   OR f.largerMember.id = :memberId
+                JOIN Member m
+                    ON m.id = (
+                        CASE
+                            WHEN f.smallerMember.id = :memberId THEN f.largerMember.id
+                            ELSE f.smallerMember.id
+                        END
+                    )
+                WHERE :memberId IN (f.smallerMember.id, f.largerMember.id)
             """)
-    Page<Long> findFriendsByMemberId(Long memberId, Pageable pageable);
+    Page<Member> findFriendsByMemberId(Long memberId, Pageable pageable);
 
     @Query("""
                 SELECT new triplestar.mixchat.domain.member.friend.dto.FriendDetailResp(

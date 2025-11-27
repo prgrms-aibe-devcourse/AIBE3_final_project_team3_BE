@@ -43,7 +43,7 @@ public class PresenceRepository {
         Set<String> allOnlineIds = redisTemplate.opsForZSet().rangeByScore(key, threshold, Double.MAX_VALUE);
 
         if (allOnlineIds == null) {
-            return memberIds.stream().collect(Collectors.toMap(id -> id, id -> false));
+            return result;
         }
 
         for (Long memberId : memberIds) {

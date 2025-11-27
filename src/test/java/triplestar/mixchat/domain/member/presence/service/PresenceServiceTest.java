@@ -93,7 +93,7 @@ class PresenceServiceTest extends RedisTestContainer {
         );
 
         // then
-        assertThat(result.get(onlineMemberId)).isTrue();
+        assertThat(result.get(offlineMemberId)).isTrue();
         assertThat(result.get(offlineMemberId)).isFalse();
     }
 
