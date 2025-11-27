@@ -241,7 +241,7 @@ INSERT INTO members (
 
 -- 34
 ('test34@test.com','$2a$10$k1PEYBKO83YurbOiVR/tc.HUEdc9w9ZTYPlYTjBznNcNiWnZ6Bl5S',
- 'Hank','HK','NZ',
+ 'Hank','HK','CH',
  '["🏉 rugby","🎬 drama"]',
  'INTERMEDIATE','테스트 유저34','ROLE_MEMBER','BASIC',
  NOW(), FALSE, NULL, FALSE, NULL, NULL, NULL, NOW(), NOW()),
@@ -290,7 +290,7 @@ INSERT INTO members (
 
 -- 41
 ('test41@test.com','$2a$10$k1PEYBKO83YurbOiVR/tc.HUEdc9w9ZTYPlYTjBznNcNiWnZ6Bl5S',
- 'Olga','Olg','PL',
+ 'Olga','Olg','RU',
  '["🎿 ski","🧘 meditation"]',
  'BEGINNER','테스트 유저41','ROLE_MEMBER','BASIC',
  NOW(), FALSE, NULL, FALSE, NULL, NULL, NULL, NOW(), NOW()),

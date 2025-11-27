@@ -11,7 +11,7 @@ import triplestar.mixchat.domain.member.member.entity.Member;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "prompts")
+@Table(name = "user_prompts")
 public class UserPrompt extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

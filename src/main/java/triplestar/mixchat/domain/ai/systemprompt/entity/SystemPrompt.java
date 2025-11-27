@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 import triplestar.mixchat.global.jpa.entity.BaseEntityNoModified;
 
 @Entity
-@Table(name = "system_prompts")
 @Getter
+@Table(name = "system_prompts")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SystemPrompt extends BaseEntityNoModified {
 
