@@ -79,11 +79,11 @@ public class ChatSubscriberCacheService {
         // 1. 세션별 구독 제거
         Long removedSession = redisTemplate.opsForSet().remove(sessionsKey, sessionId);
 
-        // 2. 세션-멤버 매핑 제거
-        redisTemplate.delete(mappingKey);
-
-        // 3. 이 회원의 다른 세션이 남아있는지 확인
+        // 2. 이 회원의 다른 세션이 남아있는지 확인 (매핑 삭제 전에 확인)
         boolean hasOtherSessions = checkOtherSessionsForMember(roomId, memberId);
+
+        // 3. 세션-멤버 매핑 제거 (확인 후 삭제)
+        redisTemplate.delete(mappingKey);
 
         // 4. 모든 세션이 해제되었으면 members Set에서도 제거
         Long removedMember = null;
@@ -91,7 +91,7 @@ public class ChatSubscriberCacheService {
             removedMember = redisTemplate.opsForSet().remove(membersKey, String.valueOf(memberId));
         }
 
-        log.debug("Removed subscriber: roomId={}, memberId={}, sessionId={}, removedSession={}, removedMember={}, hasOtherSessions={}",
+        log.info("Removed subscriber: roomId={}, memberId={}, sessionId={}, removedSession={}, removedMember={}, hasOtherSessions={}",
                   roomId, memberId, sessionId, removedSession, removedMember, hasOtherSessions);
     }
 

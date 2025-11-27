@@ -191,12 +191,7 @@ public class WebSocketEventListener {
         String sessionId = roomInfo.getSessionId();
 
         // Redis에서 구독자 제거 (세션 ID 포함)
-        log.info("[BEFORE REMOVE] Removing subscriber: roomId={}, memberId={}, sessionId={}", roomId, memberId, sessionId);
         subscriberCacheService.removeSubscriber(roomId, memberId, sessionId);
-
-        // 제거 후 확인
-        Set<String> remainingSubscribers = subscriberCacheService.getSubscribers(roomId);
-        log.info("[AFTER REMOVE] Remaining subscribers in room {}: {}", roomId, remainingSubscribers);
 
         // 세션별 구독 방 목록에서도 제거
         SessionSubscription sessionSubscription = sessionSubscriptions.get(sessionId);
@@ -231,11 +226,14 @@ public class WebSocketEventListener {
         Set<Long> roomIds = subscription.getRoomIds();
         Set<String> subscriptionIds = subscription.getSubscriptionIds();
 
-        // 실제 구독한 방만 Redis에서 제거 (sessionId 사용)
+        // 실제 구독한 방만 Redis에서 제거 및 구독자 수 브로드캐스트 (sessionId 사용)
         for (String subId : subscriptionIds) {
             RoomSubscriptionInfo info = subscriptionIdToRoomInfo.get(subId);
             if (info != null) {
                 subscriberCacheService.removeSubscriber(info.getRoomId(), memberId, sessionId);
+
+                // 구독자 수 변경 브로드캐스트
+                broadcastSubscriberCount(info.getRoomId(), info.getChatRoomType());
             }
         }
 

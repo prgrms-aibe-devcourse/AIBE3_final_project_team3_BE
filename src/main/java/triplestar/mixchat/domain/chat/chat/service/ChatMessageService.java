@@ -37,6 +37,7 @@ public class ChatMessageService {
     private final DirectChatRoomRepository directChatRoomRepository;
     private final GroupChatRoomRepository groupChatRoomRepository;
     private final ChatSubscriberCacheService subscriberCacheService;
+    private final jakarta.persistence.EntityManager entityManager;
 
     @Transactional
     public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatMessage.chatRoomType chatRoomType) {
@@ -57,7 +58,7 @@ public class ChatMessageService {
         // 2. Redis에서 구독자 목록 조회 및 수집
         Set<Long> subscribedMembers = new HashSet<>();
         Set<String> subscribers = subscriberCacheService.getSubscribers(roomId);
-        log.info("[DEBUG] roomId={}, senderId={}, Redis subscribers={}", roomId, senderId, subscribers);
+        log.info("[DEBUG Redis] roomId={}, subscribers from Redis={}", roomId, subscribers);
         if (subscribers != null && !subscribers.isEmpty()) {
             for (String subscriberIdStr : subscribers) {
                 try {
@@ -75,6 +76,7 @@ public class ChatMessageService {
                 }
             }
         }
+        log.info("[DEBUG memberIdsToMarkRead] memberIdsToMarkRead={}", memberIdsToMarkRead);
 
         // 3. Bulk Update: 발신자 + 구독자 모두 한 번에 처리 (쿼리 통합)
         if (!memberIdsToMarkRead.isEmpty()) {
@@ -83,11 +85,23 @@ public class ChatMessageService {
             );
         }
 
-        // 4. unreadCount 계산: 전체 멤버 수 - 1(발신자) - 구독 중인 사람 수
+        // 4. unreadCount 계산: lastReadSequence 기준으로 안 읽은 사람 수 계산
+        // Bulk Update 후 다시 조회하여 업데이트된 lastReadSequence 사용
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
-        int unreadCount = allMembers.size() - 1 - subscribedMembers.size();
-        log.info("[DEBUG] unreadCount calc: allMembers={}, subscribedMembers={}, unreadCount={}",
-                allMembers.size(), subscribedMembers.size(), unreadCount);
+
+        log.info("[DEBUG unreadCount] roomId={}, sequence={}, senderId={}", roomId, sequence, senderId);
+        for (ChatMember member : allMembers) {
+            log.info("[DEBUG unreadCount] memberId={}, lastReadSequence={}",
+                    member.getMember().getId(), member.getLastReadSequence());
+        }
+
+        int unreadCount = (int) allMembers.stream()
+                .filter(member -> !member.getMember().getId().equals(senderId)) // 발신자 제외
+                .filter(member -> member.getLastReadSequence() == null ||
+                        member.getLastReadSequence() < sequence) // 안 읽은 사람
+                .count();
+
+        log.info("[DEBUG unreadCount] calculated unreadCount={}", unreadCount);
 
         // 5. 알림 이벤트 (구독 중이지 않은 사람들에게만)
         List<ChatMember> roomMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_IdNot(roomId, chatRoomType, senderId);
@@ -151,16 +165,28 @@ public class ChatMessageService {
     }
 
     // Sequence 생성 (비관적 락으로 동시성 제어)
-    // Dirty Checking으로 트랜잭션 종료 시 자동 저장되므로 save 불필요
     private Long generateSequence(Long roomId, ChatMessage.chatRoomType chatRoomType) {
-        return switch (chatRoomType) {
-            case DIRECT -> directChatRoomRepository.findByIdWithLock(roomId)
-                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
-                    .generateNextSequence();
-            case GROUP -> groupChatRoomRepository.findByIdWithLock(roomId)
-                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
-                    .generateNextSequence();
+        Long sequence = switch (chatRoomType) {
+            case DIRECT -> {
+                var room = directChatRoomRepository.findByIdWithLock(roomId)
+                        .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId));
+                Long beforeSeq = room.getCurrentSequence();
+                Long newSeq = room.generateNextSequence();
+                entityManager.flush(); // 즉시 DB에 반영
+                log.info("[DEBUG Sequence] DIRECT roomId={}, before={}, after={}, flushed", roomId, beforeSeq, newSeq);
+                yield newSeq;
+            }
+            case GROUP -> {
+                var room = groupChatRoomRepository.findByIdWithLock(roomId)
+                        .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId));
+                Long beforeSeq = room.getCurrentSequence();
+                Long newSeq = room.generateNextSequence();
+                entityManager.flush(); // 즉시 DB에 반영
+                log.info("[DEBUG Sequence] GROUP roomId={}, before={}, after={}, flushed", roomId, beforeSeq, newSeq);
+                yield newSeq;
+            }
             default -> throw new UnsupportedOperationException("지원하지 않는 채팅방 타입입니다: " + chatRoomType);
         };
+        return sequence;
     }
 }
