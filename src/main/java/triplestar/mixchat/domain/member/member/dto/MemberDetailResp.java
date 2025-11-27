@@ -13,12 +13,6 @@ public record MemberDetailResp(
         @Schema(description = "회원 고유 ID", example = "123", requiredMode = REQUIRED)
         Long memberId,
 
-        @Schema(description = "이메일 주소", example = "gildong@example.com", requiredMode = REQUIRED)
-        String email,
-
-        @Schema(description = "실명", example = "홍길동", requiredMode = REQUIRED)
-        String name,
-
         @Schema(description = "닉네임", example = "MixMaster", requiredMode = REQUIRED)
         String nickname,
 
@@ -51,8 +45,6 @@ public record MemberDetailResp(
         public static MemberDetailResp forAnonymousViewer(Member member) {
                 return new MemberDetailResp(
                         member.getId(),
-                        member.getEmail(),
-                        member.getName(),
                         member.getNickname(),
                         member.getCountry(),
                         member.getEnglishLevel(),
