@@ -28,6 +28,9 @@ public class GroupChatRoom extends BaseEntity {
     @JoinColumn(name = "owner_id", nullable = false)
     private Member owner; // 방장
 
+    @Column(nullable = false)
+    private Long currentSequence = 0L; // 채팅방 메시지 순서 번호
+
     private GroupChatRoom(String name, String description, String topic, String password, Member owner) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("채팅방 이름(name)은 비어 있을 수 없습니다.");
@@ -78,5 +81,10 @@ public class GroupChatRoom extends BaseEntity {
         if (!this.password.equals(inputPassword.trim())) {
             throw new IllegalArgumentException("채팅방 비밀번호가 올바르지 않습니다.");
         }
+    }
+
+    // 다음 sequence 번호 생성, 락 추가로 synchronized는 필요 없을듯해 제거
+    public Long generateNextSequence() {
+        return ++this.currentSequence;
     }
 }

@@ -1,8 +1,11 @@
 package triplestar.mixchat.domain.chat.chat.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional; // Optional import 추가
+import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
@@ -65,4 +68,22 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long
         WHERE cm.chatRoomId IN :roomIds AND cm.chatRoomType = 'GROUP'
         """)
     List<ChatMember> findAllByRoomIdsWithMember(@Param("roomIds") List<Long> roomIds);
+
+    // 여러 멤버의 lastReadSequence를 한 번에 일괄 쿼리로 업데이트 (Bulk Update)
+    @Modifying(clearAutomatically = true)
+    @Query("""
+        UPDATE ChatMember cm
+        SET cm.lastReadSequence = :sequence, cm.lastReadAt = :now
+        WHERE cm.chatRoomId = :roomId
+        AND cm.chatRoomType = :chatRoomType
+        AND cm.member.id IN :memberIds
+        AND (cm.lastReadSequence IS NULL OR cm.lastReadSequence < :sequence)
+        """)
+    void bulkUpdateLastReadSequence(
+        @Param("roomId") Long roomId,
+        @Param("chatRoomType") ChatMessage.chatRoomType chatRoomType,
+        @Param("memberIds") Set<Long> memberIds,
+        @Param("sequence") Long sequence,
+        @Param("now") LocalDateTime now
+    );
 }
