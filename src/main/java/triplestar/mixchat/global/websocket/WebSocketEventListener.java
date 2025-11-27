@@ -14,10 +14,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
+import java.util.List;
+import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountDto;
 import triplestar.mixchat.domain.chat.chat.dto.ReadStatusUpdateEvent;
 import triplestar.mixchat.domain.chat.chat.dto.SubscriberCountUpdateResp;
+import triplestar.mixchat.domain.chat.chat.dto.UnreadCountUpdateEventDto;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
+import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
 import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
 import triplestar.mixchat.global.security.CustomUserDetails;
 
@@ -29,6 +33,7 @@ public class WebSocketEventListener {
 
     private final ChatSubscriberCacheService subscriberCacheService;
     private final ChatMemberService chatMemberService;
+    private final ChatMessageService chatMessageService;
     private final SimpMessageSendingOperations messagingTemplate;
 
     // 세션별 구독 중인 방 목록 추적 (KEYS 명령어 사용 방지)
@@ -45,19 +50,22 @@ public class WebSocketEventListener {
         private final Long memberId;
         private final Set<Long> roomIds = ConcurrentHashMap.newKeySet();
         private final Set<String> subscriptionIds = ConcurrentHashMap.newKeySet(); // disconnect 시 subscriptionIdToRoomInfo 정리용
+        private final ConcurrentHashMap<Long, ChatMessage.chatRoomType> roomTypeMap = new ConcurrentHashMap<>(); // roomId -> chatRoomType
 
         public SessionSubscription(Long memberId) {
             this.memberId = memberId;
         }
 
-        public void addRoom(Long roomId, String subscriptionId) {
+        public void addRoom(Long roomId, String subscriptionId, ChatMessage.chatRoomType chatRoomType) {
             roomIds.add(roomId);
             subscriptionIds.add(subscriptionId);
+            roomTypeMap.put(roomId, chatRoomType);
         }
 
         public void removeRoom(Long roomId, String subscriptionId) {
             roomIds.remove(roomId);
             subscriptionIds.remove(subscriptionId);
+            roomTypeMap.remove(roomId);
         }
 
         public Set<Long> getRoomIds() {
@@ -70,6 +78,10 @@ public class WebSocketEventListener {
 
         public Long getMemberId() {
             return memberId;
+        }
+
+        public ChatMessage.chatRoomType getRoomType(Long roomId) {
+            return roomTypeMap.get(roomId);
         }
     }
 
@@ -140,10 +152,12 @@ public class WebSocketEventListener {
 
         // Redis에 구독자 추가 (세션 ID 포함)
         subscriberCacheService.addSubscriber(roomId, memberId, sessionId);
+        log.info("[Subscribe] Added to Redis: roomId={}, memberId={}, sessionId={}, subscriptionId={}",
+                roomId, memberId, sessionId, subscriptionId);
 
         // 세션별 구독 방 추적 (disconnect 시 사용)
         sessionSubscriptions.computeIfAbsent(sessionId, k -> new SessionSubscription(memberId))
-                .addRoom(roomId, subscriptionId);
+                .addRoom(roomId, subscriptionId, chatRoomType);
 
         // subscriptionId와 roomId 매핑 저장 (unsubscribe 시 사용)
         subscriptionIdToRoomInfo.put(subscriptionId, new RoomSubscriptionInfo(roomId, memberId, sessionId, chatRoomType));
@@ -151,16 +165,28 @@ public class WebSocketEventListener {
         // 채팅방 입장 시 해당 방의 모든 메시지를 읽음 처리
         Long readSequence = chatMemberService.markAsReadOnEnter(memberId, roomId, chatRoomType);
 
-        // 실제로 새로 읽은 메시지가 있을 때만 읽음 이벤트를 브로드캐스트
+        // 실제로 새로 읽은 메시지가 있을 때만 unreadCount 업데이트 이벤트를 브로드캐스트
         // readSequence가 null이면 이미 모든 메시지를 읽은 상태 (새로고침 등)
         if (readSequence != null && readSequence > 0) {
-            ReadStatusUpdateEvent readEvent = ReadStatusUpdateEvent.of(memberId, readSequence);
-            String broadcastDestination = "/topic/" + typeString.toLowerCase() + "/rooms/" + roomId;
-            messagingTemplate.convertAndSend(broadcastDestination, readEvent);
-            log.info("Broadcasted read event: memberId={}, roomId={}, readSequence={}",
-                    memberId, roomId, readSequence);
+            // 영향받은 메시지들의 최신 unreadCount 계산
+            List<MessageUnreadCountDto> updates = chatMessageService.getUnreadCountUpdates(roomId, chatRoomType, readSequence);
+
+            if (!updates.isEmpty()) {
+                UnreadCountUpdateEventDto updateEvent = UnreadCountUpdateEventDto.from(updates);
+                String broadcastDestination = "/topic/" + typeString.toLowerCase() + "/rooms/" + roomId;
+
+                log.info("🔔 [UNREAD COUNT UPDATE] Broadcasting to ALL subscribers: destination={}, updatedCount={}, readerId={}, readSequence={}",
+                        broadcastDestination, updates.size(), memberId, readSequence);
+
+                messagingTemplate.convertAndSend(broadcastDestination, updateEvent);
+
+                log.info("✅ [UNREAD COUNT UPDATE] Broadcast completed: destination={}, {} messages updated",
+                        broadcastDestination, updates.size());
+            } else {
+                log.info("⏭️ [UNREAD COUNT UPDATE] No messages to update for roomId={}", roomId);
+            }
         } else {
-            log.debug("No new messages to mark as read: memberId={}, roomId={}", memberId, roomId);
+            log.info("⏭️ [UNREAD COUNT UPDATE] Skipped (already read all): memberId={}, roomId={}", memberId, roomId);
         }
 
         // 구독자 수 변경 브로드캐스트
@@ -183,12 +209,16 @@ public class WebSocketEventListener {
         // subscriptionId로 방 정보 조회 및 제거
         RoomSubscriptionInfo roomInfo = subscriptionIdToRoomInfo.remove(subscriptionId);
         if (roomInfo == null) {
+            log.warn("[Unsubscribe] No room info found for subscriptionId={}", subscriptionId);
             return;
         }
 
         Long roomId = roomInfo.getRoomId();
         Long memberId = roomInfo.getMemberId();
         String sessionId = roomInfo.getSessionId();
+
+        log.info("[Unsubscribe] Removing from Redis: roomId={}, memberId={}, sessionId={}, subscriptionId={}",
+                roomId, memberId, sessionId, subscriptionId);
 
         // Redis에서 구독자 제거 (세션 ID 포함)
         subscriberCacheService.removeSubscriber(roomId, memberId, sessionId);
@@ -219,6 +249,7 @@ public class WebSocketEventListener {
         // 세션별 구독 정보 조회 및 제거
         SessionSubscription subscription = sessionSubscriptions.remove(sessionId);
         if (subscription == null) {
+            log.warn("[Disconnect] No subscription info found for sessionId={}", sessionId);
             return;
         }
 
@@ -226,15 +257,24 @@ public class WebSocketEventListener {
         Set<Long> roomIds = subscription.getRoomIds();
         Set<String> subscriptionIds = subscription.getSubscriptionIds();
 
-        // 실제 구독한 방만 Redis에서 제거 및 구독자 수 브로드캐스트 (sessionId 사용)
-        for (String subId : subscriptionIds) {
-            RoomSubscriptionInfo info = subscriptionIdToRoomInfo.get(subId);
-            if (info != null) {
-                subscriberCacheService.removeSubscriber(info.getRoomId(), memberId, sessionId);
+        log.info("[Disconnect] Cleaning up session: sessionId={}, memberId={}, roomCount={}, subscriptionCount={}",
+                sessionId, memberId, roomIds.size(), subscriptionIds.size());
 
-                // 구독자 수 변경 브로드캐스트
-                broadcastSubscriberCount(info.getRoomId(), info.getChatRoomType());
+        // 실제 구독한 방만 Redis에서 제거 및 구독자 수 브로드캐스트
+        // SessionSubscription에서 직접 roomId와 chatRoomType을 가져와서 처리 (subscriptionIdToRoomInfo에 의존하지 않음)
+        for (Long roomId : roomIds) {
+            ChatMessage.chatRoomType chatRoomType = subscription.getRoomType(roomId);
+            if (chatRoomType == null || chatRoomType == ChatMessage.chatRoomType.AI) {
+                continue; // AI 채팅방은 제외
             }
+
+            log.info("[Disconnect] Removing from Redis: roomId={}, memberId={}, sessionId={}",
+                    roomId, memberId, sessionId);
+
+            subscriberCacheService.removeSubscriber(roomId, memberId, sessionId);
+
+            // 구독자 수 변경 브로드캐스트
+            broadcastSubscriberCount(roomId, chatRoomType);
         }
 
         // [중요] subscriptionIdToRoomInfo 맵에서도 제거 (메모리 누수 방지)

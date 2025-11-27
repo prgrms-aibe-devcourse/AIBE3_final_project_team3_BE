@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomDataResp;
+import triplestar.mixchat.domain.chat.chat.dto.ChatRoomPageDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
@@ -88,10 +89,15 @@ public interface ApiChatController {
             @Valid @RequestBody TextMessageReq request
     );
 
-    @Operation(summary = "채팅방 메시지 목록 조회", description = "지정된 채팅방의 모든 메시지 내역을 시간순으로 조회합니다.")
-    CustomResponse<ChatRoomDataResp> getMessages(
+    @Operation(
+        summary = "채팅방 메시지 목록 조회 (페이징)",
+        description = "지정된 채팅방의 메시지 내역을 페이징하여 조회합니다. cursor와 size 파라미터를 생략하면 최근 25개 메시지를 반환합니다."
+    )
+    CustomResponse<ChatRoomPageDataResp> getMessages(
             @Parameter(description = "메시지를 조회할 채팅방의 ID") @PathVariable Long roomId,
             @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @Parameter(description = "이전 페이지의 마지막 메시지 sequence (생략 시 최신 메시지부터 조회)") @RequestParam(required = false) Long cursor,
+            @Parameter(description = "한 페이지에 조회할 메시지 개수 (기본 25, 최대 100)") @RequestParam(required = false) Integer size,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 

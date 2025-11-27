@@ -17,12 +17,16 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomDataResp;
+import triplestar.mixchat.domain.chat.chat.dto.ChatRoomPageDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.JoinGroupChatReq;
+import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
+import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountDto;
+import triplestar.mixchat.domain.chat.chat.dto.UnreadCountUpdateEventDto;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.TextMessageReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
@@ -143,16 +147,18 @@ public class ApiV1ChatController implements ApiChatController {
 
     @Override
     @GetMapping("/rooms/{roomId}/messages")
-    public CustomResponse<ChatRoomDataResp> getMessages(
+    public CustomResponse<ChatRoomPageDataResp> getMessages(
             @PathVariable("roomId") Long roomId,
             @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(required = false) Integer size,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         // 메시지 조회 전에 읽음 처리 (채팅방 입장 시 자동 읽음)
         chatMemberService.markAsReadOnEnter(currentUser.getId(), roomId, chatRoomType);
 
-        List<MessageResp> messageResps = chatMessageService.getMessagesWithSenderInfo(roomId, chatRoomType, currentUser.getId());
-        ChatRoomDataResp responseData = new ChatRoomDataResp(chatRoomType, messageResps);
+        MessagePageResp messagePageResp = chatMessageService.getMessagesWithSenderInfo(roomId, chatRoomType, currentUser.getId(), cursor, size);
+        ChatRoomPageDataResp responseData = ChatRoomPageDataResp.of(chatRoomType, messagePageResp);
         return CustomResponse.ok("메시지 목록과 대화 타입 조회에 성공하였습니다.", responseData);
     }
 

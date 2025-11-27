@@ -1,12 +1,12 @@
 package triplestar.mixchat.global.cache;
 
+import jakarta.annotation.PostConstruct;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * 현재 채팅방에 WebSocket으로 구독 중인 사용자 관리
@@ -24,6 +24,26 @@ import java.util.Set;
 public class ChatSubscriberCacheService {
 
     private final RedisTemplate<String, String> redisTemplate;
+
+    // 서버 시작 시 모든 구독자 정보 초기화 (유령 세션 방지)
+    @PostConstruct
+    public void clearAllSubscribersOnStartup() {
+        try {
+            Set<String> keys = redisTemplate.keys("chat:subscribers:room:*");
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+                log.info("서버 재시작 시 구독자 키 초기화 {}", keys.size());
+            }
+
+            Set<String> sessionKeys = redisTemplate.keys("session:member:*");
+            if (sessionKeys != null && !sessionKeys.isEmpty()) {
+                redisTemplate.delete(sessionKeys);
+                log.info("서버 재시작 시 세션 매핑 키 초기화 {}", sessionKeys.size());
+            }
+        } catch (Exception e) {
+            log.error("초기화 실패", e);
+        }
+    }
 
     private static final String SESSIONS_KEY_PREFIX = "chat:subscribers:room:";
     private static final String SESSIONS_KEY_SUFFIX = ":sessions";
@@ -137,7 +157,10 @@ public class ChatSubscriberCacheService {
         String sessionsKey = getSessionsKey(roomId);
         Set<String> allSessions = redisTemplate.opsForSet().members(sessionsKey);
 
+        log.info("[DEBUG checkOtherSessions] roomId={}, memberId={}, allSessions={}", roomId, memberId, allSessions);
+
         if (allSessions == null || allSessions.isEmpty()) {
+            log.info("[DEBUG checkOtherSessions] No sessions found, returning false");
             return false;
         }
 
@@ -146,11 +169,16 @@ public class ChatSubscriberCacheService {
             String mappingKey = getSessionMappingKey(sessionId);
             String sessionMemberId = redisTemplate.opsForValue().get(mappingKey);
 
+            log.info("[DEBUG checkOtherSessions] Checking sessionId={}, mappingKey={}, sessionMemberId={}",
+                    sessionId, mappingKey, sessionMemberId);
+
             if (sessionMemberId != null && sessionMemberId.equals(String.valueOf(memberId))) {
+                log.info("[DEBUG checkOtherSessions] Found matching session! Returning true");
                 return true; // 같은 회원의 다른 세션 발견
             }
         }
 
+        log.info("[DEBUG checkOtherSessions] No matching sessions found, returning false");
         return false;
     }
 

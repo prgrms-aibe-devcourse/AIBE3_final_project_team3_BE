@@ -93,7 +93,7 @@ public class ChatMemberService {
             }
 
             member.updateLastReadSequence(currentSequence);
-            log.debug("채팅방 입장 시 읽음 처리 완료: memberId={}, roomId={}, sequence={}, previous={}",
+            log.info("✅ [markAsReadOnEnter] 읽음 처리 완료: memberId={}, roomId={}, readSequence={}, previous={}",
                     memberId, roomId, currentSequence, lastReadSequence);
             return currentSequence;
         }

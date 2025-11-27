@@ -78,16 +78,27 @@ public class StompHandler implements ExecutorChannelInterceptor {
     @Override
     public Message<?> beforeHandle(Message<?> message, MessageChannel channel, MessageHandler handler) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+        if (accessor == null) {
+            return message;
+        }
+
+        // Heart-beat 등 command가 없는 내부 메시지는 별도 처리 필요 없음
+        if (accessor.getCommand() == null) {
+            return message;
+        }
+
         Principal principal = accessor.getUser();
 
         // beforeHandle에서 principal 객체 확인
         if (principal != null) {
-            log.info("✅ [beforeHandle] Principal'{}' found in session '{}'. Setting SecurityContext.",
-                    principal.getName(), accessor.getSessionId());
+            // 너무 많은 로그를 남기므로 주석 처리. 연결 시 로그만으로 충분.
+            // log.info("✅ [beforeHandle] Principal'{}' found in session '{}'. Setting SecurityContext.",
+            //         principal.getName(), accessor.getSessionId());
             SecurityContextHolder.getContext().setAuthentication((Authentication) principal);
         } else {
-            log.warn("❌ [beforeHandle] Principal NOT FOUND in session '{}'. SecurityContext will be empty.",
-                    accessor.getSessionId());
+            // 이 로그도 너무 자주 발생할 수 있으므로 주석 처리.
+            // log.warn("❌ [beforeHandle] Principal NOT FOUND in session '{}'. SecurityContext will be empty.",
+            //         accessor.getSessionId());
         }
 
         return message;

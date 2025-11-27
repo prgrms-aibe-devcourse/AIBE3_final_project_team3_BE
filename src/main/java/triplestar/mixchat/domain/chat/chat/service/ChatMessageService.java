@@ -10,7 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
+import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountDto;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
@@ -132,8 +134,30 @@ public class ChatMessageService {
         return saveMessage(roomId, senderId, senderNickname, fileUrl, messageType, chatRoomType);
     }
 
-    public List<MessageResp> getMessagesWithSenderInfo(Long roomId, ChatMessage.chatRoomType chatRoomType, Long requesterId) {
-        List<ChatMessage> messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeOrderByCreatedAtAsc(roomId, chatRoomType);
+    public MessagePageResp getMessagesWithSenderInfo(Long roomId, ChatMessage.chatRoomType chatRoomType, Long requesterId, Long cursor, Integer size) {
+        // 기본값: size = 25, 최대 100
+        int pageSize = (size != null && size > 0 && size <= 100) ? size : 25;
+
+        log.info("[getMessagesWithSenderInfo] roomId={}, chatRoomType={}, cursor={}, size={}", roomId, chatRoomType, cursor, pageSize);
+
+        // 메시지 조회 (sequence 내림차순)
+        List<ChatMessage> messages;
+        if (cursor == null) {
+            // 최신 메시지부터 pageSize개
+            messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(
+                roomId, chatRoomType, org.springframework.data.domain.PageRequest.of(0, pageSize)
+            );
+        } else {
+            // cursor 이전 메시지 pageSize개
+            messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeAndSequenceLessThanOrderBySequenceDesc(
+                roomId, chatRoomType, cursor, org.springframework.data.domain.PageRequest.of(0, pageSize)
+            );
+        }
+
+        // 역순 정렬 (오래된 메시지 → 최신 메시지 순으로 표시)
+        java.util.Collections.reverse(messages);
+
+        log.info("[getMessagesWithSenderInfo] Found {} messages for roomId={}", messages.size(), roomId);
 
         // 발신자 이름 조회
         List<Long> senderIds = messages.stream()
@@ -144,14 +168,12 @@ public class ChatMessageService {
                 .collect(Collectors.toMap(Member::getId, Member::getNickname));
 
         // 채팅방의 모든 멤버 조회 (읽음 상태 확인용)
-        // todo: 부하 심해지면 프론트에서 연산 고려? 하지만 신뢰성이 낮을듯
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
 
-        return messages.stream()
+        List<MessageResp> messageResps = messages.stream()
                 .map(message -> {
                     String senderName = senderNames.getOrDefault(message.getSenderId(), "Unknown");
 
-                    //todo: 로직 개선, 페이징 필요
                     // unreadCount 계산: 발신자를 제외한 멤버 중 안 읽은 사람 수
                     int unreadCount = (int) allMembers.stream()
                             .filter(member -> !member.getMember().getId().equals(message.getSenderId()))
@@ -160,6 +182,68 @@ public class ChatMessageService {
                             .count();
 
                     return MessageResp.withUnreadCount(message, senderName, unreadCount);
+                })
+                .collect(Collectors.toList());
+
+        // 다음 페이지 정보 계산
+        Long nextCursor = null;
+        boolean hasMore = false;
+
+        if (!messages.isEmpty()) {
+            // nextCursor는 가장 오래된 메시지의 sequence (역순 정렬 후 첫 번째)
+            nextCursor = messages.get(0).getSequence();
+            // hasMore는 조회된 메시지 수가 pageSize와 같으면 true
+            hasMore = messages.size() == pageSize;
+        }
+
+        return MessagePageResp.of(messageResps, nextCursor, hasMore);
+    }
+
+    public List<MessageUnreadCountDto> getUnreadCountUpdates(Long roomId, ChatMessage.chatRoomType chatRoomType, Long readUpToSequence) {
+        // 1. 채팅방의 모든 멤버 조회 (읽음 상태 확인용)
+        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
+
+        // 2. 성능 최적화: 최근 200개 메시지만 조회
+        // 이유:
+        // - 화면에 보이는 건 보통 25개
+        // - 여러 사용자가 스크롤업으로 100개 정도까지 볼 수 있음
+        // - 200개면 대부분의 실시간 케이스 커버
+        // - 그보다 오래된 메시지는 페이지 로드 시 서버가 정확히 계산하므로 문제없음
+        List<ChatMessage> recentMessages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(
+                roomId, chatRoomType, org.springframework.data.domain.PageRequest.of(0, 200)
+        );
+
+        // 3. readUpToSequence 이하만 필터링
+        List<ChatMessage> affectedMessages = recentMessages.stream()
+                .filter(msg -> msg.getSequence() <= readUpToSequence)
+                .collect(Collectors.toList());
+
+        log.info("[getUnreadCountUpdates] Found {} affected messages (out of {} recent) for roomId={} up to sequence={}",
+                affectedMessages.size(), recentMessages.size(), roomId, readUpToSequence);
+
+        // 3. 각 메시지의 unreadCount를 다시 계산하여 DTO 리스트 생성
+        log.info("[getUnreadCountUpdates] Calculating unreadCount for {} messages. Total members in room: {}",
+                affectedMessages.size(), allMembers.size());
+
+        // 디버깅: 멤버 정보 출력
+        allMembers.forEach(member ->
+            log.debug("[Member] id={}, lastReadSequence={}",
+                member.getMember().getId(), member.getLastReadSequence())
+        );
+
+        return affectedMessages.stream()
+                .map(message -> {
+                    // unreadCount 계산: 발신자를 제외한 멤버 중 안 읽은 사람 수
+                    int unreadCount = (int) allMembers.stream()
+                            .filter(member -> !member.getMember().getId().equals(message.getSenderId()))
+                            .filter(member -> member.getLastReadSequence() == null ||
+                                    member.getLastReadSequence() < message.getSequence())
+                            .count();
+
+                    log.debug("[unreadCount] msgId={}, sequence={}, senderId={}, unreadCount={}",
+                            message.getId(), message.getSequence(), message.getSenderId(), unreadCount);
+
+                    return new MessageUnreadCountDto(message.getId(), unreadCount);
                 })
                 .collect(Collectors.toList());
     }
