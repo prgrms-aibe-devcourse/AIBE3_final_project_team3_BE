@@ -73,4 +73,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
                 AND m.isDeleted = false AND m.isBlocked = false AND m.role = 'ROLE_MEMBER'
     """)
     Page<Member> findByIds(Long currentUserId, List<Long> onlineMemberIds, Pageable pageable);
+
+    Page<Member> findAllByIdIn(List<Long> ids, Pageable pageable);
 }
