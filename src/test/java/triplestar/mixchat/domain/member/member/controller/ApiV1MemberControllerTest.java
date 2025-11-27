@@ -20,14 +20,11 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-import triplestar.mixchat.domain.member.member.service.MemberService;
-import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.testutils.TestMemberFactory;
 
 @ActiveProfiles("test")
@@ -39,10 +36,6 @@ class ApiV1MemberControllerTest {
 
     @Autowired
     MockMvc mvc;
-    @MockitoBean
-    S3Uploader s3Uploader;
-    @Autowired
-    MemberService memberService;
     @Autowired
     MemberRepository memberRepository;
 
@@ -105,6 +98,14 @@ class ApiV1MemberControllerTest {
 
         // 3. 응답 검증
         resultActions.andExpect(status().isOk());
+
+        // 4. DB 검증 (선택적)
+        Member updatedMember = memberRepository.findById(member.getId()).get();
+        // S3Uploader는 파일명을 UUID로 생성하므로 원본 파일명이 포함되지 않음
+        // 따라서 업로드 경로와 확장자 기반으로 검증
+        assertThat(updatedMember.getProfileImageUrl())
+                .contains("/member/profile/")
+                .endsWith(".jpg");
     }
 
     @Test

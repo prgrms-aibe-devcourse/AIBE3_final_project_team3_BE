@@ -14,20 +14,17 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.friend.dto.FriendshipRequestResp;
 import triplestar.mixchat.domain.member.friend.service.FriendshipRequestService;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
-import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
+import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
-import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.presence.service.PresenceService;
-import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.testutils.RedisTestContainer;
 import triplestar.mixchat.testutils.TestMemberFactory;
 
@@ -107,7 +104,8 @@ class MemberServiceTest extends RedisTestContainer {
                 .orElseThrow(() -> new AssertionError("멤버 조회 실패"));
 
         // minio에 UUID로 저장되므로 파일 이름이 아닌 확장자만 확인
-        assertThat(updatedMember.getProfileImageUrl()).isNotEqualTo("http://localhost:9000/test-bucket/default-profile.webp");
+        assertThat(updatedMember.getProfileImageUrl()).isNotEqualTo(
+                "http://localhost:9000/test-bucket/default-profile.webp");
         assertThat(updatedMember.getProfileImageUrl()).endsWith(".png");
     }
 
@@ -119,7 +117,8 @@ class MemberServiceTest extends RedisTestContainer {
         Member updatedMember = memberRepository.findById(member1.getId())
                 .orElseThrow(() -> new AssertionError("멤버 조회 실패"));
 
-        assertThat(updatedMember.getProfileImageUrl()).isEqualTo("http://localhost:9000/test-bucket/default-profile.webp");
+        assertThat(updatedMember.getProfileImageUrl()).isEqualTo(
+                "http://localhost:9000/test-bucket/default-profile.webp");
     }
 
     @Test
@@ -264,7 +263,8 @@ class MemberServiceTest extends RedisTestContainer {
         assertThat(deletedMember.getName()).isEqualTo("삭제된 회원");
         assertThat(deletedMember.getNickname()).isEqualTo("삭제된 회원");
         assertThat(deletedMember.getPassword().getPassword()).isEqualTo("DELETED_MEMBER_PASSWORD");
-        assertThat(deletedMember.getProfileImageUrl()).isEqualTo("http://localhost:9000/test-bucket/default-profile.webp");
+        assertThat(deletedMember.getProfileImageUrl()).isEqualTo(
+                "http://localhost:9000/test-bucket/default-profile.webp");
         assertThat(deletedMember.getDescription()).isEqualTo("삭제된 회원입니다.");
     }
 
