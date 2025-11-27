@@ -145,39 +145,49 @@ public class WebSocketEventListener {
         Long roomId = Long.parseLong(matcher.group(2));
         ChatMessage.chatRoomType chatRoomType = ChatMessage.chatRoomType.valueOf(typeString);
 
-        // AI 채팅방은 읽음 처리 제외
+        // AI 채팅방은 읽음 처리 및 구독자 추적이 불필요 (1:1 AI 대화)
         if (chatRoomType == ChatMessage.chatRoomType.AI) {
             return;
         }
 
-        // Redis에 구독자 추가 (세션 ID 포함)
-        subscriberCacheService.addSubscriber(roomId, memberId, sessionId);
+        try {
+            // 1. 먼저 읽음 처리 (DB 작업 - 실패 가능성 높음)
+            // 실패 시 Redis/메모리에 유령 데이터가 남지 않도록 가장 먼저 실행
+            Long readSequence = chatMemberService.markAsReadOnEnter(memberId, roomId, chatRoomType);
 
-        // 세션별 구독 방 추적 (disconnect 시 사용)
-        sessionSubscriptions.computeIfAbsent(sessionId, k -> new SessionSubscription(memberId))
-                .addRoom(roomId, subscriptionId, chatRoomType);
+            // 2. 성공하면 Redis에 구독자 추가 (실패 가능성 낮음)
+            subscriberCacheService.addSubscriber(roomId, memberId, sessionId);
 
-        // subscriptionId와 roomId 매핑 저장 (unsubscribe 시 사용)
-        subscriptionIdToRoomInfo.put(subscriptionId, new RoomSubscriptionInfo(roomId, memberId, sessionId, chatRoomType));
+            // 3. 세션별 구독 방 추적 (disconnect 시 사용)
+            sessionSubscriptions.computeIfAbsent(sessionId, k -> new SessionSubscription(memberId))
+                    .addRoom(roomId, subscriptionId, chatRoomType);
 
-        // 채팅방 입장 시 해당 방의 모든 메시지를 읽음 처리
-        Long readSequence = chatMemberService.markAsReadOnEnter(memberId, roomId, chatRoomType);
+            // 4. subscriptionId와 roomId 매핑 저장 (unsubscribe 시 사용)
+            subscriptionIdToRoomInfo.put(subscriptionId, new RoomSubscriptionInfo(roomId, memberId, sessionId, chatRoomType));
 
-        // 실제로 새로 읽은 메시지가 있을 때만 unreadCount 업데이트 이벤트를 브로드캐스트
-        // readSequence가 null이면 이미 모든 메시지를 읽은 상태 (새로고침 등)
-        if (readSequence != null && readSequence > 0) {
-            // 영향받은 메시지들의 최신 unreadCount 계산
-            List<MessageUnreadCountDto> updates = chatMessageService.getUnreadCountUpdates(roomId, chatRoomType, readSequence);
+            // 5. 실제로 새로 읽은 메시지가 있을 때만 unreadCount 업데이트 이벤트를 브로드캐스트
+            // readSequence가 null이면 이미 모든 메시지를 읽은 상태 (새로고침 등)
+            if (readSequence != null && readSequence > 0) {
+                // 영향받은 메시지들의 최신 unreadCount 계산
+                List<MessageUnreadCountDto> updates = chatMessageService.getUnreadCountUpdates(roomId, chatRoomType, readSequence);
 
-            if (!updates.isEmpty()) {
-                UnreadCountUpdateEventDto updateEvent = UnreadCountUpdateEventDto.from(updates);
-                String broadcastDestination = "/topic/" + typeString.toLowerCase() + "/rooms/" + roomId;
-                messagingTemplate.convertAndSend(broadcastDestination, updateEvent);
+                if (!updates.isEmpty()) {
+                    UnreadCountUpdateEventDto updateEvent = UnreadCountUpdateEventDto.from(updates);
+                    String broadcastDestination = "/topic/" + typeString.toLowerCase() + "/rooms/" + roomId;
+                    messagingTemplate.convertAndSend(broadcastDestination, updateEvent);
+                }
             }
-        }
 
-        // 구독자 수 변경 브로드캐스트
-        broadcastSubscriberCount(roomId, chatRoomType);
+            // 6. 구독자 수 변경 브로드캐스트
+            broadcastSubscriberCount(roomId, chatRoomType);
+
+        } catch (Exception e) {
+            // 예외 발생 시 로그만 남기고 클라이언트는 구독 실패로 처리
+            // Redis/메모리에 유령 데이터가 남지 않음 (원자성 보장)
+            log.error("채팅방 구독 처리 실패 - memberId: {}, roomId: {}, type: {}, error: {}",
+                    memberId, roomId, chatRoomType, e.getMessage());
+            // 예외를 다시 던지지 않음 (StompHandler에서 이미 멤버십 검증 완료)
+        }
     }
 
     // 채팅방 구독 해제
@@ -240,8 +250,9 @@ public class WebSocketEventListener {
         // SessionSubscription에서 직접 roomId와 chatRoomType을 가져와서 처리 (subscriptionIdToRoomInfo에 의존하지 않음)
         for (Long roomId : roomIds) {
             ChatMessage.chatRoomType chatRoomType = subscription.getRoomType(roomId);
+            // AI 채팅방은 읽음 처리 및 구독자 추적이 불필요 (1:1 AI 대화)
             if (chatRoomType == null || chatRoomType == ChatMessage.chatRoomType.AI) {
-                continue; // AI 채팅방은 제외
+                continue;
             }
 
             subscriberCacheService.removeSubscriber(roomId, memberId, sessionId);
@@ -258,7 +269,7 @@ public class WebSocketEventListener {
 
     // 구독자 수 변경 브로드캐스트 헬퍼 메서드
     private void broadcastSubscriberCount(Long roomId, ChatMessage.chatRoomType chatRoomType) {
-        // AI 채팅방은 제외
+        // AI 채팅방은 읽음 처리 및 구독자 추적이 불필요 (1:1 AI 대화)
         if (chatRoomType == ChatMessage.chatRoomType.AI) {
             return;
         }

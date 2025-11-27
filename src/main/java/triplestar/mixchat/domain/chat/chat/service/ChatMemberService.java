@@ -67,7 +67,7 @@ public class ChatMemberService {
     public void updateLastReadSequence(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType, Long sequence) {
         ChatMember member = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_Id(
                 roomId, chatRoomType, memberId
-        ).orElseThrow(() -> new SecurityException("해당 대화방에 속해있지 않습니다."));
+        ).orElseThrow(() -> new AccessDeniedException("해당 대화방에 접근할 권한이 없습니다."));
 
         member.updateLastReadSequence(sequence);
     }
@@ -78,7 +78,7 @@ public class ChatMemberService {
     public Long markAsReadOnEnter(Long memberId, Long roomId, ChatMessage.chatRoomType chatRoomType) {
         ChatMember member = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_Id(
                 roomId, chatRoomType, memberId
-        ).orElseThrow(() -> new SecurityException("해당 대화방에 속해있지 않습니다."));
+        ).orElseThrow(() -> new AccessDeniedException("해당 대화방에 접근할 권한이 없습니다."));
 
         Long currentSequence = getCurrentSequence(roomId, chatRoomType);
         if (currentSequence != null && currentSequence > 0) {
@@ -114,13 +114,25 @@ public class ChatMemberService {
         // 1. ChatMember 찾기 및 삭제
         ChatMember memberToRemove = chatRoomMemberRepository
                 .findByChatRoomIdAndChatRoomTypeAndMember_Id(roomId, chatRoomType, memberId)
-                .orElseThrow(() -> new SecurityException("해당 대화방에 속해있지 않습니다."));
+                .orElseThrow(() -> new AccessDeniedException("해당 대화방에 접근할 권한이 없습니다."));
         chatRoomMemberRepository.delete(memberToRemove);
 
-        // 2. 캐시에서 멤버 제거
+        // 2. 인증 캐시에서 멤버 제거
         chatAuthCacheService.removeMember(roomId, memberId);
 
-        // 3. 남은 멤버 수 확인 후 대화방 삭제 (해당 타입의 방에만 적용)
+        // 3. Redis 구독자 캐시에서 해당 멤버의 모든 세션 제거
+        // WebSocket 연결이 끊기기 전에 HTTP DELETE로 방을 나가는 경우를 대비
+        // (유령 구독자 방지 및 정확한 구독자 수 유지)
+        Set<String> memberSessions = subscriberCacheService.getSessionsByMemberId(roomId, memberId);
+        if (memberSessions != null && !memberSessions.isEmpty()) {
+            for (String sessionId : memberSessions) {
+                subscriberCacheService.removeSubscriber(roomId, memberId, sessionId);
+            }
+            log.info("채팅방 퇴장 시 구독자 캐시 정리 완료 - memberId: {}, roomId: {}, 제거된 세션 수: {}",
+                    memberId, roomId, memberSessions.size());
+        }
+
+        // 4. 남은 멤버 수 확인 후 대화방 삭제 (해당 타입의 방에만 적용)
         long remainingMembersCount = chatRoomMemberRepository.countByChatRoomIdAndChatRoomType(roomId, chatRoomType);
 
         if (remainingMembersCount == 0) {

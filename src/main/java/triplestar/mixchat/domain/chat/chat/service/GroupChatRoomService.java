@@ -85,7 +85,7 @@ public class GroupChatRoomService {
         // 2. ChatMember 찾기
         ChatMember memberToRemove = chatRoomMemberRepository
                 .findByChatRoomIdAndChatRoomTypeAndMember_Id(roomId, ChatMessage.chatRoomType.GROUP, currentUserId)
-                .orElseThrow(() -> new SecurityException("해당 대화방에 속해있지 않습니다."));
+                .orElseThrow(() -> new AccessDeniedException("해당 대화방에 접근할 권한이 없습니다."));
 
         // 3. 방장이 나가는 경우 방장 위임 처리
         if (room.isOwner(memberToRemove.getMember())) {
