@@ -15,6 +15,7 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
 
     Optional<Friendship> findBySmallerMember_IdAndLargerMember_Id(Long smallerId, Long largerId);
 
+    // 특정 멤버의 친구 id 목록 조회
     @Query("""
                 SELECT 
                     CASE 
@@ -25,7 +26,7 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
                 WHERE f.smallerMember.id = :memberId
                    OR f.largerMember.id = :memberId
             """)
-    Page<Long> findByMemberId(Long memberId, Pageable pageable);
+    Page<Long> findFriendsByMemberId(Long memberId, Pageable pageable);
 
     @Query("""
                 SELECT new triplestar.mixchat.domain.member.friend.dto.FriendDetailResp(
