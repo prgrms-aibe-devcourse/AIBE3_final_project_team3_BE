@@ -57,6 +57,7 @@ public class ChatMessageService {
         // 2. Redis에서 구독자 목록 조회 및 수집
         Set<Long> subscribedMembers = new HashSet<>();
         Set<String> subscribers = subscriberCacheService.getSubscribers(roomId);
+        log.info("[DEBUG] roomId={}, senderId={}, Redis subscribers={}", roomId, senderId, subscribers);
         if (subscribers != null && !subscribers.isEmpty()) {
             for (String subscriberIdStr : subscribers) {
                 try {
@@ -85,6 +86,8 @@ public class ChatMessageService {
         // 4. unreadCount 계산: 전체 멤버 수 - 1(발신자) - 구독 중인 사람 수
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
         int unreadCount = allMembers.size() - 1 - subscribedMembers.size();
+        log.info("[DEBUG] unreadCount calc: allMembers={}, subscribedMembers={}, unreadCount={}",
+                allMembers.size(), subscribedMembers.size(), unreadCount);
 
         // 5. 알림 이벤트 (구독 중이지 않은 사람들에게만)
         List<ChatMember> roomMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_IdNot(roomId, chatRoomType, senderId);
@@ -134,6 +137,7 @@ public class ChatMessageService {
                 .map(message -> {
                     String senderName = senderNames.getOrDefault(message.getSenderId(), "Unknown");
 
+                    //todo: 로직 개선, 페이징 필요
                     // unreadCount 계산: 발신자를 제외한 멤버 중 안 읽은 사람 수
                     int unreadCount = (int) allMembers.stream()
                             .filter(member -> !member.getMember().getId().equals(message.getSenderId()))

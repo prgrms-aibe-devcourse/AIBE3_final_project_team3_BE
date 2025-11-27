@@ -14,6 +14,10 @@ import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.cache.ChatAuthCacheService;
+import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
+import triplestar.mixchat.domain.chat.chat.dto.SubscriberCountUpdateResp;
+
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +28,7 @@ public class ChatMemberService {
     private final MemberRepository memberRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final ChatAuthCacheService chatAuthCacheService;
+    private final ChatSubscriberCacheService chatSubscriberCacheService;
     private final DirectChatRoomRepository directChatRoomRepository;
     private final GroupChatRoomRepository groupChatRoomRepository;
     private final AIChatRoomRepository aiChatRoomRepository;
@@ -151,6 +156,17 @@ public class ChatMemberService {
     @Transactional
     public void reportUser(Long currentUserId, Long targetUserId, Long roomId, ChatMessage.chatRoomType chatRoomType, String reason) {
         throw new UnsupportedOperationException("신고 기능은 아직 구현되지 않았습니다.");
+    }
+
+    // 채팅방의 현재 구독자 수 조회 (Redis)
+    public int getSubscriberCount(Long roomId) {
+        Set<String> subscribers = chatSubscriberCacheService.getSubscribers(roomId);
+        return (subscribers != null) ? subscribers.size() : 0;
+    }
+
+    // 채팅방의 전체 멤버 수 조회 (DB)
+    public int getTotalMemberCount(Long roomId, ChatMessage.chatRoomType chatRoomType) {
+        return (int) chatRoomMemberRepository.countByChatRoomIdAndChatRoomType(roomId, chatRoomType);
     }
 }
 
