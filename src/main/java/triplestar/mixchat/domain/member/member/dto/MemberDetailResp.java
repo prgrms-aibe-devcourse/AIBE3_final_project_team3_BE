@@ -17,10 +17,10 @@ public record MemberDetailResp(
         String nickname,
 
         @Schema(description = "국가 코드 (Alpha-2)", example = "KR", requiredMode = REQUIRED)
-        Country country,
+        String country,
 
         @Schema(description = "영어 실력 레벨", example = "BEGINNER", requiredMode = REQUIRED)
-        EnglishLevel englishLevel,
+        String englishLevel,
 
         @Schema(description = "관심사 목록", example = "[\"농구\", \"독서\"]", requiredMode = REQUIRED)
         List<String> interests,
@@ -46,8 +46,8 @@ public record MemberDetailResp(
                 return new MemberDetailResp(
                         member.getId(),
                         member.getNickname(),
-                        member.getCountry(),
-                        member.getEnglishLevel(),
+                        member.getCountry().name(),
+                        member.getEnglishLevel().name(),
                         member.getInterests(),
                         member.getDescription(),
                         member.getProfileImageUrl(),
