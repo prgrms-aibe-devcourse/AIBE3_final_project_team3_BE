@@ -49,6 +49,9 @@ dependencies {
     // Redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
 
+    // flyway
+    implementation("org.flywaydb:flyway-core")
+
     // Minio
     implementation("io.minio:minio:8.5.3")
 

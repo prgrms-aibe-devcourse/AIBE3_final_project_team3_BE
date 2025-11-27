@@ -20,14 +20,11 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-import triplestar.mixchat.domain.member.member.service.MemberService;
-import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.testutils.TestMemberFactory;
 
 @ActiveProfiles("test")
@@ -38,11 +35,9 @@ import triplestar.mixchat.testutils.TestMemberFactory;
 class ApiV1MemberControllerTest {
 
     @Autowired
-    private MockMvc mvc;
+    MockMvc mvc;
     @Autowired
-    private MemberService memberService;
-    @Autowired
-    private MemberRepository memberRepository;
+    MemberRepository memberRepository;
 
     Member member;
 
