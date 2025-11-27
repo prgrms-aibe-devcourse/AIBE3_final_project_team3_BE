@@ -49,16 +49,11 @@ public class AdminChatRoomService {
             default -> throw new IllegalArgumentException("지원하지 않는 타입입니다.");
         }
 
-        // 5) 🔥 멤버들에게 방 폐쇄 알림(NotificationEvent 발행)
+        // 🔥 5) 멤버들에게 방 폐쇄 알림(NotificationEvent 발행)
         for (ChatMember m : members) {
-            NotificationEvent event = new NotificationEvent(
-                    m.getMember().getId(),
-                    adminId, // 관리자 ID
-                    NotificationType.CHAT_ROOM_CLOSED,
-                    "채팅방이 관리자에 의해 폐쇄되었습니다. 방 ID: " + roomId
-            );
+            Long receiverId = m.getMember().getId();
 
-            eventPublisher.publishEvent(event);
+
         }
     }
 }

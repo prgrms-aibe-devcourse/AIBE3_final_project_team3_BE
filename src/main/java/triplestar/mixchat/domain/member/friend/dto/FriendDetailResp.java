@@ -1,15 +1,16 @@
-package triplestar.mixchat.domain.member.member.dto;
+package triplestar.mixchat.domain.member.friend.dto;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDateTime;
 import java.util.List;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
-@Schema(description = "회원 상세 조회 응답 DTO")
-public record MemberDetailResp(
+@Schema(description = "친구 상세 조회 응답 DTO")
+public record FriendDetailResp(
         @Schema(description = "회원 고유 ID", example = "123", requiredMode = REQUIRED)
         Long memberId,
 
@@ -31,29 +32,7 @@ public record MemberDetailResp(
         @Schema(description = "프로필 이미지 URL", example = "https://cdn.example.com/profile/123_photo.jpg", requiredMode = REQUIRED)
         String profileImageUrl,
 
-        @Schema(description = "현재 로그인 사용자와 친구 관계인지 여부", example = "true", requiredMode = REQUIRED)
-        boolean isFriend,
-
-        @Schema(description = "현재 로그인 사용자가 상대방에게 친구 요청을 보내고 대기 중인 상태인지 여부",
-                example = "true")
-        boolean isFriendRequestSent,
-
-        @Schema(description = "상대방이 현재 사용자에게 보낸 친구 요청의 ID. 대기 중인 요청이 없으면 null입니다.",
-                example = "51")
-        Long receivedFriendRequestId
+        @Schema(description = "친구관계 생성 날짜", example = "2024-07-25T10:30:00", requiredMode = REQUIRED)
+        LocalDateTime createdAt
 ) {
-        public static MemberDetailResp forAnonymousViewer(Member member) {
-                return new MemberDetailResp(
-                        member.getId(),
-                        member.getNickname(),
-                        member.getCountry().name(),
-                        member.getEnglishLevel().name(),
-                        member.getInterests(),
-                        member.getDescription(),
-                        member.getProfileImageUrl(),
-                        false,
-                        false,
-                        null
-                );
-        }
 }

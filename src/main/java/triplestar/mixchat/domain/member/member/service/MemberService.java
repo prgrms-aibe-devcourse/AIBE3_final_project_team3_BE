@@ -40,17 +40,17 @@ public class MemberService {
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다."));
     }
 
-    public MemberDetailResp getMemberDetails(Long signInId, Long memberId) {
+    public MemberDetailResp getMemberDetails(Long currentUserId, Long memberId) {
         // 비회원이 조회하는 경우
         // isFriend, isPendingRequest는 모두 false로 반환
-        if (signInId == null) {
+        if (currentUserId == null) {
             Member member = findMemberById(memberId);
             return MemberDetailResp.forAnonymousViewer(member);
         }
 
         // 회원이 조회하는 경우
         // 친구 관계 및 친구 신청 상태를 함께 조회
-        return memberRepository.findByIdWithFriendInfo(signInId, memberId)
+        return memberRepository.findByIdWithFriendInfo(currentUserId, memberId)
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다."));
     }
 

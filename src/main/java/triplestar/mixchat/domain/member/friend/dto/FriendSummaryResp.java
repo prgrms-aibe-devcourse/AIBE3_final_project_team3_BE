@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.member.member.dto;
+package triplestar.mixchat.domain.member.friend.dto;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
@@ -6,8 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
-@Schema(description = "회원가입 완료 또는 멤버 조회 시 반환되는 요약된 사용자 정보")
-public record MemberSummaryResp(
+@Schema(description = "내 친구 목록 응답 DTO")
+public record FriendSummaryResp(
         @Schema(description = "사용자 고유 ID", example = "1", requiredMode = REQUIRED)
         Long id,
 
@@ -26,8 +26,8 @@ public record MemberSummaryResp(
         @Schema(description = "자기소개", example = "안녕하세요.", requiredMode = REQUIRED)
         String description
 ) {
-    public static MemberSummaryResp from(Member savedMember) {
-        return new MemberSummaryResp(
+    public static FriendSummaryResp from(Member savedMember) {
+        return new FriendSummaryResp(
                 savedMember.getId(),
                 savedMember.getNickname(),
                 savedMember.getCountry().name(),
