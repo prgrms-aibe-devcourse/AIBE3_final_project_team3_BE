@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class CookieHelper {
 
-    @Value("${jwt.refresh-token-expiration-seconds}")
+    @Value("${auth.jwt.refresh.token-expiration-seconds}")
     private int refreshTokenExpireSeconds;
 
     @Value("${cookie.domain}")

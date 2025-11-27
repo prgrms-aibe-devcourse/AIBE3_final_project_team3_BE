@@ -55,9 +55,12 @@ class PresenceServiceTest extends RedisTestContainer {
         presenceService.heartbeat(memberId);
 
         // then
-        String key = "test:presence-user:" + memberId;
-        Boolean exists = stringRedisTemplate.hasKey(key);
-        assertThat(exists).isTrue();
+        String key = "test:presence-user:";
+        Double score = stringRedisTemplate.opsForZSet()
+                .score(key, memberId.toString());
+
+        assertThat(score).isNotNull();
+        assertThat(score).isGreaterThan(0);
     }
 
     @Test

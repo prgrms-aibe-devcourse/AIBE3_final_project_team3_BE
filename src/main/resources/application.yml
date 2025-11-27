@@ -23,8 +23,15 @@ spring:
 
     web:
       pageable:
-        one-indexed-parameters: true
         max-page-size: 100
+
+  ai:
+    openai:
+      base-url: https://ollama.yhcho.com/ollama
+      api-key: ${OPENAI_API_KEY} # 로컬은 키가 필요 없지만, 라이브러리 검증 통과용으로 입력
+      chat:
+        options:
+          model: ${OPENAI_CHAT_MODEL:exaone3.5:2.4b}
 
 swagger:
   redirect:

@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.prompt.prompt.controller;
+package triplestar.mixchat.domain.ai.userprompt.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -23,9 +23,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
-import triplestar.mixchat.domain.prompt.prompt.dto.PromptReq;
-import triplestar.mixchat.domain.prompt.prompt.entity.Prompt;
-import triplestar.mixchat.domain.prompt.prompt.repository.PromptRepository;
+import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptReq;
+import triplestar.mixchat.domain.ai.userprompt.entity.UserPrompt;
+import triplestar.mixchat.domain.ai.userprompt.repository.UserPromptRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
@@ -36,11 +36,11 @@ import triplestar.mixchat.testutils.TestMemberFactory;
 @AutoConfigureMockMvc
 @Transactional
 @DisplayName("프롬프트 컨트롤러")
-class ApiV1PromptControllerTest {
+class ApiV1UserPromptControllerTest {
     @Autowired
     private MockMvc mvc;
     @Autowired
-    private PromptRepository promptRepository;
+    private UserPromptRepository userPromptRepository;
     @Autowired
     private MemberRepository memberRepository;
     @Autowired
@@ -61,7 +61,7 @@ class ApiV1PromptControllerTest {
     @DisplayName("프리미엄 회원 프롬프트 생성 성공")
     @WithUserDetails(value = "premiumUser", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void createPrompt_success() throws Exception {
-        PromptReq req = new PromptReq("테스트 프롬프트", "프롬프트 내용입니다.", "CUSTOM");
+        UserPromptReq req = new UserPromptReq("테스트 프롬프트", "프롬프트 내용입니다.", "CUSTOM");
         ResultActions result = mvc.perform(post("/api/v1/prompt/create")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)))
@@ -75,8 +75,8 @@ class ApiV1PromptControllerTest {
     @DisplayName("프리미엄 회원 프롬프트 상세 조회 성공")
     @WithUserDetails(value = "premiumUser", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void detailPrompt_success() throws Exception {
-        Prompt prompt = promptRepository.save(Prompt.create(premiumMember, "상세 프롬프트", "내용", "CUSTOM"));
-        ResultActions result = mvc.perform(get("/api/v1/prompt/" + prompt.getId()))
+        UserPrompt userPrompt = userPromptRepository.save(UserPrompt.create(premiumMember, "상세 프롬프트", "내용", "CUSTOM"));
+        ResultActions result = mvc.perform(get("/api/v1/prompt/" + userPrompt.getId()))
                 .andDo(print());
         result.andExpect(handler().handlerType(ApiV1PromptController.class))
                 .andExpect(handler().methodName("detail"))
@@ -87,9 +87,9 @@ class ApiV1PromptControllerTest {
     @DisplayName("프리미엄 회원 프롬프트 수정 성공")
     @WithUserDetails(value = "premiumUser", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void updatePrompt_success() throws Exception {
-        Prompt prompt = promptRepository.save(Prompt.create(premiumMember, "수정 프롬프트", "내용", "CUSTOM"));
-        PromptReq req = new PromptReq("수정된 프롬프트", "수정된 내용입니다.", "CUSTOM");
-        ResultActions result = mvc.perform(put("/api/v1/prompt/" + prompt.getId())
+        UserPrompt userPrompt = userPromptRepository.save(UserPrompt.create(premiumMember, "수정 프롬프트", "내용", "CUSTOM"));
+        UserPromptReq req = new UserPromptReq("수정된 프롬프트", "수정된 내용입니다.", "CUSTOM");
+        ResultActions result = mvc.perform(put("/api/v1/prompt/" + userPrompt.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)))
                 .andDo(print());
@@ -102,8 +102,8 @@ class ApiV1PromptControllerTest {
     @DisplayName("프리미엄 회원 프롬프트 삭제 성공")
     @WithUserDetails(value = "premiumUser", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void deletePrompt_success() throws Exception {
-        Prompt prompt = promptRepository.save(Prompt.create(premiumMember, "삭제 프롬프트", "내용", "CUSTOM"));
-        ResultActions result = mvc.perform(delete("/api/v1/prompt/" + prompt.getId()))
+        UserPrompt userPrompt = userPromptRepository.save(UserPrompt.create(premiumMember, "삭제 프롬프트", "내용", "CUSTOM"));
+        ResultActions result = mvc.perform(delete("/api/v1/prompt/" + userPrompt.getId()))
                 .andDo(print());
         result.andExpect(handler().handlerType(ApiV1PromptController.class))
                 .andExpect(handler().methodName("delete"))
@@ -114,8 +114,8 @@ class ApiV1PromptControllerTest {
     @DisplayName("기본 회원 프롬프트 상세 조회 실패 - 프리미엄 등급 아님")
     @WithUserDetails(value = "basicUser", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void detailPrompt_fail_noPremium() throws Exception {
-        Prompt prompt = promptRepository.save(Prompt.create(premiumMember, "상세 프롬프트", "내용", "CUSTOM"));
-        ResultActions result = mvc.perform(get("/api/v1/prompt/" + prompt.getId()))
+        UserPrompt userPrompt = userPromptRepository.save(UserPrompt.create(premiumMember, "상세 프롬프트", "내용", "CUSTOM"));
+        ResultActions result = mvc.perform(get("/api/v1/prompt/" + userPrompt.getId()))
                 .andDo(print());
         result.andExpect(handler().handlerType(ApiV1PromptController.class))
                 .andExpect(handler().methodName("detail"))
@@ -126,7 +126,7 @@ class ApiV1PromptControllerTest {
     @DisplayName("기본 회원 프롬프트 생성 실패 - 프리미엄 등급 아님")
     @WithUserDetails(value = "basicUser", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void createPrompt_fail_noPremium() throws Exception {
-        PromptReq req = new PromptReq("테스트 프롬프트", "프롬프트 내용입니다.", "CUSTOM");
+        UserPromptReq req = new UserPromptReq("테스트 프롬프트", "프롬프트 내용입니다.", "CUSTOM");
         ResultActions result = mvc.perform(post("/api/v1/prompt/create")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)))

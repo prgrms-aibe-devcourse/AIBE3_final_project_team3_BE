@@ -24,8 +24,8 @@ public class AuthJwtProvider {
     private final SecretKey refreshKey;
 
     public AuthJwtProvider(
-            @Value("${jwt.access-token-expiration-seconds}") int accessTokenExpiration,
-            @Value("${jwt.refresh-token-expiration-seconds}") int refreshTokenExpiration,
+            @Value("${auth.jwt.access.token-expiration-seconds}") int accessTokenExpiration,
+            @Value("${auth.jwt.refresh.token-expiration-seconds}") int refreshTokenExpiration,
             @Value("${jwt.access-secret}") String accessSecret,
             @Value("${jwt.refresh-secret}") String refreshSecret
     ) {
