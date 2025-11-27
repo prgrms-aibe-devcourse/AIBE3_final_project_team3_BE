@@ -35,17 +35,4 @@ public record FriendDetailResp(
         @Schema(description = "친구관계 생성 날짜", example = "2024-07-25T10:30:00", requiredMode = REQUIRED)
         LocalDateTime createdAt
 ) {
-        public static FriendDetailResp forAnonymousViewer(Member member) {
-                return new FriendDetailResp(
-                        member.getId(),
-                        member.getNickname(),
-                        member.getCountry(),
-                        member.getEnglishLevel(),
-                        member.getInterests(),
-                        member.getDescription(),
-                        member.getProfileImageUrl(),
-                        // TODO : 친구 추가된 날짜로 변경 필요
-                        null
-                );
-        }
 }

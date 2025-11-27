@@ -51,6 +51,7 @@ public class FriendshipService {
         friendshipRepository.delete(friendship);
     }
 
+    // TODO : presence(online) 추가
     public Page<FriendSummaryResp> getFriends(Long currentMemberId, Pageable pageable) {
         Page<Long> friendIds = friendshipRepository.findByMemberId(currentMemberId, pageable);
         Page<Member> friends = memberRepository.findAllByIdIn(friendIds.getContent(), pageable);
