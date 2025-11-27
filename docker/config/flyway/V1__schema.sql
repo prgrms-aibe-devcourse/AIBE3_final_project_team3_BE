@@ -188,7 +188,6 @@ CREATE TABLE IF NOT EXISTS `chat_members` (
     `member_id`                 BIGINT       NOT NULL,
     `chat_room_id`              BIGINT       NOT NULL,
     `chat_room_type`            VARCHAR(50)  NOT NULL,
-    `user_type`                 VARCHAR(50)  NOT NULL,
     `last_read_at`              DATETIME(6),
     `last_read_sequence`        BIGINT,
     `chat_notification_setting` VARCHAR(50)  NOT NULL,
