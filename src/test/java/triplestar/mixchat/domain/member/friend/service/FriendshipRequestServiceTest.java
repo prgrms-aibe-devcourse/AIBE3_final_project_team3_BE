@@ -9,9 +9,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.member.friend.dto.FriendDetailResp;
+import triplestar.mixchat.domain.member.friend.dto.FriendSummaryResp;
 import triplestar.mixchat.domain.member.friend.dto.FriendshipRequestResp;
 import triplestar.mixchat.domain.member.friend.repository.FriendshipRequestRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -161,5 +164,40 @@ class FriendshipRequestServiceTest {
 
         assertThat(friendshipService.isFriends(member1.getId(), member2.getId())).isFalse();
         assertThat(friendshipService.isFriends(member2.getId(), member1.getId())).isFalse();
+    }
+
+    @Test
+    @DisplayName("친구 목록 조회 성공")
+    void get_friends_success() {
+        FriendshipRequestResp friendshipRequestResp1 = friendshipRequestService
+                .sendRequest(member1.getId(), member2.getId());
+        Long requestId1 = friendshipRequestResp1.id();
+        friendshipRequestService.processRequest(member2.getId(), requestId1, true);
+
+        FriendshipRequestResp friendshipRequestResp2 = friendshipRequestService
+                .sendRequest(member1.getId(), member3.getId());
+        Long requestId2 = friendshipRequestResp2.id();
+        friendshipRequestService.processRequest(member3.getId(), requestId2, true);
+
+        Page<FriendSummaryResp> friendsOfMember1 = friendshipService.getFriends(member1.getId(), null);
+        Page<FriendSummaryResp> friendsOfMember2 = friendshipService.getFriends(member2.getId(), null);
+        Page<FriendSummaryResp> friendsOfMember3 = friendshipService.getFriends(member3.getId(), null);
+
+        assertThat(friendsOfMember1.getTotalElements()).isEqualTo(2);
+        assertThat(friendsOfMember2.getTotalElements()).isEqualTo(1);
+        assertThat(friendsOfMember3.getTotalElements()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("특정 친구 정보 조회 성공")
+    void get_friend_success() {
+        FriendshipRequestResp friendshipRequestResp = friendshipRequestService
+                .sendRequest(member1.getId(), member2.getId());
+        Long requestId = friendshipRequestResp.id();
+        friendshipRequestService.processRequest(member2.getId(), requestId, true);
+
+        FriendDetailResp friendDetail = friendshipService.getFriend(member1.getId(), member2.getId());
+
+        assertThat(friendDetail.memberId()).isEqualTo(member2.getId());
     }
 }
