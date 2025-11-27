@@ -91,7 +91,8 @@ public interface ApiChatController {
     @Operation(summary = "채팅방 메시지 목록 조회", description = "지정된 채팅방의 모든 메시지 내역을 시간순으로 조회합니다.")
     CustomResponse<ChatRoomDataResp> getMessages(
             @Parameter(description = "메시지를 조회할 채팅방의 ID") @PathVariable Long roomId,
-            @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatMessage.chatRoomType chatRoomType
+            @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 
     @Operation(summary = "파일 메시지 전송 (이미지/파일)", description = "지정된 채팅방에 이미지 또는 파일을 전송합니다.")

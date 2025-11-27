@@ -30,7 +30,7 @@ public class DirectChatRoomService {
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatAuthCacheService chatAuthCacheService;
     private final ChatMessageService chatMessageService;
-    private final ChatInteractionService chatInteractionService;
+    private final ChatMemberService chatMemberService;
     // todo: 각 서비스 Facade패턴 도입 고려
 
     private Member findMemberById(Long memberId) {
@@ -38,9 +38,9 @@ public class DirectChatRoomService {
                 .orElseThrow(() -> new AccessDeniedException("사용자를 찾을 수 없습니다. ID: " + memberId));
     }
 
-    //사용자가 해당 1:1 채팅방의 멤버인지 확인 (ChatInteractionService로 위임)
+    // 사용자가 해당 1:1 채팅방의 멤버인지 확인
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
-        chatInteractionService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.chatRoomType.DIRECT);
+        chatMemberService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.chatRoomType.DIRECT);
     }
 
     @Transactional
@@ -83,24 +83,10 @@ public class DirectChatRoomService {
         return DirectChatRoomResp.from(room);
     }
 
-    //1:1 채팅방 나가기 (ChatInteractionService로 위임)
+    // 1:1 채팅방 나가기
     @Transactional
     public void leaveRoom(Long roomId, Long currentUserId) {
-        chatInteractionService.leaveRoom(currentUserId, roomId, ChatMessage.chatRoomType.DIRECT);
-    }
-
-    //1:1 채팅방 사용자 차단 (ChatInteractionService로 위임)
-    @Transactional
-    public void blockUser(Long roomId, Long currentUserId, Long blockedUserId) {
-        // TODO: ChatInteractionService에 blockUser 로직 구현 후 위임
-        log.warn("blockUser (DirectChatRoom) 메서드는 아직 구현되지 않았습니다.");
-        throw new UnsupportedOperationException("1:1 채팅방 사용자 차단 기능은 아직 구현되지 않았습니다.");
-    }
-
-    //1:1 채팅방/사용자 신고 (ChatInteractionService로 위임)
-    @Transactional
-    public void reportUser(Long roomId, Long currentUserId, Long reportedUserId, String reason) {
-        chatInteractionService.reportUser(currentUserId, reportedUserId, roomId, ChatMessage.chatRoomType.DIRECT, reason);
+        chatMemberService.leaveRoom(currentUserId, roomId, ChatMessage.chatRoomType.DIRECT);
     }
 
     // 사용자가 참여하고 있는 1:1 채팅방 목록 조회

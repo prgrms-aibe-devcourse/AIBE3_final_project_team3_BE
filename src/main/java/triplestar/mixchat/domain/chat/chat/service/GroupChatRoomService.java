@@ -33,10 +33,10 @@ public class GroupChatRoomService {
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatAuthCacheService chatAuthCacheService;
-    private final ChatInteractionService chatInteractionService;
+    private final ChatMemberService chatMemberService;
 
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
-        chatInteractionService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.chatRoomType.GROUP);
+        chatMemberService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.chatRoomType.GROUP);
     }
 
 
@@ -123,15 +123,6 @@ public class GroupChatRoomService {
         }
     }
 
-    @Transactional
-    public void blockUser(Long roomId, Long currentUserId, Long blockedUserId) {
-        chatInteractionService.blockUser(currentUserId, blockedUserId, roomId, ChatMessage.chatRoomType.GROUP);
-    }
-
-    @Transactional
-    public void reportUser(Long roomId, Long currentUserId, Long reportedUserId, String reason) {
-        chatInteractionService.reportUser(currentUserId, reportedUserId, roomId, ChatMessage.chatRoomType.GROUP, reason);
-    }
 
     @Transactional
     public GroupChatRoomResp joinGroupRoom(Long roomId, Long userId, String password) {
