@@ -27,29 +27,7 @@ import triplestar.mixchat.global.springdoc.SuccessResponse;
 @SecurityRequirement(name = "Authorization")
 public interface ApiFriendshipController {
 
-    // --- 1. 친구 목록 조회 (GET /) ---
-    @Operation(
-            summary = "친구 목록 조회",
-            description = "현재 사용자의 친구 목록을 페이지네이션으로 조회합니다."
-    )
-    CustomResponse<Page<FriendSummaryResp>> getFriends(
-            @Parameter(hidden = true) CustomUserDetails userDetails,
-            @Parameter(description = "페이지네이션 정보 (예: page=0&size=20&sort=nickname,asc)")
-            Pageable pageable
-    );
-
-    // --- 2. 특정 친구 상세 정보 조회 (GET /{friendId}) ---
-    @Operation(
-            summary = "특정 친구 상세 정보 조회",
-            description = "친구 ID를 통해 해당 친구의 상세 정보를 조회합니다."
-    )
-    CustomResponse<FriendDetailResp> getFriend(
-            @Parameter(hidden = true) CustomUserDetails userDetails,
-            @Parameter(description = "상세 정보를 조회할 친구 ID", required = true)
-            @PathVariable Long friendId
-    );
-
-    // --- 3. 친구 요청 전송 (POST) ---
+    // --- 1. 친구 요청 전송 (POST) ---
     @Operation(
             summary = "친구 요청 전송",
             description = "특정 사용자에게 친구 요청을 보냅니다."
@@ -62,7 +40,7 @@ public interface ApiFriendshipController {
             FriendshipSendReq friendshipSendReq
     );
 
-    // --- 4. 친구 요청 수락 (PATCH /requests/{requestId}/accept) ---
+    // --- 2. 친구 요청 수락 (PATCH /requests/{requestId}/accept) ---
     @Operation(
             summary = "친구 요청 수락",
             description = "받은 친구 요청을 수락하여 친구 관계를 맺습니다."
@@ -75,7 +53,7 @@ public interface ApiFriendshipController {
             @PathVariable Long requestId
     );
 
-    // --- 5. 친구 요청 거절 (PATCH /requests/{requestId}/reject) ---
+    // --- 3. 친구 요청 거절 (PATCH /requests/{requestId}/reject) ---
     @Operation(
             summary = "친구 요청 거절",
             description = "받은 친구 요청을 거절합니다."
@@ -87,7 +65,7 @@ public interface ApiFriendshipController {
             @PathVariable Long requestId
     );
 
-    // --- 6. 친구 삭제 (DELETE /{friendId}) ---
+    // --- 4. 친구 삭제 (DELETE /{friendId}) ---
     @SecurityRequireResponse
     @Operation(
             summary = "친구 삭제",
@@ -96,6 +74,28 @@ public interface ApiFriendshipController {
     CustomResponse<Void> deleteFriend(
             @Parameter(hidden = true) CustomUserDetails userDetails,
             @Parameter(description = "삭제할 친구의 ID", required = true)
+            @PathVariable Long friendId
+    );
+
+    // --- 5. 친구 목록 조회 (GET /) ---
+    @Operation(
+            summary = "친구 목록 조회",
+            description = "현재 사용자의 친구 목록을 페이지네이션으로 조회합니다."
+    )
+    CustomResponse<Page<FriendSummaryResp>> getFriends(
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            @Parameter(description = "페이지네이션 정보 (예: page=0&size=20&sort=nickname,asc)")
+            Pageable pageable
+    );
+
+    // --- 6. 특정 친구 상세 정보 조회 (GET /{friendId}) ---
+    @Operation(
+            summary = "특정 친구 상세 정보 조회",
+            description = "친구 ID를 통해 해당 친구의 상세 정보를 조회합니다."
+    )
+    CustomResponse<FriendDetailResp> getFriend(
+            @Parameter(hidden = true) CustomUserDetails userDetails,
+            @Parameter(description = "상세 정보를 조회할 친구 ID", required = true)
             @PathVariable Long friendId
     );
 }

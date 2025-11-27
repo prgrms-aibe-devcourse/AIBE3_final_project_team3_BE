@@ -22,24 +22,6 @@ public class FriendshipService {
     private final FriendshipRepository friendshipRepository;
     private final MemberRepository memberRepository;
 
-    public Page<FriendSummaryResp> getFriends(Long currentMemberId, Pageable pageable) {
-        Page<Long> friendIds = friendshipRepository.findByMemberId(currentMemberId, pageable);
-        Page<Member> friends = memberRepository.findAllByIdIn(friendIds.getContent(), pageable);
-
-        return friends.map(FriendSummaryResp::from);
-    }
-
-    public FriendDetailResp getFriend(Long currentMemberId, Long friendId) {
-        if (!isFriends(currentMemberId, friendId)) {
-            throw new EntityNotFoundException("존재하지 않는 친구 관계입니다.");
-        }
-
-        Long smallerId = Math.min(currentMemberId, friendId);
-        Long largerId = Math.max(currentMemberId, friendId);
-
-        return friendshipRepository.findFriendDetail(smallerId, largerId, friendId);
-    }
-
     public boolean isFriends(Long memberId1, Long memberId2) {
         Long smallerId = Math.min(memberId1, memberId2);
         Long largerId = Math.max(memberId1, memberId2);
@@ -67,5 +49,23 @@ public class FriendshipService {
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 친구 관계입니다"));
 
         friendshipRepository.delete(friendship);
+    }
+
+    public Page<FriendSummaryResp> getFriends(Long currentMemberId, Pageable pageable) {
+        Page<Long> friendIds = friendshipRepository.findByMemberId(currentMemberId, pageable);
+        Page<Member> friends = memberRepository.findAllByIdIn(friendIds.getContent(), pageable);
+
+        return friends.map(FriendSummaryResp::from);
+    }
+
+    public FriendDetailResp getFriend(Long currentMemberId, Long friendId) {
+        if (!isFriends(currentMemberId, friendId)) {
+            throw new EntityNotFoundException("존재하지 않는 친구 관계입니다.");
+        }
+
+        Long smallerId = Math.min(currentMemberId, friendId);
+        Long largerId = Math.max(currentMemberId, friendId);
+
+        return friendshipRepository.findFriendDetail(smallerId, largerId, friendId);
     }
 }
