@@ -32,8 +32,8 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
                 SELECT new triplestar.mixchat.domain.member.friend.dto.FriendDetailResp(
                     m.id,
                     m.nickname,
-                    m.country,
-                    m.englishLevel,
+                    CONCAT('', m.country),
+                    CONCAT('', m.englishLevel),
                     m.interests,
                     m.description,
                     m.profileImageUrl,
