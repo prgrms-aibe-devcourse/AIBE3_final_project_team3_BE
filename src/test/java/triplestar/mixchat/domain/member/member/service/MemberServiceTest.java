@@ -152,11 +152,9 @@ class MemberServiceTest extends RedisTestContainer {
         MemberDetailResp resp = memberService.getMemberDetails(null, member1.getId());
 
         assertThat(resp.memberId()).isEqualTo(member1.getId());
-        assertThat(resp.email()).isEqualTo(member1.getEmail());
-        assertThat(resp.name()).isEqualTo(member1.getName());
         assertThat(resp.nickname()).isEqualTo(member1.getNickname());
-        assertThat(resp.country()).isEqualTo(member1.getCountry());
-        assertThat(resp.englishLevel()).isEqualTo(member1.getEnglishLevel());
+        assertThat(resp.country()).isEqualTo(member1.getCountry().name());
+        assertThat(resp.englishLevel()).isEqualTo(member1.getEnglishLevel().name());
         assertThat(resp.interests()).isEqualTo(member1.getInterests());
         assertThat(resp.description()).isEqualTo(member1.getDescription());
         assertThat(resp.profileImageUrl()).isEqualTo(member1.getProfileImageUrl());

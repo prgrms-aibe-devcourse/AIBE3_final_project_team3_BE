@@ -13,20 +13,14 @@ public record MemberDetailResp(
         @Schema(description = "회원 고유 ID", example = "123", requiredMode = REQUIRED)
         Long memberId,
 
-        @Schema(description = "이메일 주소", example = "gildong@example.com", requiredMode = REQUIRED)
-        String email,
-
-        @Schema(description = "실명", example = "홍길동", requiredMode = REQUIRED)
-        String name,
-
         @Schema(description = "닉네임", example = "MixMaster", requiredMode = REQUIRED)
         String nickname,
 
         @Schema(description = "국가 코드 (Alpha-2)", example = "KR", requiredMode = REQUIRED)
-        Country country,
+        String country,
 
         @Schema(description = "영어 실력 레벨", example = "BEGINNER", requiredMode = REQUIRED)
-        EnglishLevel englishLevel,
+        String englishLevel,
 
         @Schema(description = "관심사 목록", example = "[\"농구\", \"독서\"]", requiredMode = REQUIRED)
         List<String> interests,
@@ -51,11 +45,9 @@ public record MemberDetailResp(
         public static MemberDetailResp forAnonymousViewer(Member member) {
                 return new MemberDetailResp(
                         member.getId(),
-                        member.getEmail(),
-                        member.getName(),
                         member.getNickname(),
-                        member.getCountry(),
-                        member.getEnglishLevel(),
+                        member.getCountry().name(),
+                        member.getEnglishLevel().name(),
                         member.getInterests(),
                         member.getDescription(),
                         member.getProfileImageUrl(),

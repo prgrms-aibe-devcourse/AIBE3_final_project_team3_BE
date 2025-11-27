@@ -21,11 +21,9 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Query("""
             SELECT new triplestar.mixchat.domain.member.member.dto.MemberDetailResp(
                 m.id,
-                m.email,
-                m.name,
                 m.nickname,
-                m.country,
-                m.englishLevel,
+                CONCAT('', m.country),
+                CONCAT('', m.englishLevel),
                 m.interests,
                 m.description,
                 m.profileImageUrl,
