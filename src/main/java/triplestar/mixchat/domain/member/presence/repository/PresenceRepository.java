@@ -1,14 +1,10 @@
 package triplestar.mixchat.domain.member.presence.repository;
 
-import java.time.Duration;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -35,22 +31,30 @@ public class PresenceRepository {
         redisTemplate.opsForZSet().add(key, memberId.toString(), now);
     }
 
-    public Map<Long, Boolean> isOnlineBulk(List<Long> memberIds) {
+    public Set<Long> filterOnlineBulk(List<Long> memberIds) {
         long now = System.currentTimeMillis() / 1000;
         long threshold = now - expirationSeconds;
 
-        Map<Long, Boolean> result = new HashMap<>();
-        Set<String> allOnlineIds = redisTemplate.opsForZSet().rangeByScore(key, threshold, Double.MAX_VALUE);
+        Set<String> onlineStrIds = redisTemplate.opsForZSet().rangeByScore(key, threshold, Double.MAX_VALUE);
 
-        if (allOnlineIds == null) {
-            return result;
+        if (onlineStrIds == null || onlineStrIds.isEmpty()) {
+            return Set.of();
         }
 
-        for (Long memberId : memberIds) {
-            boolean isOnline = allOnlineIds.contains(memberId.toString());
-            result.put(memberId, isOnline);
+        Set<String> targetStrIds = memberIds.stream()
+                .map(String::valueOf)
+                .collect(Collectors.toSet());
+
+        // 교집합 계산
+        onlineStrIds.retainAll(targetStrIds);
+
+        if (onlineStrIds.isEmpty()) {
+            return Set.of();
         }
-        return result;
+
+        return onlineStrIds.stream()
+                .map(Long::valueOf)
+                .collect(Collectors.toSet());
     }
 
     public List<Long> getOnlineMemberIds(long offset, long size) {

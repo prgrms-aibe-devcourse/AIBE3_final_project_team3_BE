@@ -1,7 +1,7 @@
 package triplestar.mixchat.domain.member.presence.service;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -17,8 +17,8 @@ public class PresenceService {
         presenceRepository.save(memberId);
     }
 
-    public Map<Long, Boolean> isOnlineBulk(List<Long> memberIds) {
-        return presenceRepository.isOnlineBulk(memberIds);
+    public Set<Long> isOnlineBulk(List<Long> memberIds) {
+        return presenceRepository.filterOnlineBulk(memberIds);
     }
 
     public List<Long> getOnlineMemberIds(long offset, long size) {

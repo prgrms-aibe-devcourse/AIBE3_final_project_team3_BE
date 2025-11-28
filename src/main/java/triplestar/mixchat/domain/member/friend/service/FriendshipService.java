@@ -64,13 +64,10 @@ public class FriendshipService {
                 .map(Member::getId)
                 .toList();
 
-        Map<Long, Boolean> onlineBulk = presenceService.isOnlineBulk(ids);
+        Set<Long> onlineBulk = presenceService.isOnlineBulk(ids);
 
-        return friends.map(member -> {
-            boolean isOnline = onlineBulk.getOrDefault(member.getId(), false);
-
-            return FriendSummaryResp.from(member, isOnline);
-        });
+        return friends.map(member ->
+                FriendSummaryResp.from(member, onlineBulk.contains(member.getId())));
     }
 
     public FriendDetailResp getFriend(Long currentMemberId, Long friendId) {

@@ -59,11 +59,10 @@ public class MemberService {
         Page<Member> members = memberRepository.findAllByIdIsNot(currentUserId, pageable);
 
         List<Long> ids = members.stream().map(Member::getId).toList();
-        Map<Long, Boolean> onlineBulk = presenceService.isOnlineBulk(ids);
-        return members.map(member -> {
-            boolean isOnline = onlineBulk.getOrDefault(member.getId(), false);
-            return MemberPresenceSummaryResp.from(member, isOnline);
-        });
+        Set<Long> onlineBulk = presenceService.isOnlineBulk(ids);
+
+        return members.map(member ->
+                MemberPresenceSummaryResp.from(member, onlineBulk.contains(member.getId())));
     }
 
     // NOTE : 현재 로그인한 사용자를 제외한 모든 회원 조회 -> 추후 로그인 사용자도 포함시킬지 검토 필요

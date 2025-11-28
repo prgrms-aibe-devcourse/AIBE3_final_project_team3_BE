@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -88,13 +89,13 @@ class PresenceServiceTest extends RedisTestContainer {
         presenceService.heartbeat(onlineMemberId);
 
         // when
-        Map<Long, Boolean> result = presenceService.isOnlineBulk(
+        Set<Long> result = presenceService.isOnlineBulk(
                 List.of(onlineMemberId, offlineMemberId)
         );
 
         // then
-        assertThat(result.get(offlineMemberId)).isTrue();
-        assertThat(result.get(offlineMemberId)).isFalse();
+        assertThat(result.contains(onlineMemberId)).isTrue();
+        assertThat(result.contains(offlineMemberId)).isFalse();
     }
 
     @Test
