@@ -23,8 +23,8 @@ public record DirectChatRoomResp(
     public static DirectChatRoomResp from(DirectChatRoom entity) {
         return new DirectChatRoomResp(
                 entity.getId(),
-                ChatMemberResp.from(entity.getUser1()),
-                ChatMemberResp.from(entity.getUser2())
+                ChatMemberResp.from(entity.getUser1(), true),
+                ChatMemberResp.from(entity.getUser2(), true)
         );
     }
 }

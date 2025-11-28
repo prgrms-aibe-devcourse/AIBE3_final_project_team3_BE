@@ -5,6 +5,7 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.GroupChatRoom;
@@ -38,9 +39,12 @@ public record GroupChatRoomResp(
         @Schema(description = "채팅방 멤버 목록", requiredMode = REQUIRED)
         List<ChatMemberResp> members
 ) {
-    public static GroupChatRoomResp from(GroupChatRoom entity, List<ChatMember> chatMembers) {
+    public static GroupChatRoomResp from(GroupChatRoom entity, List<ChatMember> chatMembers, Long currentUserId, Set<Long> friendIdSet) {
         List<ChatMemberResp> memberDtos = chatMembers.stream()
-                .map(chatMember -> ChatMemberResp.from(chatMember.getMember()))
+                .map(chatMember -> {
+                    boolean isFriend = !chatMember.getMember().getId().equals(currentUserId) && friendIdSet.contains(chatMember.getMember().getId());
+                    return ChatMemberResp.from(chatMember.getMember(), isFriend);
+                })
                 .collect(Collectors.toList());
 
         // 비밀번호 설정 여부 확인
