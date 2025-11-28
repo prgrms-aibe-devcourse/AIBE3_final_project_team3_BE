@@ -44,7 +44,6 @@ public class AdminChatRoomService {
         // 3. 해당 방의 모든 멤버 삭제 (DB)
        chatRoomMemberRepository.deleteByChatRoomIdAndChatRoomType(roomId, ChatMessage.chatRoomType.GROUP);
 
-
         // 4. Redis 캐시도 삭제
         chatAuthCacheService.removeRoom(roomId);
 
@@ -57,7 +56,7 @@ public class AdminChatRoomService {
             NotificationEvent event = new NotificationEvent(
                     m.getMember().getId(),
                     adminId,
-                    NotificationType.SYSTEM_ALERT,
+                    NotificationType.ROOM_CLOSED,
                     message
             );
             eventPublisher.publishEvent(event);

@@ -10,6 +10,7 @@ import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
 import triplestar.mixchat.domain.chat.chat.entity.AIChatRoom;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.repository.AIChatRoomRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -42,7 +43,7 @@ public class AIChatRoomService {
         AIChatRoom newRoom = AIChatRoom.create("AI Chat", "gpt-4", "Friendly Assistant"); // Example values
         AIChatRoom savedRoom = aiChatRoomRepository.save(newRoom);
 
-        ChatMember chatMember = new ChatMember(creator, savedRoom.getId(), ChatMessage.chatRoomType.AI);
+        ChatMember chatMember = new ChatMember(creator, savedRoom.getId(), ChatRoomType.AI);
         chatRoomMemberRepository.save(chatMember);
 
         chatAuthCacheService.addMember(savedRoom.getId(), creatorId);
@@ -51,7 +52,7 @@ public class AIChatRoomService {
     }
 
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
-        chatMemberService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.chatRoomType.AI);
+        chatMemberService.verifyUserIsMemberOfRoom(memberId, roomId, ChatRoomType.AI);
     }
 
     public List<AIChatRoomResp> getRoomsForUser(Long currentUserId) {
@@ -69,7 +70,7 @@ public class AIChatRoomService {
     // AI 채팅방 나가기
     @Transactional
     public void leaveAIChatRoom(Long roomId, Long currentUserId) {
-        chatMemberService.leaveRoom(currentUserId, roomId, ChatMessage.chatRoomType.AI);
+        chatMemberService.leaveRoom(currentUserId, roomId, ChatRoomType.AI);
     }
 }
 
