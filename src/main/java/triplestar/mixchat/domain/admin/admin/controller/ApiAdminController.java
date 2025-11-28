@@ -8,7 +8,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import triplestar.mixchat.domain.admin.admin.dto.AdminReportListResp;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateReq;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateResp;
@@ -16,6 +18,7 @@ import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameNoteResp;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameResp;
 import triplestar.mixchat.domain.report.report.dto.ReportStatusUpdateReq;
 import triplestar.mixchat.global.response.CustomResponse;
+import triplestar.mixchat.global.security.CustomUserDetails;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
 import triplestar.mixchat.global.springdoc.SecurityRequireResponse;
 import triplestar.mixchat.global.springdoc.SuccessResponse;
@@ -73,5 +76,16 @@ public interface ApiAdminController {
     CustomResponse<Void> deleteSentenceGame(
             @Parameter(description = "삭제할 문장게임 ID")
             @PathVariable Long sentenceGameId
+    );
+
+    // --- 7. 방 폐쇄 (DELETE / chat-rooms/{roomId}) ---
+    @Operation(summary = "관리자 방 폐쇄", description = "관리자가 그룹 채팅방을 폐쇄합니다.")
+    @SecurityRequireResponse
+    CustomResponse<Void> closeChatRoom(
+            @AuthenticationPrincipal CustomUserDetails admin,
+            @PathVariable Long roomId,
+            @Parameter(description = "폐쇄 사유", example = "1")
+            @RequestParam
+            int reasonCode
     );
 }
