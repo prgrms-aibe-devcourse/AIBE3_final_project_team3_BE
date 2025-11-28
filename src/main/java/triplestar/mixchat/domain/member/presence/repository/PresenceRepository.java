@@ -1,9 +1,14 @@
 package triplestar.mixchat.domain.member.presence.repository;
 
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.connection.RedisZSetCommands;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -35,26 +40,38 @@ public class PresenceRepository {
         long now = System.currentTimeMillis() / 1000;
         long threshold = now - expirationSeconds;
 
-        Set<String> onlineStrIds = redisTemplate.opsForZSet().rangeByScore(key, threshold, Double.MAX_VALUE);
-
-        if (onlineStrIds == null || onlineStrIds.isEmpty()) {
+        if (memberIds == null || memberIds.isEmpty()) {
             return Set.of();
         }
 
-        Set<String> targetStrIds = memberIds.stream()
-                .map(String::valueOf)
-                .collect(Collectors.toSet());
+        // ZMScore를 이용한 특정 key를 일괄 조회
+        // RedisCallback을 사용하여 저수준 Redis 명령어 실행
+        return redisTemplate.execute((RedisCallback<Set<Long>>) connection -> {
+            RedisZSetCommands zSet = connection.zSetCommands();
 
-        // 교집합 계산
-        onlineStrIds.retainAll(targetStrIds);
+            byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
 
-        if (onlineStrIds.isEmpty()) {
-            return Set.of();
-        }
+            byte[][] memberBytes = memberIds.stream()
+                    .map(id -> id.toString().getBytes(StandardCharsets.UTF_8))
+                    .toArray(byte[][]::new);
 
-        return onlineStrIds.stream()
-                .map(Long::valueOf)
-                .collect(Collectors.toSet());
+            // ZMScore 명령어로 특정 멤버들의 점수(접속 시간) 일괄 조회
+            List<Double> scores = zSet.zMScore(keyBytes, memberBytes);
+
+            if (scores == null || scores.isEmpty()) {
+                return Set.of();
+            }
+
+            Set<Long> onlineIds = new HashSet<>();
+
+            for (int i = 0; i < scores.size(); i++) {
+                Double score = scores.get(i);
+                if (score != null && score >= threshold) {
+                    onlineIds.add(memberIds.get(i));
+                }
+            }
+            return onlineIds;
+        });
     }
 
     public List<Long> getOnlineMemberIds(long offset, long size) {
