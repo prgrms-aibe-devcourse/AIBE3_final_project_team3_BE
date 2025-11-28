@@ -16,7 +16,7 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
 
     Optional<Friendship> findBySmallerMember_IdAndLargerMember_Id(Long smallerId, Long largerId);
 
-    // 특정 멤버의 친구 id 목록 조회
+    // 특정 멤버의 친구 목록 조회
     @Query("""
                 SELECT m
                 FROM Friendship f
