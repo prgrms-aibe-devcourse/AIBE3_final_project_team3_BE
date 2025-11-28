@@ -8,6 +8,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,15 +18,21 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomDataResp;
+import triplestar.mixchat.domain.chat.chat.dto.ChatRoomPageDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.JoinGroupChatReq;
+import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
+import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
+import triplestar.mixchat.domain.chat.chat.dto.UnreadCountUpdateEvent;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.TextMessageReq;
+import triplestar.mixchat.domain.chat.chat.dto.TransferOwnerReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.service.AIChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
@@ -132,7 +139,7 @@ public class ApiV1ChatController implements ApiChatController {
     @PostMapping("/rooms/{roomId}/message")
     public CustomResponse<MessageResp> sendMessage(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @RequestParam ChatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody TextMessageReq request
     ) {
@@ -143,16 +150,18 @@ public class ApiV1ChatController implements ApiChatController {
 
     @Override
     @GetMapping("/rooms/{roomId}/messages")
-    public CustomResponse<ChatRoomDataResp> getMessages(
+    public CustomResponse<ChatRoomPageDataResp> getMessages(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @RequestParam ChatRoomType chatRoomType,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(required = false) Integer size,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         // 메시지 조회 전에 읽음 처리 (채팅방 입장 시 자동 읽음)
         chatMemberService.markAsReadOnEnter(currentUser.getId(), roomId, chatRoomType);
 
-        List<MessageResp> messageResps = chatMessageService.getMessagesWithSenderInfo(roomId, chatRoomType, currentUser.getId());
-        ChatRoomDataResp responseData = new ChatRoomDataResp(chatRoomType, messageResps);
+        MessagePageResp messagePageResp = chatMessageService.getMessagesWithSenderInfo(roomId, chatRoomType, currentUser.getId(), cursor, size);
+        ChatRoomPageDataResp responseData = ChatRoomPageDataResp.of(chatRoomType, messagePageResp);
         return CustomResponse.ok("메시지 목록과 대화 타입 조회에 성공하였습니다.", responseData);
     }
 
@@ -160,7 +169,7 @@ public class ApiV1ChatController implements ApiChatController {
     @PostMapping(value = "/rooms/{roomId}/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CustomResponse<MessageResp> uploadFile(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @RequestParam ChatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam("file") MultipartFile file,
             @RequestParam("messageType") ChatMessage.MessageType messageType
@@ -181,25 +190,45 @@ public class ApiV1ChatController implements ApiChatController {
     @DeleteMapping("/rooms/{roomId}")
     public void leaveRoom(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @RequestParam ChatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        if (chatRoomType == ChatMessage.chatRoomType.DIRECT) {
+        if (chatRoomType == ChatRoomType.DIRECT) {
             directChatRoomService.leaveRoom(roomId, currentUser.getId());
-        } else if (chatRoomType == ChatMessage.chatRoomType.GROUP) {
+        } else if (chatRoomType == ChatRoomType.GROUP) {
             groupChatRoomService.leaveRoom(roomId, currentUser.getId());
-        } else if (chatRoomType == ChatMessage.chatRoomType.AI) {
+        } else if (chatRoomType == ChatRoomType.AI) {
             aiChatRoomService.leaveAIChatRoom(roomId, currentUser.getId());
         } else {
             throw new IllegalArgumentException("지원하지 않는 대화 타입입니다: " + chatRoomType);
         }
     }
 
+    @DeleteMapping("/rooms/{roomId}/members/{memberId}")
+    public CustomResponse<Void> kickMember(
+            @PathVariable Long roomId,
+            @PathVariable Long memberId,
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        groupChatRoomService.kickMember(roomId, currentUser.getId(), memberId);
+        return CustomResponse.ok("멤버를 강퇴했습니다.", null);
+    }
+
+    @PatchMapping("/rooms/{roomId}/owner")
+    public CustomResponse<Void> transferOwnership(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody TransferOwnerReq request
+    ) {
+        groupChatRoomService.transferOwnership(roomId, currentUser.getId(), request.newOwnerId());
+        return CustomResponse.ok("방장을 위임했습니다.", null);
+    }
+
     @Override
     @PostMapping("/rooms/{roomId}/block")
     public void blockUser(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @RequestParam ChatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         // chatMemberService.blockUser(currentUser.getId(), null, roomId, chatRoomType);
@@ -209,7 +238,7 @@ public class ApiV1ChatController implements ApiChatController {
     @PostMapping("/rooms/{roomId}/reportUser")
     public void reportUser(
             @PathVariable Long roomId,
-            @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @RequestParam ChatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         // chatMemberService.reportUser(currentUser.getId(), null, roomId, chatRoomType, null);

@@ -5,6 +5,7 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.GroupChatRoom;
@@ -32,12 +33,21 @@ public record GroupChatRoomResp(
         @Schema(description = "생성일시", requiredMode = REQUIRED)
         LocalDateTime createdAt,
 
+        @Schema(description = "방장 ID", requiredMode = REQUIRED)
+        Long ownerId,
+
+        @Schema(description = "안 읽은 메시지 수", example = "10", requiredMode = REQUIRED)
+        Long unreadCount,
+
         @Schema(description = "채팅방 멤버 목록", requiredMode = REQUIRED)
         List<ChatMemberResp> members
 ) {
-    public static GroupChatRoomResp from(GroupChatRoom entity, List<ChatMember> chatMembers) {
+    public static GroupChatRoomResp from(GroupChatRoom entity, List<ChatMember> chatMembers, Long currentUserId, Set<Long> friendIdSet, Long unreadCount) {
         List<ChatMemberResp> memberDtos = chatMembers.stream()
-                .map(chatMember -> ChatMemberResp.from(chatMember.getMember()))
+                .map(chatMember -> {
+                    boolean isFriend = !chatMember.getMember().getId().equals(currentUserId) && friendIdSet.contains(chatMember.getMember().getId());
+                    return ChatMemberResp.from(chatMember.getMember(), isFriend);
+                })
                 .collect(Collectors.toList());
 
         // 비밀번호 설정 여부 확인
@@ -51,6 +61,8 @@ public record GroupChatRoomResp(
                 hasPassword,
                 memberDtos.size(),
                 entity.getCreatedAt(),
+                entity.getOwner().getId(),
+                unreadCount,
                 memberDtos
         );
     }
