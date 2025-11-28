@@ -36,6 +36,7 @@ public class GroupChatRoomService {
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatAuthCacheService chatAuthCacheService;
     private final ChatMemberService chatMemberService;
+    private final ChatMessageService chatMessageService;
 
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
         chatMemberService.verifyUserIsMemberOfRoom(memberId, roomId, ChatRoomType.GROUP);
@@ -213,6 +214,39 @@ public class GroupChatRoomService {
         String systemMessageContent = String.format("'%s'님이 강퇴되었습니다.", targetNickname);
         // 시스템 메시지는 senderId를 0L, senderNickname을 "System"으로 통일
         MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP);
+
+        messagingTemplate.convertAndSend(
+                "/topic/chat/room/" + roomId,
+                systemMessage
+        );
+    }
+
+    @Transactional
+    public void transferOwnership(Long roomId, Long currentOwnerId, Long newOwnerId) {
+        // 1. 채팅방과 새로운 방장 멤버 엔티티 조회
+        GroupChatRoom room = groupChatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 그룹 채팅방입니다."));
+        Member newOwner = memberRepository.findById(newOwnerId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 멤버입니다."));
+
+        // 2. 요청자가 현재 방장인지 확인
+        if (!room.getOwner().getId().equals(currentOwnerId)) {
+            throw new AccessDeniedException("방장을 위임할 권한이 없습니다.");
+        }
+
+        // 3. 새로운 방장이 될 멤버가 현재 채팅방에 속해있는지 확인
+        chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_Id(roomId, ChatRoomType.GROUP, newOwnerId)
+                .orElseThrow(() -> new IllegalArgumentException("새로운 방장은 채팅방의 멤버여야 합니다."));
+
+        String oldOwnerNickname = room.getOwner().getNickname();
+        String newOwnerNickname = newOwner.getNickname();
+
+        // 4. 채팅방의 방장을 새로운 멤버로 변경
+        room.transferOwner(newOwner);
+
+        // 5. 시스템 메시지를 저장하고 채팅방 전체에 전송
+        String systemMessageContent = String.format("'%s'님이 '%s'님에게 방장을 위임했습니다.", oldOwnerNickname, newOwnerNickname);
+        MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatMessage.chatRoomType.GROUP);
 
         messagingTemplate.convertAndSend(
                 "/topic/chat/room/" + roomId,

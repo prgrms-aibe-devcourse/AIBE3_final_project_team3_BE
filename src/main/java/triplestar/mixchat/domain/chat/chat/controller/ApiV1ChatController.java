@@ -212,6 +212,16 @@ public class ApiV1ChatController implements ApiChatController {
         return CustomResponse.ok("멤버를 강퇴했습니다.", null);
     }
 
+    @PatchMapping("/rooms/{roomId}/owner")
+    public CustomResponse<Void> transferOwnership(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody TransferOwnerReq request
+    ) {
+        groupChatRoomService.transferOwnership(roomId, currentUser.getId(), request.newOwnerId());
+        return CustomResponse.ok("방장을 위임했습니다.", null);
+    }
+
     @Override
     @PostMapping("/rooms/{roomId}/block")
     public void blockUser(

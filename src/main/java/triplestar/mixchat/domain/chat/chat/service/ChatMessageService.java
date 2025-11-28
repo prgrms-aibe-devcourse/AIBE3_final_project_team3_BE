@@ -48,8 +48,10 @@ public class ChatMessageService {
 
     @Transactional
     public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatRoomType chatRoomType) {
-        // 멤버 검증
-        chatMemberService.verifyUserIsMemberOfRoom(senderId, roomId, chatRoomType);
+        // 시스템 메시지가 아닐 경우에만 멤버 검증을 수행
+        if (messageType != ChatMessage.MessageType.SYSTEM) {
+            chatMemberService.verifyUserIsMemberOfRoom(senderId, roomId, chatRoomType);
+        }
 
         // Sequence 생성 (비관적 락으로 동시성 제어)
         Long sequence = generateSequence(roomId, chatRoomType);
