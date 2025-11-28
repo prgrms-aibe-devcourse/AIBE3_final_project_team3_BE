@@ -6,6 +6,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.admin.admin.constant.RoomCloseReason;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.entity.GroupChatRoom;
@@ -39,10 +40,10 @@ public class AdminChatRoomService {
 
         // 2. 모든 멤버 조회 (알림 보내기 위해 필요)
         List<ChatMember> members = chatRoomMemberRepository
-                .findByChatRoomIdAndChatRoomType(roomId, ChatMessage.chatRoomType.GROUP);
+                .findByChatRoomIdAndChatRoomType(roomId, ChatRoomType.GROUP);
 
         // 3. 해당 방의 모든 멤버 삭제 (DB)
-       chatRoomMemberRepository.deleteByChatRoomIdAndChatRoomType(roomId, ChatMessage.chatRoomType.GROUP);
+       chatRoomMemberRepository.deleteByChatRoomIdAndChatRoomType(roomId, ChatRoomType.GROUP);
 
         // 4. Redis 캐시도 삭제
         chatAuthCacheService.removeRoom(roomId);
