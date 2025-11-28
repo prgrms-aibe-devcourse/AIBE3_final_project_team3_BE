@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 @Schema(description = "메시지별 읽음 카운트 업데이트 정보")
-public record MessageUnreadCountDto(
+public record MessageUnreadCountResp(
     @NotBlank
     @Schema(description = "메시지 고유 ID", example = "60c72b2f9b1d8e001f8e4bde", requiredMode = Schema.RequiredMode.REQUIRED)
     String messageId,

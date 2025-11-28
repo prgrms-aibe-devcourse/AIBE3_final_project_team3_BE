@@ -6,12 +6,12 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 @Schema(description = "읽음 카운트 갱신 이벤트")
-public record UnreadCountUpdateEventDto(
+public record UnreadCountUpdateEvent(
     @NotNull
     @Schema(description = "읽음 카운트가 갱신된 메시지 목록", requiredMode = Schema.RequiredMode.REQUIRED)
-    List<MessageUnreadCountDto> updates
+    List<MessageUnreadCountResp> updates
 ) {
-    public static UnreadCountUpdateEventDto from(List<MessageUnreadCountDto> updates) {
-        return new UnreadCountUpdateEventDto(updates);
+    public static UnreadCountUpdateEvent from(List<MessageUnreadCountResp> updates) {
+        return new UnreadCountUpdateEvent(updates);
     }
 }

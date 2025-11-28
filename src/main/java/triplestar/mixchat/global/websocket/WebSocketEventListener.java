@@ -1,5 +1,6 @@
 package triplestar.mixchat.global.websocket;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,13 +17,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
-import java.util.List;
-import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountDto;
-import triplestar.mixchat.domain.chat.chat.dto.ReadStatusUpdateEvent;
-import triplestar.mixchat.domain.chat.chat.dto.SubscriberCountUpdateResp;
-import triplestar.mixchat.domain.chat.chat.dto.UnreadCountUpdateEventDto;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
+import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
+import triplestar.mixchat.domain.chat.chat.dto.SubscriberCountUpdateResp;
+import triplestar.mixchat.domain.chat.chat.dto.UnreadCountUpdateEvent;
 import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
 import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
@@ -165,10 +163,10 @@ public class WebSocketEventListener {
             // readSequence가 null이면 이미 모든 메시지를 읽은 상태 (새로고침 등)
             if (readSequence != null && readSequence > 0) {
                 // 영향받은 메시지들의 최신 unreadCount 계산
-                List<MessageUnreadCountDto> updates = chatMessageService.getUnreadCountUpdates(roomId, chatRoomType, readSequence);
+                List<MessageUnreadCountResp> updates = chatMessageService.getUnreadCountUpdates(roomId, chatRoomType, readSequence);
 
                 if (!updates.isEmpty()) {
-                    UnreadCountUpdateEventDto updateEvent = UnreadCountUpdateEventDto.from(updates);
+                    UnreadCountUpdateEvent updateEvent = UnreadCountUpdateEvent.from(updates);
                     String broadcastDestination = "/topic/" + typeString.toLowerCase() + "/rooms/" + roomId;
                     messagingTemplate.convertAndSend(broadcastDestination, updateEvent);
                 }

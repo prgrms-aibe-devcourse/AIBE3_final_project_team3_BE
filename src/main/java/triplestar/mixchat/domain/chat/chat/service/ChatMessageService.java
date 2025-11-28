@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
-import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountDto;
+import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
@@ -181,7 +181,7 @@ public class ChatMessageService {
     }
 
     // 누군가 채팅방 구독시 읽지 않은 사람 수 업데이트
-    public List<MessageUnreadCountDto> getUnreadCountUpdates(Long roomId, ChatRoomType chatRoomType, Long readUpToSequence) {
+    public List<MessageUnreadCountResp> getUnreadCountUpdates(Long roomId, ChatRoomType chatRoomType, Long readUpToSequence) {
         // 1. 채팅방의 모든 멤버 조회 (읽음 상태 확인용)
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
 
@@ -198,7 +198,7 @@ public class ChatMessageService {
                             .filter(member -> member.hasNotRead(message.getSequence()))
                             .count();
 
-                    return new MessageUnreadCountDto(message.getId(), unreadCount);
+                    return new MessageUnreadCountResp(message.getId(), unreadCount);
                 })
                 .collect(Collectors.toList());
     }
