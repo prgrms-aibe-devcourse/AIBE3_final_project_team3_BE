@@ -36,10 +36,13 @@ public record GroupChatRoomResp(
         @Schema(description = "방장 ID", requiredMode = REQUIRED)
         Long ownerId,
 
+        @Schema(description = "안 읽은 메시지 수", example = "10", requiredMode = REQUIRED)
+        Long unreadCount,
+
         @Schema(description = "채팅방 멤버 목록", requiredMode = REQUIRED)
         List<ChatMemberResp> members
 ) {
-    public static GroupChatRoomResp from(GroupChatRoom entity, List<ChatMember> chatMembers, Long currentUserId, Set<Long> friendIdSet) {
+    public static GroupChatRoomResp from(GroupChatRoom entity, List<ChatMember> chatMembers, Long currentUserId, Set<Long> friendIdSet, Long unreadCount) {
         List<ChatMemberResp> memberDtos = chatMembers.stream()
                 .map(chatMember -> {
                     boolean isFriend = !chatMember.getMember().getId().equals(currentUserId) && friendIdSet.contains(chatMember.getMember().getId());
@@ -59,6 +62,7 @@ public record GroupChatRoomResp(
                 memberDtos.size(),
                 entity.getCreatedAt(),
                 entity.getOwner().getId(),
+                unreadCount,
                 memberDtos
         );
     }

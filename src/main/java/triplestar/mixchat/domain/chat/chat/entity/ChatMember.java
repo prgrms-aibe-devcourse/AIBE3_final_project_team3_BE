@@ -59,6 +59,7 @@ public class ChatMember extends BaseEntity {
         this.chatRoomType = chatRoomType;
         // 기본 알림 설정은 ALWAYS로 설정
         this.chatNotificationSetting = ChatNotificationSetting.ALWAYS;
+        this.lastReadSequence = 0L;
 
         //lastReadAt은 채팅 읽은 사람 수 기능 구현시 추가 예정
     }

@@ -81,7 +81,7 @@ public class GroupChatRoomService {
         Page<Long> friendIdPage = friendshipRepository.findFriendsByMemberId(creatorId, Pageable.ofSize(500));
         Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
 
-        GroupChatRoomResp roomDto = GroupChatRoomResp.from(savedRoom, chatMembers, creatorId, friendIdSet);
+        GroupChatRoomResp roomDto = GroupChatRoomResp.from(savedRoom, chatMembers, creatorId, friendIdSet, 0L);
         members.forEach(member -> {
             messagingTemplate.convertAndSendToUser(member.getId().toString(), "/topic/rooms", roomDto);
         });
@@ -170,7 +170,7 @@ public class GroupChatRoomService {
         Page<Long> friendIdPage = friendshipRepository.findFriendsByMemberId(userId, Pageable.ofSize(500));
         Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
 
-        GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers, userId, friendIdSet);
+        GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers, userId, friendIdSet, 0L);
 
         // 8. WebSocket으로 방의 모든 멤버에게 알림 (새 멤버 참가 알림)
         allMembers.forEach(cm -> {
@@ -275,9 +275,14 @@ public class GroupChatRoomService {
             return Collections.emptyList();
         }
 
-        // 현재 사용자의 친구 ID 목록 조회 (최대 2000명으로 가정)
+        // 현재 사용자의 친구 ID 목록 조회 (최대 500명으로 가정)
         Page<Long> friendIdPage = friendshipRepository.findFriendsByMemberId(currentUserId, Pageable.ofSize(500));
         Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
+
+        // 현재 사용자의 모든 그룹 채팅방 ChatMember 정보 조회
+        List<ChatMember> currentUserChatMembers = chatRoomMemberRepository.findByMemberAndChatRoomType(findMemberById(currentUserId), ChatRoomType.GROUP);
+        Map<Long, Long> lastReadSequenceMap = currentUserChatMembers.stream()
+                .collect(Collectors.toMap(ChatMember::getChatRoomId, ChatMember::getLastReadSequence, (seq1, seq2) -> seq1));
 
         // 1. 모든 방의 ID 수집
         List<Long> roomIds = rooms.stream()
@@ -293,12 +298,19 @@ public class GroupChatRoomService {
 
         // 4. DTO 변환
         return rooms.stream()
-                .map(room -> GroupChatRoomResp.from(
-                        room,
-                        membersByRoom.getOrDefault(room.getId(), Collections.emptyList()),
-                        currentUserId,
-                        friendIdSet
-                ))
+                .map(room -> {
+                    Long lastRead = lastReadSequenceMap.get(room.getId());
+                    long unreadCount = (lastRead == null) ? room.getCurrentSequence() : room.getCurrentSequence() - lastRead;
+                    if (unreadCount < 0) unreadCount = 0;
+
+                    return GroupChatRoomResp.from(
+                            room,
+                            membersByRoom.getOrDefault(room.getId(), Collections.emptyList()),
+                            currentUserId,
+                            friendIdSet,
+                            unreadCount
+                    );
+                })
                 .collect(Collectors.toList());
     }
 }
