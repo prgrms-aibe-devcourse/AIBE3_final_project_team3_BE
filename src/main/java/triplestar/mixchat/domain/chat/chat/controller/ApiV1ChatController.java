@@ -202,6 +202,16 @@ public class ApiV1ChatController implements ApiChatController {
         }
     }
 
+    @DeleteMapping("/rooms/{roomId}/members/{memberId}")
+    public CustomResponse<Void> kickMember(
+            @PathVariable Long roomId,
+            @PathVariable Long memberId,
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        groupChatRoomService.kickMember(roomId, currentUser.getId(), memberId);
+        return CustomResponse.ok("멤버를 강퇴했습니다.", null);
+    }
+
     @Override
     @PostMapping("/rooms/{roomId}/block")
     public void blockUser(

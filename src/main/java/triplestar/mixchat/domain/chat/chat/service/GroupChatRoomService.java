@@ -1,22 +1,23 @@
 package triplestar.mixchat.domain.chat.chat.service;
 
 
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.entity.GroupChatRoom;
-import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -178,6 +179,47 @@ public class GroupChatRoomService {
         List<GroupChatRoom> rooms = groupChatRoomRepository.findPublicRoomsExcludingMemberId(currentUserId);
         return convertToRoomResponses(rooms);
     }
+
+    @Transactional
+    public void kickMember(Long roomId, Long ownerId, Long targetMemberId) {
+        // 1. 채팅방 조회
+        GroupChatRoom room = groupChatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 그룹 채팅방입니다."));
+
+        // 2. 요청자가 방장인지 확인
+        if (!room.getOwner().getId().equals(ownerId)) {
+            throw new AccessDeniedException("멤버를 강퇴할 권한이 없습니다.");
+        }
+
+        // 3. 자신을 강퇴할 수 없음
+        if (ownerId.equals(targetMemberId)) {
+            throw new IllegalArgumentException("자기 자신을 강퇴할 수 없습니다.");
+        }
+
+        // 4. 강퇴할 ChatMember 찾기
+        ChatMember memberToKick = chatRoomMemberRepository
+                .findByChatRoomIdAndChatRoomTypeAndMember_Id(roomId, ChatRoomType.GROUP, targetMemberId)
+                .orElseThrow(() -> new IllegalArgumentException("채팅방에 존재하지 않는 멤버입니다."));
+
+        String targetNickname = memberToKick.getMember().getNickname();
+
+        // 5. ChatMember 삭제
+        chatRoomMemberRepository.delete(memberToKick);
+
+        // 6. 캐시에서 멤버 제거
+        chatAuthCacheService.removeMember(roomId, targetMemberId);
+
+        // 7. 시스템 메시지 저장 및 전송
+        String systemMessageContent = String.format("'%s'님이 강퇴되었습니다.", targetNickname);
+        // 시스템 메시지는 senderId를 0L, senderNickname을 "System"으로 통일
+        MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP);
+
+        messagingTemplate.convertAndSend(
+                "/topic/chat/room/" + roomId,
+                systemMessage
+        );
+    }
+
     //그룹 채팅방 목록을 DTO로 변환
     private List<GroupChatRoomResp> convertToRoomResponses(List<GroupChatRoom> rooms) {
         if (rooms.isEmpty()) {
