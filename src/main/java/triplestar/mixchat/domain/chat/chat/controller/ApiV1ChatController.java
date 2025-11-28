@@ -30,6 +30,7 @@ import triplestar.mixchat.domain.chat.chat.dto.UnreadCountUpdateEventDto;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.TextMessageReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.service.AIChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
@@ -136,7 +137,7 @@ public class ApiV1ChatController implements ApiChatController {
     @PostMapping("/rooms/{roomId}/message")
     public CustomResponse<MessageResp> sendMessage(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @RequestParam ChatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody TextMessageReq request
     ) {
@@ -149,7 +150,7 @@ public class ApiV1ChatController implements ApiChatController {
     @GetMapping("/rooms/{roomId}/messages")
     public CustomResponse<ChatRoomPageDataResp> getMessages(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @RequestParam ChatRoomType chatRoomType,
             @RequestParam(required = false) Long cursor,
             @RequestParam(required = false) Integer size,
             @AuthenticationPrincipal CustomUserDetails currentUser
@@ -166,7 +167,7 @@ public class ApiV1ChatController implements ApiChatController {
     @PostMapping(value = "/rooms/{roomId}/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CustomResponse<MessageResp> uploadFile(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @RequestParam ChatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam("file") MultipartFile file,
             @RequestParam("messageType") ChatMessage.MessageType messageType
@@ -187,14 +188,14 @@ public class ApiV1ChatController implements ApiChatController {
     @DeleteMapping("/rooms/{roomId}")
     public void leaveRoom(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @RequestParam ChatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        if (chatRoomType == ChatMessage.chatRoomType.DIRECT) {
+        if (chatRoomType == ChatRoomType.DIRECT) {
             directChatRoomService.leaveRoom(roomId, currentUser.getId());
-        } else if (chatRoomType == ChatMessage.chatRoomType.GROUP) {
+        } else if (chatRoomType == ChatRoomType.GROUP) {
             groupChatRoomService.leaveRoom(roomId, currentUser.getId());
-        } else if (chatRoomType == ChatMessage.chatRoomType.AI) {
+        } else if (chatRoomType == ChatRoomType.AI) {
             aiChatRoomService.leaveAIChatRoom(roomId, currentUser.getId());
         } else {
             throw new IllegalArgumentException("지원하지 않는 대화 타입입니다: " + chatRoomType);
@@ -205,7 +206,7 @@ public class ApiV1ChatController implements ApiChatController {
     @PostMapping("/rooms/{roomId}/block")
     public void blockUser(
             @PathVariable("roomId") Long roomId,
-            @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @RequestParam ChatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         // chatMemberService.blockUser(currentUser.getId(), null, roomId, chatRoomType);
@@ -215,7 +216,7 @@ public class ApiV1ChatController implements ApiChatController {
     @PostMapping("/rooms/{roomId}/reportUser")
     public void reportUser(
             @PathVariable Long roomId,
-            @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @RequestParam ChatRoomType chatRoomType,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         // chatMemberService.reportUser(currentUser.getId(), null, roomId, chatRoomType, null);

@@ -21,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
@@ -132,8 +133,8 @@ public class StompHandler implements ExecutorChannelInterceptor {
         if (matcher.matches()) {
             String typeString = matcher.group(1).toUpperCase();
             Long roomId = Long.parseLong(matcher.group(2));
-            ChatMessage.chatRoomType chatRoomType =
-                    ChatMessage.chatRoomType.valueOf(typeString);
+            ChatRoomType chatRoomType =
+                    ChatRoomType.valueOf(typeString);
 
             // 멤버십 검증 (캐시 사용으로 성능 최적화)
             chatMemberService.verifyUserIsMemberOfRoom(

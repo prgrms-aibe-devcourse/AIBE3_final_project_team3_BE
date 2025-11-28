@@ -1,5 +1,8 @@
 package triplestar.mixchat.domain.chat.chat.service;
 
+import static java.time.LocalDateTime.now;
+import static java.util.Collections.reverse;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +19,7 @@ import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountDto;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.DirectChatRoomRepository;
@@ -43,7 +47,7 @@ public class ChatMessageService {
     private final jakarta.persistence.EntityManager entityManager;
 
     @Transactional
-    public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatMessage.chatRoomType chatRoomType) {
+    public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatRoomType chatRoomType) {
         // 멤버 검증
         chatMemberService.verifyUserIsMemberOfRoom(senderId, roomId, chatRoomType);
 
@@ -56,23 +60,15 @@ public class ChatMessageService {
 
         // 1. 발신자 + 구독자 모두를 하나의 Set으로 수집 (읽음 처리 대상)
         Set<Long> memberIdsToMarkRead = new HashSet<>();
-        memberIdsToMarkRead.add(senderId); // 발신자도 포함
+        memberIdsToMarkRead.add(senderId); // 발신자도 포함(방어적 코드)
 
-        // 2. Redis에서 구독자 목록 조회 및 수집
-        Set<Long> subscribedMembers = new HashSet<>();
+        // 2. Redis에서 구독자 목록 조회 및 읽음 처리 대상에 추가
         Set<String> subscribers = subscriberCacheService.getSubscribers(roomId);
         if (subscribers != null && !subscribers.isEmpty()) {
             for (String subscriberIdStr : subscribers) {
                 try {
                     Long subscriberId = Long.parseLong(subscriberIdStr);
-
-                    // 발신자 제외한 구독자만 subscribedMembers에 추가 (unreadCount 계산용)
-                    if (!subscriberId.equals(senderId)) {
-                        subscribedMembers.add(subscriberId);
-                    }
-
-                    // 읽음 처리 대상에는 모두 추가 (Set이므로 중복 자동 제거)
-                    memberIdsToMarkRead.add(subscriberId);
+                    memberIdsToMarkRead.add(subscriberId); // Set이므로 중복 자동 제거
                 } catch (NumberFormatException e) {
                     log.error("구독자 ID 파싱 실패 - roomId: {}, 잘못된 ID: {}", roomId, subscriberIdStr);
                 }
@@ -82,18 +78,15 @@ public class ChatMessageService {
         // 3. Bulk Update: 발신자 + 구독자 모두 한 번에 처리 (쿼리 통합)
         if (!memberIdsToMarkRead.isEmpty()) {
             chatRoomMemberRepository.bulkUpdateLastReadSequence(
-                roomId, chatRoomType, memberIdsToMarkRead, sequence, java.time.LocalDateTime.now()
+                roomId, chatRoomType, memberIdsToMarkRead, sequence, now()
             );
         }
 
-        // 4. unreadCount 계산: lastReadSequence 기준으로 안 읽은 사람 수 계산
-        // Bulk Update 후 다시 조회하여 업데이트된 lastReadSequence 사용
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
 
+        // 읽지 않은 사람 수
         int unreadCount = (int) allMembers.stream()
-                .filter(member -> !member.getMember().getId().equals(senderId)) // 발신자 제외
-                .filter(member -> member.getLastReadSequence() == null ||
-                        member.getLastReadSequence() < sequence) // 안 읽은 사람
+                .filter(member -> member.hasNotRead(sequence))
                 .count();
 
         // 5. 알림 이벤트 (구독 중이지 않은 사람들에게만)
@@ -118,7 +111,7 @@ public class ChatMessageService {
     }
 
     @Transactional
-    public MessageResp saveFileMessage(Long roomId, Long senderId, String senderNickname, String fileUrl, ChatMessage.MessageType messageType, ChatMessage.chatRoomType chatRoomType) {
+    public MessageResp saveFileMessage(Long roomId, Long senderId, String senderNickname, String fileUrl, ChatMessage.MessageType messageType, ChatRoomType chatRoomType) {
         if (messageType != ChatMessage.MessageType.IMAGE && messageType != ChatMessage.MessageType.FILE) {
             throw new IllegalArgumentException("파일 메시지는 IMAGE 또는 FILE 타입이어야 합니다.");
         }
@@ -126,7 +119,7 @@ public class ChatMessageService {
     }
 
     // 메시지 목록 조회 (페이징), 발신자 이름 및 unreadCount 포함
-    public MessagePageResp getMessagesWithSenderInfo(Long roomId, ChatMessage.chatRoomType chatRoomType, Long requesterId, Long cursor, Integer size) {
+    public MessagePageResp getMessagesWithSenderInfo(Long roomId, ChatRoomType chatRoomType, Long requesterId, Long cursor, Integer size) {
         // 기본값: size = 25, 최대 100
         int pageSize = (size != null && size > 0 && size <= 100) ? size : 25;
 
@@ -145,7 +138,7 @@ public class ChatMessageService {
         }
 
         // 역순 정렬 (오래된 메시지 → 최신 메시지 순으로 표시)
-        java.util.Collections.reverse(messages);
+        reverse(messages);
 
         // 발신자 이름 조회
         List<Long> senderIds = messages.stream()
@@ -162,11 +155,9 @@ public class ChatMessageService {
                 .map(message -> {
                     String senderName = senderNames.getOrDefault(message.getSenderId(), "Unknown");
 
-                    // unreadCount 계산: 발신자를 제외한 멤버 중 안 읽은 사람 수
+                    // 읽지 않은 사람 수
                     int unreadCount = (int) allMembers.stream()
-                            .filter(member -> !member.getMember().getId().equals(message.getSenderId()))
-                            .filter(member -> member.getLastReadSequence() == null ||
-                                            member.getLastReadSequence() < message.getSequence())
+                            .filter(member -> member.hasNotRead(message.getSequence()))
                             .count();
 
                     return MessageResp.withUnreadCount(message, senderName, unreadCount);
@@ -188,27 +179,21 @@ public class ChatMessageService {
     }
 
     // 누군가 채팅방 구독시 읽지 않은 사람 수 업데이트
-    public List<MessageUnreadCountDto> getUnreadCountUpdates(Long roomId, ChatMessage.chatRoomType chatRoomType, Long readUpToSequence) {
+    public List<MessageUnreadCountDto> getUnreadCountUpdates(Long roomId, ChatRoomType chatRoomType, Long readUpToSequence) {
         // 1. 채팅방의 모든 멤버 조회 (읽음 상태 확인용)
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
 
         // 최근 50개 업데이트(페이징이 25개이므로 여유있게 50개 조회)
         List<ChatMessage> recentMessages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(
-                roomId, chatRoomType, org.springframework.data.domain.PageRequest.of(0, 50)
+                roomId, chatRoomType, PageRequest.of(0, 50)
         );
 
-        // readUpToSequence 이하만 필터링
-        List<ChatMessage> affectedMessages = recentMessages.stream()
-                .filter(msg -> msg.getSequence() <= readUpToSequence)
-                .collect(Collectors.toList());
-
-        return affectedMessages.stream()
+        return recentMessages.stream()
+                .filter(msg -> msg.getSequence() <= readUpToSequence) // readUpToSequence 이하만 필터링
                 .map(message -> {
-                    // unreadCount 계산: 발신자를 제외한 멤버 중 안 읽은 사람 수
+                    // 읽지 않은 사람 수
                     int unreadCount = (int) allMembers.stream()
-                            .filter(member -> !member.getMember().getId().equals(message.getSenderId()))
-                            .filter(member -> member.getLastReadSequence() == null ||
-                                    member.getLastReadSequence() < message.getSequence())
+                            .filter(member -> member.hasNotRead(message.getSequence()))
                             .count();
 
                     return new MessageUnreadCountDto(message.getId(), unreadCount);
@@ -217,7 +202,7 @@ public class ChatMessageService {
     }
 
     // Sequence 생성 (비관적 락으로 동시성 제어)
-    private Long generateSequence(Long roomId, ChatMessage.chatRoomType chatRoomType) {
+    private Long generateSequence(Long roomId, ChatRoomType chatRoomType) {
         Long sequence = switch (chatRoomType) {
             case DIRECT -> {
                 var room = directChatRoomRepository.findByIdWithLock(roomId)

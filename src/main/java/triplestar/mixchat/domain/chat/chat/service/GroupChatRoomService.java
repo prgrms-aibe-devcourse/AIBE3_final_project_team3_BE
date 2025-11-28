@@ -16,6 +16,7 @@ import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.entity.GroupChatRoom;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -36,7 +37,7 @@ public class GroupChatRoomService {
     private final ChatMemberService chatMemberService;
 
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
-        chatMemberService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.chatRoomType.GROUP);
+        chatMemberService.verifyUserIsMemberOfRoom(memberId, roomId, ChatRoomType.GROUP);
     }
 
 
@@ -60,7 +61,7 @@ public class GroupChatRoomService {
 
         // 모든 멤버를 ChatMember로 추가 (방장 여부는 GroupChatRoom.owner로 판단)
         List<ChatMember> chatMembers = members.stream().map(member ->
-            new ChatMember(member, savedRoom.getId(), ChatMessage.chatRoomType.GROUP)
+            new ChatMember(member, savedRoom.getId(), ChatRoomType.GROUP)
         ).collect(Collectors.toList());
         chatRoomMemberRepository.saveAll(chatMembers);
 
@@ -84,14 +85,14 @@ public class GroupChatRoomService {
 
         // 2. ChatMember 찾기
         ChatMember memberToRemove = chatRoomMemberRepository
-                .findByChatRoomIdAndChatRoomTypeAndMember_Id(roomId, ChatMessage.chatRoomType.GROUP, currentUserId)
+                .findByChatRoomIdAndChatRoomTypeAndMember_Id(roomId, ChatRoomType.GROUP, currentUserId)
                 .orElseThrow(() -> new AccessDeniedException("해당 대화방에 접근할 권한이 없습니다."));
 
         // 3. 방장이 나가는 경우 방장 위임 처리
         if (room.isOwner(memberToRemove.getMember())) {
             // 남은 멤버 조회 (본인 제외)
             List<ChatMember> remainingMembers = chatRoomMemberRepository
-                    .findByChatRoomIdAndChatRoomType(roomId, ChatMessage.chatRoomType.GROUP)
+                    .findByChatRoomIdAndChatRoomType(roomId, ChatRoomType.GROUP)
                     .stream()
                     .filter(cm -> !cm.getMember().getId().equals(currentUserId))
                     .collect(Collectors.toList());
@@ -115,7 +116,7 @@ public class GroupChatRoomService {
 
         // 6. 남은 멤버 수 확인 후 대화방 삭제
         long remainingMembersCount = chatRoomMemberRepository.countByChatRoomIdAndChatRoomType(
-                roomId, ChatMessage.chatRoomType.GROUP);
+                roomId, ChatRoomType.GROUP);
 
         if (remainingMembersCount == 0) {
             groupChatRoomRepository.deleteById(roomId);
@@ -132,7 +133,7 @@ public class GroupChatRoomService {
 
         // 2. 이미 참가한 회원인지 확인
         boolean alreadyMember = chatRoomMemberRepository.existsByChatRoomIdAndChatRoomTypeAndMember_Id(
-                roomId, ChatMessage.chatRoomType.GROUP, userId);
+                roomId, ChatRoomType.GROUP, userId);
         if (alreadyMember) {
             throw new IllegalStateException("이미 참가한 채팅방입니다.");
         }
@@ -144,14 +145,14 @@ public class GroupChatRoomService {
         Member member = findMemberById(userId);
 
         // 5. ChatMember 추가
-        ChatMember newMember = new ChatMember(member, roomId, ChatMessage.chatRoomType.GROUP);
+        ChatMember newMember = new ChatMember(member, roomId, ChatRoomType.GROUP);
         chatRoomMemberRepository.save(newMember);
 
         // 6. 캐시에 추가
         chatAuthCacheService.addMember(roomId, userId);
 
         // 7. 응답 생성 (해당 방의 모든 멤버 정보 포함)
-        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, ChatMessage.chatRoomType.GROUP);
+        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, ChatRoomType.GROUP);
         GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers);
 
         // 8. WebSocket으로 방의 모든 멤버에게 알림 (새 멤버 참가 알림)

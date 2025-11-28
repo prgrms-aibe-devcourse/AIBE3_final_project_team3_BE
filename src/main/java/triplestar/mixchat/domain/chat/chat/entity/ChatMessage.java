@@ -10,6 +10,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 
 //mongoDB용 Entity
 @Getter
@@ -31,11 +32,6 @@ public class ChatMessage {
         TEXT, IMAGE, FILE, SYSTEM
     }
 
-    // 대화 타입 (1:1, 그룹, AI 등)을 구분하는 enum 추가
-    public enum chatRoomType {
-        DIRECT, GROUP, AI
-    }
-
     @CreatedDate
     @Field("created_at")
     private LocalDateTime createdAt;
@@ -44,9 +40,9 @@ public class ChatMessage {
     @Field("updated_at")
     private LocalDateTime updatedAt;
 
-    private chatRoomType chatRoomType; // 대화 타입을 저장하는 필드 추가
+    private ChatRoomType chatRoomType;
 
-    public ChatMessage(Long chatRoomId, Long senderId, Long sequence, String content, MessageType messageType, chatRoomType chatRoomType) {
+    public ChatMessage(Long chatRoomId, Long senderId, Long sequence, String content, MessageType messageType, ChatRoomType chatRoomType) {
         if (chatRoomId == null) {
             throw new IllegalArgumentException("chatRoomId는 null일 수 없습니다.");
         }
@@ -71,7 +67,7 @@ public class ChatMessage {
         this.sequence = sequence;
         this.content = content;
         this.messageType = messageType;
-        this.chatRoomType = chatRoomType; // 필드 할당
+        this.chatRoomType = chatRoomType;
     }
 }
 

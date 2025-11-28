@@ -1,5 +1,6 @@
 package triplestar.mixchat.global.websocket;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -9,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
@@ -20,6 +22,7 @@ import triplestar.mixchat.domain.chat.chat.dto.ReadStatusUpdateEvent;
 import triplestar.mixchat.domain.chat.chat.dto.SubscriberCountUpdateResp;
 import triplestar.mixchat.domain.chat.chat.dto.UnreadCountUpdateEventDto;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
 import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
@@ -48,28 +51,21 @@ public class WebSocketEventListener {
     // 세션별 구독 정보 저장용 내부 클래스(redis keys 사용 방지)
     private static class SessionSubscription {
         private final Long memberId;
-        private final Set<Long> roomIds = ConcurrentHashMap.newKeySet();
         private final Set<String> subscriptionIds = ConcurrentHashMap.newKeySet(); // disconnect 시 subscriptionIdToRoomInfo 정리용
-        private final ConcurrentHashMap<Long, ChatMessage.chatRoomType> roomTypeMap = new ConcurrentHashMap<>(); // roomId -> chatRoomType
+        private final ConcurrentHashMap<Long, ChatRoomType> roomTypeMap = new ConcurrentHashMap<>(); // roomId -> chatRoomType
 
         public SessionSubscription(Long memberId) {
             this.memberId = memberId;
         }
 
-        public void addRoom(Long roomId, String subscriptionId, ChatMessage.chatRoomType chatRoomType) {
-            roomIds.add(roomId);
+        public void addRoom(Long roomId, String subscriptionId, ChatRoomType chatRoomType) {
             subscriptionIds.add(subscriptionId);
             roomTypeMap.put(roomId, chatRoomType);
         }
 
         public void removeRoom(Long roomId, String subscriptionId) {
-            roomIds.remove(roomId);
             subscriptionIds.remove(subscriptionId);
             roomTypeMap.remove(roomId);
-        }
-
-        public Set<Long> getRoomIds() {
-            return roomIds;
         }
 
         public Set<String> getSubscriptionIds() {
@@ -80,8 +76,8 @@ public class WebSocketEventListener {
             return memberId;
         }
 
-        public ChatMessage.chatRoomType getRoomType(Long roomId) {
-            return roomTypeMap.get(roomId);
+        public ConcurrentHashMap<Long, ChatRoomType> getRoomTypeMap() {
+            return roomTypeMap;
         }
     }
 
@@ -90,9 +86,9 @@ public class WebSocketEventListener {
         private final Long roomId;
         private final Long memberId;
         private final String sessionId;
-        private final ChatMessage.chatRoomType chatRoomType;
+        private final ChatRoomType chatRoomType;
 
-        public RoomSubscriptionInfo(Long roomId, Long memberId, String sessionId, ChatMessage.chatRoomType chatRoomType) {
+        public RoomSubscriptionInfo(Long roomId, Long memberId, String sessionId, ChatRoomType chatRoomType) {
             this.roomId = roomId;
             this.memberId = memberId;
             this.sessionId = sessionId;
@@ -111,7 +107,7 @@ public class WebSocketEventListener {
             return sessionId;
         }
 
-        public ChatMessage.chatRoomType getChatRoomType() {
+        public ChatRoomType getChatRoomType() {
             return chatRoomType;
         }
     }
@@ -143,10 +139,10 @@ public class WebSocketEventListener {
 
         String typeString = matcher.group(1).toUpperCase();
         Long roomId = Long.parseLong(matcher.group(2));
-        ChatMessage.chatRoomType chatRoomType = ChatMessage.chatRoomType.valueOf(typeString);
+        ChatRoomType chatRoomType = ChatRoomType.valueOf(typeString);
 
         // AI 채팅방은 읽음 처리 및 구독자 추적이 불필요 (1:1 AI 대화)
-        if (chatRoomType == ChatMessage.chatRoomType.AI) {
+        if (chatRoomType == ChatRoomType.AI) {
             return;
         }
 
@@ -181,12 +177,16 @@ public class WebSocketEventListener {
             // 6. 구독자 수 변경 브로드캐스트
             broadcastSubscriberCount(roomId, chatRoomType);
 
-        } catch (Exception e) {
-            // 예외 발생 시 로그만 남기고 클라이언트는 구독 실패로 처리
+        } catch (IllegalArgumentException | AccessDeniedException e) {
+            // 채팅방 권한 또는 데이터 검증 실패 시 로그만 남기고 클라이언트는 구독 실패로 처리
             // Redis/메모리에 유령 데이터가 남지 않음 (원자성 보장)
             log.error("채팅방 구독 처리 실패 - memberId: {}, roomId: {}, type: {}, error: {}",
                     memberId, roomId, chatRoomType, e.getMessage());
             // 예외를 다시 던지지 않음 (StompHandler에서 이미 멤버십 검증 완료)
+        } catch (Exception e) {
+            // 예상치 못한 예외는 별도 처리 (모니터링 필요)
+            log.error("채팅방 구독 처리 중 예상치 못한 오류 - memberId: {}, roomId: {}, type: {}",
+                    memberId, roomId, chatRoomType, e);
         }
     }
 
@@ -221,7 +221,7 @@ public class WebSocketEventListener {
         }
 
         // 구독자 수 변경 브로드캐스트
-        ChatMessage.chatRoomType chatRoomType = roomInfo.getChatRoomType();
+        ChatRoomType chatRoomType = roomInfo.getChatRoomType();
         broadcastSubscriberCount(roomId, chatRoomType);
     }
 
@@ -243,15 +243,16 @@ public class WebSocketEventListener {
         }
 
         Long memberId = subscription.getMemberId();
-        Set<Long> roomIds = subscription.getRoomIds();
+        ConcurrentHashMap<Long, ChatRoomType> roomTypeMap = subscription.getRoomTypeMap();
         Set<String> subscriptionIds = subscription.getSubscriptionIds();
 
         // 실제 구독한 방만 Redis에서 제거 및 구독자 수 브로드캐스트
-        // SessionSubscription에서 직접 roomId와 chatRoomType을 가져와서 처리 (subscriptionIdToRoomInfo에 의존하지 않음)
-        for (Long roomId : roomIds) {
-            ChatMessage.chatRoomType chatRoomType = subscription.getRoomType(roomId);
+        for (Map.Entry<Long, ChatRoomType> entry : roomTypeMap.entrySet()) {
+            Long roomId = entry.getKey();
+            ChatRoomType chatRoomType = entry.getValue();
+
             // AI 채팅방은 읽음 처리 및 구독자 추적이 불필요 (1:1 AI 대화)
-            if (chatRoomType == null || chatRoomType == ChatMessage.chatRoomType.AI) {
+            if (chatRoomType == ChatRoomType.AI) {
                 continue;
             }
 
@@ -268,9 +269,9 @@ public class WebSocketEventListener {
     }
 
     // 구독자 수 변경 브로드캐스트 헬퍼 메서드
-    private void broadcastSubscriberCount(Long roomId, ChatMessage.chatRoomType chatRoomType) {
+    private void broadcastSubscriberCount(Long roomId, ChatRoomType chatRoomType) {
         // AI 채팅방은 읽음 처리 및 구독자 추적이 불필요 (1:1 AI 대화)
-        if (chatRoomType == ChatMessage.chatRoomType.AI) {
+        if (chatRoomType == ChatRoomType.AI) {
             return;
         }
 

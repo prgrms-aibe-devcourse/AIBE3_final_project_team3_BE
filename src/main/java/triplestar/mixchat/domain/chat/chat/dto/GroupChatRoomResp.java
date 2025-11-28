@@ -32,6 +32,9 @@ public record GroupChatRoomResp(
         @Schema(description = "생성일시", requiredMode = REQUIRED)
         LocalDateTime createdAt,
 
+        @Schema(description = "방장 ID", requiredMode = REQUIRED)
+        Long ownerId,
+
         @Schema(description = "채팅방 멤버 목록", requiredMode = REQUIRED)
         List<ChatMemberResp> members
 ) {
@@ -51,6 +54,7 @@ public record GroupChatRoomResp(
                 hasPassword,
                 memberDtos.size(),
                 entity.getCreatedAt(),
+                entity.getOwner().getId(),
                 memberDtos
         );
     }

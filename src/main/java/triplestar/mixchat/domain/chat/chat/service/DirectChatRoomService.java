@@ -12,6 +12,7 @@ import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.entity.DirectChatRoom;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.DirectChatRoomRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -40,7 +41,7 @@ public class DirectChatRoomService {
 
     // 사용자가 해당 1:1 채팅방의 멤버인지 확인
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
-        chatMemberService.verifyUserIsMemberOfRoom(memberId, roomId, ChatMessage.chatRoomType.DIRECT);
+        chatMemberService.verifyUserIsMemberOfRoom(memberId, roomId, ChatRoomType.DIRECT);
     }
 
     @Transactional
@@ -59,8 +60,8 @@ public class DirectChatRoomService {
                     DirectChatRoom savedRoom = directChatRoomRepository.save(newRoom);
 
                     // ChatMember 생성 및 저장
-                    chatRoomMemberRepository.save(new ChatMember(member1, savedRoom.getId(), ChatMessage.chatRoomType.DIRECT));
-                    chatRoomMemberRepository.save(new ChatMember(member2, savedRoom.getId(), ChatMessage.chatRoomType.DIRECT));
+                    chatRoomMemberRepository.save(new ChatMember(member1, savedRoom.getId(), ChatRoomType.DIRECT));
+                    chatRoomMemberRepository.save(new ChatMember(member2, savedRoom.getId(), ChatRoomType.DIRECT));
 
                     // 캐시 관리
                     chatAuthCacheService.addMember(savedRoom.getId(), member1Id);
@@ -74,7 +75,7 @@ public class DirectChatRoomService {
                     messagingTemplate.convertAndSendToUser(member2.getId().toString(), "/topic/rooms", roomDto);
 
                     // 채팅 시작 첫 메시지 전송 (TODO 해결)
-                    chatMessageService.saveMessage(savedRoom.getId(), member1Id, senderNickname, "1:1 채팅이 시작되었습니다.", ChatMessage.MessageType.SYSTEM, ChatMessage.chatRoomType.DIRECT);
+                    chatMessageService.saveMessage(savedRoom.getId(), member1Id, senderNickname, "1:1 채팅이 시작되었습니다.", ChatMessage.MessageType.SYSTEM, ChatRoomType.DIRECT);
 
                     return savedRoom;
                 });
@@ -86,14 +87,14 @@ public class DirectChatRoomService {
     // 1:1 채팅방 나가기
     @Transactional
     public void leaveRoom(Long roomId, Long currentUserId) {
-        chatMemberService.leaveRoom(currentUserId, roomId, ChatMessage.chatRoomType.DIRECT);
+        chatMemberService.leaveRoom(currentUserId, roomId, ChatRoomType.DIRECT);
     }
 
     // 사용자가 참여하고 있는 1:1 채팅방 목록 조회
     public List<DirectChatRoomResp> getRoomsForUser(Long currentUserId) {
         Member currentUser = findMemberById(currentUserId);
         // ChatMember 엔티티를 통해 사용자가 속한 1:1 채팅방 ID들을 조회
-        List<ChatMember> chatMembers = chatRoomMemberRepository.findByMemberAndChatRoomType(currentUser, ChatMessage.chatRoomType.DIRECT);
+        List<ChatMember> chatMembers = chatRoomMemberRepository.findByMemberAndChatRoomType(currentUser, ChatRoomType.DIRECT);
 
         List<Long> directRoomIds = chatMembers.stream()
                 .map(ChatMember::getChatRoomId)

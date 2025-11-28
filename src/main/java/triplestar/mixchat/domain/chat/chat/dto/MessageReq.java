@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 
 @Schema(description = "채팅 메시지 전송 요청")
 public record MessageReq(
@@ -21,6 +22,6 @@ public record MessageReq(
 
         @NotNull
         @Schema(description = "대화방 타입", example = "GROUP")
-        ChatMessage.chatRoomType chatRoomType // chatRoomType 추가
+        ChatRoomType chatRoomType // chatRoomType 추가
 ) {
 }

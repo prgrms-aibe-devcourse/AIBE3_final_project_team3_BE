@@ -1,8 +1,8 @@
 package triplestar.mixchat.global.cache;
 
-import jakarta.annotation.PostConstruct;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -16,7 +16,10 @@ import org.springframework.stereotype.Service;
  * 2. 멤버별 집계 (members Set) - 빠른 조회용 캐시
  * 3. 세션-멤버 매핑 (session:member) - 세션으로 멤버 조회
  *
- * 이 방식으로 한 유저가 여러 기기에서 접속해도 정확히 처리됨
+ * TTL 기반 유령 세션 자동 정리:
+ * - 구독 시 1시간 TTL 설정
+ * - 정상 연결: disconnect 이벤트로 즉시 제거
+ * - 유령 세션: 1시간 후 자동 만료
  */
 @Service
 @RequiredArgsConstructor
@@ -25,25 +28,8 @@ public class ChatSubscriberCacheService {
 
     private final RedisTemplate<String, String> redisTemplate;
 
-    // 서버 시작 시 모든 구독자 정보 초기화 (유령 세션 방지)
-    @PostConstruct
-    public void clearAllSubscribersOnStartup() {
-        try {
-            Set<String> keys = redisTemplate.keys("chat:subscribers:room:*");
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-                log.info("서버 시작 - 구독자 캐시 초기화 완료: {}개 키 삭제", keys.size());
-            }
-
-            Set<String> sessionKeys = redisTemplate.keys("session:member:*");
-            if (sessionKeys != null && !sessionKeys.isEmpty()) {
-                redisTemplate.delete(sessionKeys);
-                log.info("서버 시작 - 세션 매핑 캐시 초기화 완료: {}개 키 삭제", sessionKeys.size());
-            }
-        } catch (Exception e) {
-            log.error("Redis 캐시 초기화 실패", e);
-        }
-    }
+    // 구독자 정보 TTL: 12시간 (유령 세션 자동 정리, 일반 사용에는 충분한 시간)
+    private static final long SUBSCRIBER_TTL_SECONDS = 3600 * 12;
 
     private static final String SESSIONS_KEY_PREFIX = "chat:subscribers:room:";
     private static final String SESSIONS_KEY_SUFFIX = ":sessions";
@@ -75,12 +61,14 @@ public class ChatSubscriberCacheService {
 
         // 1. 세션별 구독 추가
         redisTemplate.opsForSet().add(sessionsKey, sessionId);
+        redisTemplate.expire(sessionsKey, SUBSCRIBER_TTL_SECONDS, TimeUnit.SECONDS);
 
         // 2. 세션-멤버 매핑 저장
-        redisTemplate.opsForValue().set(mappingKey, String.valueOf(memberId));
+        redisTemplate.opsForValue().set(mappingKey, String.valueOf(memberId), SUBSCRIBER_TTL_SECONDS, TimeUnit.SECONDS);
 
         // 3. 멤버별 집계에 추가 (Set이므로 중복 자동 제거)
         redisTemplate.opsForSet().add(membersKey, String.valueOf(memberId));
+        redisTemplate.expire(membersKey, SUBSCRIBER_TTL_SECONDS, TimeUnit.SECONDS);
     }
 
     /**
