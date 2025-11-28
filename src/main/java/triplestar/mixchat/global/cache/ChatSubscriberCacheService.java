@@ -10,16 +10,10 @@ import org.springframework.stereotype.Service;
 
 /**
  * 현재 채팅방에 WebSocket으로 구독 중인 사용자 관리
- *
  * 하이브리드 방식:
  * 1. 세션별 구독 관리 (sessions Set) - 각 기기 독립적 관리
  * 2. 멤버별 집계 (members Set) - 빠른 조회용 캐시
  * 3. 세션-멤버 매핑 (session:member) - 세션으로 멤버 조회
- *
- * TTL 기반 유령 세션 자동 정리:
- * - 구독 시 1시간 TTL 설정
- * - 정상 연결: disconnect 이벤트로 즉시 제거
- * - 유령 세션: 1시간 후 자동 만료
  */
 @Service
 @RequiredArgsConstructor
@@ -48,12 +42,7 @@ public class ChatSubscriberCacheService {
         return SESSION_MEMBER_MAPPING_PREFIX + sessionId;
     }
 
-    /**
-     * 채팅방 구독 시작
-     * @param roomId 채팅방 ID
-     * @param memberId 회원 ID
-     * @param sessionId WebSocket 세션 ID
-     */
+    // 채팅방 구독 시작
     public void addSubscriber(Long roomId, Long memberId, String sessionId) {
         String sessionsKey = getSessionsKey(roomId);
         String membersKey = getMembersKey(roomId);
@@ -71,12 +60,7 @@ public class ChatSubscriberCacheService {
         redisTemplate.expire(membersKey, SUBSCRIBER_TTL_SECONDS, TimeUnit.SECONDS);
     }
 
-    /**
-     * 채팅방 구독 해제
-     * @param roomId 채팅방 ID
-     * @param memberId 회원 ID
-     * @param sessionId WebSocket 세션 ID
-     */
+    // 채팅방 구독 해제
     public void removeSubscriber(Long roomId, Long memberId, String sessionId) {
         String sessionsKey = getSessionsKey(roomId);
         String membersKey = getMembersKey(roomId);
@@ -97,44 +81,26 @@ public class ChatSubscriberCacheService {
         }
     }
 
-    /**
-     * 현재 구독 중인지 확인 (빠른 조회용 - O(1))
-     * @param roomId 채팅방 ID
-     * @param memberId 회원 ID
-     * @return 구독 중이면 true
-     */
+    // 현재 구독 중인지 확인 (빠른 조회용 - O(1))
     public boolean isSubscribed(Long roomId, Long memberId) {
         String membersKey = getMembersKey(roomId);
         Boolean isMember = redisTemplate.opsForSet().isMember(membersKey, String.valueOf(memberId));
         return Boolean.TRUE.equals(isMember);
     }
 
-    /**
-     * 현재 구독 중인 모든 사용자 조회 (members Set 기반)
-     * @param roomId 채팅방 ID
-     * @return 구독 중인 회원 ID Set
-     */
+    // 현재 구독 중인 모든 사용자 조회 (members Set 기반)
     public Set<String> getSubscribers(Long roomId) {
         String membersKey = getMembersKey(roomId);
         return redisTemplate.opsForSet().members(membersKey);
     }
 
-    /**
-     * 현재 구독 중인 모든 세션 조회
-     * @param roomId 채팅방 ID
-     * @return 구독 중인 세션 ID Set
-     */
+    // 현재 구독 중인 모든 세션 조회
     public Set<String> getSubscribedSessions(Long roomId) {
         String sessionsKey = getSessionsKey(roomId);
         return redisTemplate.opsForSet().members(sessionsKey);
     }
 
-    /**
-     * 특정 회원의 다른 세션이 남아있는지 확인
-     * @param roomId 채팅방 ID
-     * @param memberId 회원 ID
-     * @return 다른 세션이 있으면 true
-     */
+    // 특정 회원의 다른 세션이 남아있는지 확인
     private boolean checkOtherSessionsForMember(Long roomId, Long memberId) {
         String sessionsKey = getSessionsKey(roomId);
         Set<String> allSessions = redisTemplate.opsForSet().members(sessionsKey);
@@ -156,23 +122,14 @@ public class ChatSubscriberCacheService {
         return false;
     }
 
-    /**
-     * 특정 세션의 회원 ID 조회
-     * @param sessionId 세션 ID
-     * @return 회원 ID (없으면 null)
-     */
+    // 특정 세션의 회원 ID 조회
     public Long getMemberIdBySessionId(String sessionId) {
         String mappingKey = getSessionMappingKey(sessionId);
         String memberIdStr = redisTemplate.opsForValue().get(mappingKey);
         return memberIdStr != null ? Long.parseLong(memberIdStr) : null;
     }
 
-    /**
-     * 특정 회원의 모든 세션 ID 조회
-     * @param roomId 채팅방 ID
-     * @param memberId 회원 ID
-     * @return 세션 ID Set
-     */
+    // 특정 회원의 모든 세션 ID 조회
     public Set<String> getSessionsByMemberId(Long roomId, Long memberId) {
         String sessionsKey = getSessionsKey(roomId);
         Set<String> allSessions = redisTemplate.opsForSet().members(sessionsKey);
