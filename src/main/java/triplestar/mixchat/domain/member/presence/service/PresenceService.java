@@ -17,8 +17,8 @@ public class PresenceService {
         presenceRepository.save(memberId);
     }
 
-    public Set<Long> isOnlineBulk(List<Long> memberIds) {
-        return presenceRepository.filterOnlineBulk(memberIds);
+    public Set<Long> filterIsOnline(List<Long> memberIds) {
+        return presenceRepository.filterIsOnline(memberIds);
     }
 
     public List<Long> getOnlineMemberIds(long offset, long size) {

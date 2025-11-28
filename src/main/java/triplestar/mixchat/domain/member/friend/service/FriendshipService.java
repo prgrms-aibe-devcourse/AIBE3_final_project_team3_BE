@@ -2,9 +2,7 @@ package triplestar.mixchat.domain.member.friend.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -64,10 +62,10 @@ public class FriendshipService {
                 .map(Member::getId)
                 .toList();
 
-        Set<Long> onlineBulk = presenceService.isOnlineBulk(ids);
+        Set<Long> onlineIds = presenceService.filterIsOnline(ids);
 
         return friends.map(member ->
-                FriendSummaryResp.from(member, onlineBulk.contains(member.getId())));
+                FriendSummaryResp.from(member, onlineIds.contains(member.getId())));
     }
 
     public FriendDetailResp getFriend(Long currentMemberId, Long friendId) {

@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.RedisZSetCommands;
 import org.springframework.data.redis.core.RedisCallback;
@@ -36,7 +35,7 @@ public class PresenceRepository {
         redisTemplate.opsForZSet().add(key, memberId.toString(), now);
     }
 
-    public Set<Long> filterOnlineBulk(List<Long> memberIds) {
+    public Set<Long> filterIsOnline(List<Long> memberIds) {
         long now = System.currentTimeMillis() / 1000;
         long threshold = now - expirationSeconds;
 
