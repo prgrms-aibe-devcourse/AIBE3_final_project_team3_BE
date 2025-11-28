@@ -78,7 +78,9 @@ public class GroupChatRoomService {
         );
 
         // 친구 목록 조회
-        Page<Long> friendIdPage = friendshipRepository.findFriendsByMemberId(creatorId, Pageable.ofSize(500));
+        // NOTE : 메소드 type 변환으로 인한 임시 처리
+        Page<Member> friendsByMemberId = friendshipRepository.findFriendsByMemberId(creatorId, Pageable.ofSize(500));
+        Page<Long> friendIdPage = friendsByMemberId.map(Member::getId);
         Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
 
         GroupChatRoomResp roomDto = GroupChatRoomResp.from(savedRoom, chatMembers, creatorId, friendIdSet, 0L);
@@ -167,7 +169,9 @@ public class GroupChatRoomService {
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, ChatRoomType.GROUP);
         
         // 친구 목록 조회
-        Page<Long> friendIdPage = friendshipRepository.findFriendsByMemberId(userId, Pageable.ofSize(500));
+        // NOTE : 메소드 type 변환으로 인한 임시 처리
+        Page<Member> friendsByMemberId = friendshipRepository.findFriendsByMemberId(userId, Pageable.ofSize(500));
+        Page<Long> friendIdPage = friendsByMemberId.map(Member::getId);
         Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
 
         GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers, userId, friendIdSet, 0L);
@@ -276,7 +280,10 @@ public class GroupChatRoomService {
         }
 
         // 현재 사용자의 친구 ID 목록 조회 (최대 500명으로 가정)
-        Page<Long> friendIdPage = friendshipRepository.findFriendsByMemberId(currentUserId, Pageable.ofSize(500));
+        // NOTE : 메소드 type 변환으로 인한 임시 처리
+        Page<Member> friendsByMemberId = friendshipRepository.findFriendsByMemberId(currentUserId,
+                Pageable.ofSize(500));
+        Page<Long> friendIdPage = friendsByMemberId.map(Member::getId);
         Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
 
         // 현재 사용자의 모든 그룹 채팅방 ChatMember 정보 조회
