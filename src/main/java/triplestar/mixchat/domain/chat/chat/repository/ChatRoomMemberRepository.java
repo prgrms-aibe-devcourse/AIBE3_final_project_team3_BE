@@ -2,16 +2,15 @@ package triplestar.mixchat.domain.chat.chat.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional; // Optional import 추가
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
-import triplestar.mixchat.domain.member.member.entity.Member; // Member import 추가
+import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
+import triplestar.mixchat.domain.member.member.entity.Member;
 
 public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long> {
 
@@ -87,4 +86,7 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long
         @Param("sequence") Long sequence,
         @Param("now") LocalDateTime now
     );
+
+    // 방 ID와 대화방 타입으로 해당 방 정보 삭제
+    void deleteByChatRoomIdAndChatRoomType(Long roomId, ChatRoomType roomType);
 }
