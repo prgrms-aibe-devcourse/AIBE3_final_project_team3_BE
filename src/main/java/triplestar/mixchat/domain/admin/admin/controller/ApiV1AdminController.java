@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -23,10 +24,10 @@ import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameResp;
 import triplestar.mixchat.domain.admin.admin.service.AdminChatRoomService;
 import triplestar.mixchat.domain.admin.admin.service.AdminReportService;
 import triplestar.mixchat.domain.admin.admin.service.AdminSentenceGameService;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.report.report.dto.ReportStatusUpdateReq;
 import triplestar.mixchat.domain.report.report.entity.Report;
 import triplestar.mixchat.global.response.CustomResponse;
+import triplestar.mixchat.global.security.CustomUserDetails;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -94,12 +95,14 @@ public class ApiV1AdminController implements  ApiAdminController {
         return CustomResponse.ok("문장게임 문장이 삭제되었습니다.");
     }
 
+    @Override
     @DeleteMapping("/chat-rooms/{roomId}")
     public CustomResponse<Void> closeChatRoom(
+            @AuthenticationPrincipal CustomUserDetails admin,
             @PathVariable Long roomId,
-            @RequestParam ChatMessage.chatRoomType chatRoomType
+            @RequestParam int reasonCode
     ) {
-        adminChatRoomService.forceCloseRoom(roomId, chatRoomType);
+        adminChatRoomService.forceCloseRoom(roomId, admin.getId(), reasonCode);
         return CustomResponse.ok("채팅방 강제 폐쇄 완료");
     }
 }

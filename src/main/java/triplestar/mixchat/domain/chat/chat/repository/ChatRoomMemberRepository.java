@@ -88,5 +88,5 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long
     );
 
     // 방 ID와 대화방 타입으로 해당 방 정보 삭제
-    void deleteAllByChatRoomIdAndChatRoomType(Long roomId, ChatMessage.chatRoomType roomType);
+    void deleteByChatRoomIdAndChatRoomType(Long roomId, ChatMessage.chatRoomType roomType);
 }
