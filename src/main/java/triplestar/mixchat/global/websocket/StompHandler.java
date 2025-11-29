@@ -20,7 +20,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -115,7 +114,6 @@ public class StompHandler implements ExecutorChannelInterceptor {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities());
         accessor.setUser(authentication);
-
         log.info("WebSocket 연결 성공 - memberId: {}, sessionId: {}", member.getId(), accessor.getSessionId());
     }
 

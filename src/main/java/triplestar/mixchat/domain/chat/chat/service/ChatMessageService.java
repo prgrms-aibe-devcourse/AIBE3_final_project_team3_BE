@@ -14,6 +14,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
@@ -47,7 +48,7 @@ public class ChatMessageService {
     private final jakarta.persistence.EntityManager entityManager;
 
     @Transactional
-    public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatRoomType chatRoomType) {
+    public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatRoomType chatRoomType, boolean isTranslateEnabled) {
         // 시스템 메시지가 아닐 경우에만 멤버 검증을 수행
         if (messageType != ChatMessage.MessageType.SYSTEM) {
             chatMemberService.verifyUserIsMemberOfRoom(senderId, roomId, chatRoomType);
@@ -57,8 +58,13 @@ public class ChatMessageService {
         Long sequence = generateSequence(roomId, chatRoomType);
 
         // 메시지 생성 및 저장
-        ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType);
+        ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType, isTranslateEnabled);
         ChatMessage savedMessage = chatMessageRepository.save(message);
+
+        // TEXT 타입만 번역
+        if (isTranslateEnabled && messageType == ChatMessage.MessageType.TEXT) {
+            eventPublisher.publishEvent(new TranslationReq(savedMessage.getId(), savedMessage.getContent()));
+        }
 
         // 1. 발신자 + 구독자 모두를 하나의 Set으로 수집 (읽음 처리 대상)
         Set<Long> memberIdsToMarkRead = new HashSet<>();
@@ -117,7 +123,8 @@ public class ChatMessageService {
         if (messageType != ChatMessage.MessageType.IMAGE && messageType != ChatMessage.MessageType.FILE) {
             throw new IllegalArgumentException("파일 메시지는 IMAGE 또는 FILE 타입이어야 합니다.");
         }
-        return saveMessage(roomId, senderId, senderNickname, fileUrl, messageType, chatRoomType);
+        // 파일 메시지는 번역하지 않으므로 isTranslateEnabled는 항상 false
+        return saveMessage(roomId, senderId, senderNickname, fileUrl, messageType, chatRoomType, false);
     }
 
     // 메시지 목록 조회 (페이징), 발신자 이름 및 unreadCount 포함

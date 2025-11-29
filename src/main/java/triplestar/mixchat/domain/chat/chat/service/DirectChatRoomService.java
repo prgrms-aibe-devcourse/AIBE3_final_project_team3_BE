@@ -77,7 +77,7 @@ public class DirectChatRoomService {
                     messagingTemplate.convertAndSendToUser(member2.getId().toString(), "/topic/rooms", roomDto);
 
                     // 채팅 시작 첫 메시지 전송 (TODO 해결)
-                    chatMessageService.saveMessage(savedRoom.getId(), member1Id, senderNickname, "1:1 채팅이 시작되었습니다.", ChatMessage.MessageType.SYSTEM, ChatRoomType.DIRECT);
+                    chatMessageService.saveMessage(savedRoom.getId(), member1Id, senderNickname, "1:1 채팅이 시작되었습니다.", ChatMessage.MessageType.SYSTEM, ChatRoomType.DIRECT, false);
 
                     return savedRoom;
                 });

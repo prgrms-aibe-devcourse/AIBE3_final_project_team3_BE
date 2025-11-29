@@ -45,7 +45,8 @@ public class ApiV1ChatSocketController {
                 senderNickname,
                 messageReq.content(),
                 messageReq.messageType(),
-                messageReq.chatRoomType()
+                messageReq.chatRoomType(),
+                messageReq.isTranslateEnabled()
         );
 
         String destination = "/topic/" + messageReq.chatRoomType().name().toLowerCase() + "/rooms/" + messageReq.roomId();

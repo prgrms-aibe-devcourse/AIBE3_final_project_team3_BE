@@ -228,7 +228,7 @@ public class GroupChatRoomService {
         // 7. 시스템 메시지 저장 및 전송
         String systemMessageContent = String.format("'%s'님이 강퇴되었습니다.", targetNickname);
         // 시스템 메시지는 senderId를 0L, senderNickname을 "System"으로 통일
-        MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP);
+        MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP, false);
 
         messagingTemplate.convertAndSend(
                 "/topic/chat/room/" + roomId,
@@ -261,7 +261,7 @@ public class GroupChatRoomService {
 
         // 5. 시스템 메시지를 저장하고 채팅방 전체에 전송
         String systemMessageContent = String.format("'%s'님이 '%s'님에게 방장을 위임했습니다.", oldOwnerNickname, newOwnerNickname);
-        MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP);
+        MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP, false);
 
         messagingTemplate.convertAndSend(
                 "/topic/chat/room/" + roomId,

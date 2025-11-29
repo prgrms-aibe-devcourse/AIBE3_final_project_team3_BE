@@ -144,7 +144,7 @@ public class ApiV1ChatController implements ApiChatController {
             @Valid @RequestBody TextMessageReq request
     ) {
         MessageResp messageResp =
-                chatMessageService.saveMessage(roomId, currentUser.getId(), currentUser.getNickname(), request.content(), ChatMessage.MessageType.TEXT, chatRoomType);
+                chatMessageService.saveMessage(roomId, currentUser.getId(), currentUser.getNickname(), request.content(), ChatMessage.MessageType.TEXT, chatRoomType, request.isTranslateEnabled());
         return CustomResponse.ok("메시지 전송에 성공하였습니다.", messageResp);
     }
 
