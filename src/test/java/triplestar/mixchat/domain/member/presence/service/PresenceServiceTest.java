@@ -3,7 +3,7 @@ package triplestar.mixchat.domain.member.presence.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,9 +55,12 @@ class PresenceServiceTest extends RedisTestContainer {
         presenceService.heartbeat(memberId);
 
         // then
-        String key = "test:presence-user:" + memberId;
-        Boolean exists = stringRedisTemplate.hasKey(key);
-        assertThat(exists).isTrue();
+        String key = "test:presence-user:";
+        Double score = stringRedisTemplate.opsForZSet()
+                .score(key, memberId.toString());
+
+        assertThat(score).isNotNull();
+        assertThat(score).isGreaterThan(0);
     }
 
     @Test
@@ -78,20 +81,20 @@ class PresenceServiceTest extends RedisTestContainer {
 
     @Test
     @DisplayName("isOnlineBulk 메서드는 여러 사용자의 온라인 상태를 반환한다.")
-    void isOnlineBulk_returns_correct_status() {
+    void filterIsOnline_returns_correct_status() {
         // given
         Long onlineMemberId = 3L;
         Long offlineMemberId = 4L;
         presenceService.heartbeat(onlineMemberId);
 
         // when
-        Map<Long, Boolean> result = presenceService.isOnlineBulk(
+        Set<Long> result = presenceService.filterIsOnline(
                 List.of(onlineMemberId, offlineMemberId)
         );
 
         // then
-        assertThat(result.get(onlineMemberId)).isTrue();
-        assertThat(result.get(offlineMemberId)).isFalse();
+        assertThat(result.contains(onlineMemberId)).isTrue();
+        assertThat(result.contains(offlineMemberId)).isFalse();
     }
 
     @Test

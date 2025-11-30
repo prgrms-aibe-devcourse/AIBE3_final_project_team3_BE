@@ -21,7 +21,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
-import triplestar.mixchat.domain.chat.chat.service.ChatInteractionService;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
+import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.security.CustomUserDetails;
@@ -37,7 +38,7 @@ public class StompHandler implements ExecutorChannelInterceptor {
 
     private final AuthJwtProvider authJwtProvider;
     private final MemberRepository memberRepository;
-    private final ChatInteractionService chatInteractionService;
+    private final ChatMemberService chatMemberService;
 
     private static final Pattern ROOM_DESTINATION_PATTERN =
             Pattern.compile("^/topic/(direct|group|ai)/rooms/(\\d+)");
@@ -46,10 +47,10 @@ public class StompHandler implements ExecutorChannelInterceptor {
     public StompHandler(
             AuthJwtProvider authJwtProvider,
             MemberRepository memberRepository,
-            @Lazy ChatInteractionService chatInteractionService) {
+            @Lazy ChatMemberService chatMemberService) {
         this.authJwtProvider = authJwtProvider;
         this.memberRepository = memberRepository;
-        this.chatInteractionService = chatInteractionService;
+        this.chatMemberService = chatMemberService;
     }
 
 
@@ -69,7 +70,7 @@ public class StompHandler implements ExecutorChannelInterceptor {
             case CONNECT -> handleConnect(accessor);
             case SUBSCRIBE -> handleSubscribe(accessor);
             case SEND -> { /* preSend에서는 특별한 작업을 하지 않음. beforeHandle에서 처리. */ }
-            case DISCONNECT -> log.info("STOMP DISCONNECT: sessionId={}", accessor.getSessionId());
+            case DISCONNECT -> { /* 연결 종료는 WebSocketEventListener에서 처리 */ }
             default -> { /* NO-OP */ }
         }
         return message;
@@ -78,16 +79,20 @@ public class StompHandler implements ExecutorChannelInterceptor {
     @Override
     public Message<?> beforeHandle(Message<?> message, MessageChannel channel, MessageHandler handler) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+        if (accessor == null) {
+            return message;
+        }
+
+        // Heart-beat 등 command가 없는 내부 메시지는 별도 처리 필요 없음
+        if (accessor.getCommand() == null) {
+            return message;
+        }
+
         Principal principal = accessor.getUser();
 
         // beforeHandle에서 principal 객체 확인
         if (principal != null) {
-            log.info("✅ [beforeHandle] Principal'{}' found in session '{}'. Setting SecurityContext.",
-                    principal.getName(), accessor.getSessionId());
             SecurityContextHolder.getContext().setAuthentication((Authentication) principal);
-        } else {
-            log.warn("❌ [beforeHandle] Principal NOT FOUND in session '{}'. SecurityContext will be empty.",
-                    accessor.getSessionId());
         }
 
         return message;
@@ -111,9 +116,7 @@ public class StompHandler implements ExecutorChannelInterceptor {
                 userDetails, null, userDetails.getAuthorities());
         accessor.setUser(authentication);
 
-        // handleConnect에서 인증 정보가 세션에 잘 설정되었는지 확인
-        log.info("✅ [handleConnect] User '{}' authentication object set to session '{}'", authentication.getName(),
-                accessor.getSessionId());
+        log.info("WebSocket 연결 성공 - memberId: {}, sessionId: {}", member.getId(), accessor.getSessionId());
     }
 
     private void handleSubscribe(StompHeaderAccessor accessor) {
@@ -125,33 +128,23 @@ public class StompHandler implements ExecutorChannelInterceptor {
             throw new IllegalArgumentException("구독 목적지가 없습니다.");
         }
 
-        // TODO : subsrbie 임시 허용중!
-        if (true) {
-            log.info("SUBSCRIBE (임시 허용): memberId={} destination={}", userDetails.getId(), destination);
-            return;
-        }
-
+        // 채팅방 구독 시 멤버십 검증
         Matcher matcher = ROOM_DESTINATION_PATTERN.matcher(destination);
         if (matcher.matches()) {
             String typeString = matcher.group(1).toUpperCase();
             Long roomId = Long.parseLong(matcher.group(2));
-            ChatMessage.chatRoomType chatRoomType =
-                    ChatMessage.chatRoomType.valueOf(typeString);
+            ChatRoomType chatRoomType =
+                    ChatRoomType.valueOf(typeString);
 
-            chatInteractionService.verifyUserIsMemberOfRoom(
+            // 멤버십 검증 (캐시 사용으로 성능 최적화)
+            chatMemberService.verifyUserIsMemberOfRoom(
                     userDetails.getId(), roomId, chatRoomType);
-            log.info(
-                    "SUBSCRIBE (Room): memberId={} destination={}", userDetails.getId(), destination);
             return;
         }
 
         // 사용자별 목적지 구독 확인 (표준 방식)
         // /user/ 로 시작하는 모든 구독은 스프링이 현재 사용자의 세션에만 연결해주므로 안전함.
         if (destination.startsWith("/user/")) {
-            log.info(
-                    "SUBSCRIBE (User Destination): memberId={} destination={}",
-                    userDetails.getId(),
-                    destination);
             return;
         }
 

@@ -7,13 +7,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
-import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
 import triplestar.mixchat.domain.member.auth.dto.LogInResp;
 import triplestar.mixchat.domain.member.auth.dto.LogInReq;
 import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.domain.member.presence.service.PresenceService;
 import triplestar.mixchat.global.customException.UniqueConstraintException;
 import triplestar.mixchat.global.security.jwt.AccessTokenPayload;
 import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
@@ -28,6 +28,9 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthJwtProvider authJwtProvider;
     private final RefreshTokenRepository refreshTokenRepository;
+
+    // 로그아웃시 즉시 오프라인 상태 전환을 위한 PresenceService 주입
+    private final PresenceService presenceService;
 
     @Qualifier("defaultProfileImageUrl")
     private final String defaultProfileBaseURL;
@@ -113,5 +116,6 @@ public class AuthService {
     public void logout(String refreshToken) {
         Long memberId = authJwtProvider.parseRefreshToken(refreshToken);
         refreshTokenRepository.delete(memberId);
+        presenceService.disconnect(memberId);
     }
 }

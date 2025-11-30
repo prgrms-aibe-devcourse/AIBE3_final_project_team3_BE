@@ -11,14 +11,11 @@ public record MemberSummaryResp(
         @Schema(description = "사용자 고유 ID", example = "1", requiredMode = REQUIRED)
         Long id,
 
-        @Schema(description = "사용자의 실명", example = "홍길동", requiredMode = REQUIRED)
-        String name,
+        @Schema(description = "사용자 닉네임", example = "MixMaster", requiredMode = REQUIRED)
+        String nickname,
 
         @Schema(description = "국가 코드 (Alpha-2)", example = "KR", requiredMode = REQUIRED)
         String country,
-
-        @Schema(description = "사용자 닉네임", example = "MixMaster", requiredMode = REQUIRED)
-        String nickname,
 
         @Schema(description = "영어 실력 레벨", example = "INTERMEDIATE", requiredMode = REQUIRED)
         String englishLevel,
@@ -32,9 +29,8 @@ public record MemberSummaryResp(
     public static MemberSummaryResp from(Member savedMember) {
         return new MemberSummaryResp(
                 savedMember.getId(),
-                savedMember.getName(),
-                savedMember.getCountry().name(),
                 savedMember.getNickname(),
+                savedMember.getCountry().name(),
                 savedMember.getEnglishLevel().name(),
                 savedMember.getInterests(),
                 savedMember.getDescription()

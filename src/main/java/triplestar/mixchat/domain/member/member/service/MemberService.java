@@ -2,7 +2,6 @@ package triplestar.mixchat.domain.member.member.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -40,17 +39,17 @@ public class MemberService {
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다."));
     }
 
-    public MemberDetailResp getMemberDetails(Long signInId, Long memberId) {
+    public MemberDetailResp getMemberDetails(Long currentUserId, Long memberId) {
         // 비회원이 조회하는 경우
         // isFriend, isPendingRequest는 모두 false로 반환
-        if (signInId == null) {
+        if (currentUserId == null) {
             Member member = findMemberById(memberId);
             return MemberDetailResp.forAnonymousViewer(member);
         }
 
         // 회원이 조회하는 경우
         // 친구 관계 및 친구 신청 상태를 함께 조회
-        return memberRepository.findByIdWithFriendInfo(signInId, memberId)
+        return memberRepository.findByIdWithFriendInfo(currentUserId, memberId)
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다."));
     }
 
@@ -59,11 +58,10 @@ public class MemberService {
         Page<Member> members = memberRepository.findAllByIdIsNot(currentUserId, pageable);
 
         List<Long> ids = members.stream().map(Member::getId).toList();
-        Map<Long, Boolean> onlineBulk = presenceService.isOnlineBulk(ids);
-        return members.map(member -> {
-            Boolean isOnline = onlineBulk.getOrDefault(member.getId(), false);
-            return MemberPresenceSummaryResp.from(member, isOnline);
-        });
+        Set<Long> onlineIds = presenceService.filterIsOnline(ids);
+
+        return members.map(member ->
+                MemberPresenceSummaryResp.from(member, onlineIds.contains(member.getId())));
     }
 
     // NOTE : 현재 로그인한 사용자를 제외한 모든 회원 조회 -> 추후 로그인 사용자도 포함시킬지 검토 필요

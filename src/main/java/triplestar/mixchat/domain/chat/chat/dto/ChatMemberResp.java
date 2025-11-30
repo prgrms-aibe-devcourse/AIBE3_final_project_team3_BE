@@ -12,9 +12,13 @@ public record ChatMemberResp(
 
         @NotNull
         @Schema(description = "멤버 닉네임", example = "JohnDoe")
-        String nickname
+        String nickname,
+
+        @NotNull
+        @Schema(description = "친구 여부", example = "false")
+        boolean isFriend
 ) {
-    public static ChatMemberResp from(Member member) {
-        return new ChatMemberResp(member.getId(), member.getNickname());
+    public static ChatMemberResp from(Member member, boolean isFriend) {
+        return new ChatMemberResp(member.getId(), member.getNickname(), isFriend);
     }
 }

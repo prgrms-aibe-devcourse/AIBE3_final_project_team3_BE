@@ -18,13 +18,18 @@ public record DirectChatRoomResp(
 
         @NotNull
         @Schema(description = "두 번째 사용자 정보", requiredMode = REQUIRED)
-        ChatMemberResp user2
+        ChatMemberResp user2,
+
+        @NotNull
+        @Schema(description = "안 읽은 메시지 수", example = "10", requiredMode = REQUIRED)
+        Long unreadCount
 ) {
-    public static DirectChatRoomResp from(DirectChatRoom entity) {
+    public static DirectChatRoomResp from(DirectChatRoom entity, Long unreadCount) {
         return new DirectChatRoomResp(
                 entity.getId(),
-                ChatMemberResp.from(entity.getUser1()),
-                ChatMemberResp.from(entity.getUser2())
+                ChatMemberResp.from(entity.getUser1(), true),
+                ChatMemberResp.from(entity.getUser2(), true),
+                unreadCount
         );
     }
 }

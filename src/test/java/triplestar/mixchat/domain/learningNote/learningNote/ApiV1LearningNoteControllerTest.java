@@ -196,15 +196,15 @@ class ApiV1LearningNoteControllerTest {
 
                 // content[0]
                 .andExpect(jsonPath("$.data.content[0].feedback.tag").value("GRAMMAR"))
-                .andExpect(jsonPath("$.data.content[0].feedback.problem").value("goes"))
-                .andExpect(jsonPath("$.data.content[0].feedback.correction").value("go"))
-                .andExpect(jsonPath("$.data.content[0].feedback.extra").value("삼인칭 단수 수정"))
+                .andExpect(jsonPath("$.data.content[0].feedback.problem").value("walk"))
+                .andExpect(jsonPath("$.data.content[0].feedback.correction").value("walks"))
+                .andExpect(jsonPath("$.data.content[0].feedback.extra").value("3인칭 단수"))
 
                 // content[1]
                 .andExpect(jsonPath("$.data.content[1].feedback.tag").value("GRAMMAR"))
-                .andExpect(jsonPath("$.data.content[1].feedback.problem").value("walk"))
-                .andExpect(jsonPath("$.data.content[1].feedback.correction").value("walks"))
-                .andExpect(jsonPath("$.data.content[1].feedback.extra").value("3인칭 단수"));
+                .andExpect(jsonPath("$.data.content[1].feedback.problem").value("goes"))
+                .andExpect(jsonPath("$.data.content[1].feedback.correction").value("go"))
+                .andExpect(jsonPath("$.data.content[1].feedback.extra").value("삼인칭 단수 수정"));
     }
 
     @Test
@@ -226,9 +226,9 @@ class ApiV1LearningNoteControllerTest {
 
                 // content[0]
                 .andExpect(jsonPath("$.data.content[0].feedback.tag").value("TRANSLATION"))
-                .andExpect(jsonPath("$.data.content[0].feedback.problem").value("학교"))
-                .andExpect(jsonPath("$.data.content[0].feedback.correction").value("school"))
-                .andExpect(jsonPath("$.data.content[0].feedback.extra").value("단어 번역"))
+                .andExpect(jsonPath("$.data.content[0].feedback.problem").value("먹는다"))
+                .andExpect(jsonPath("$.data.content[0].feedback.correction").value("eat"))
+                .andExpect(jsonPath("$.data.content[0].feedback.extra").value("직역 수정"))
 
                 // content[1]
                 .andExpect(jsonPath("$.data.content[1].feedback.tag").value("TRANSLATION"))
@@ -238,9 +238,9 @@ class ApiV1LearningNoteControllerTest {
 
                 // content[2]
                 .andExpect(jsonPath("$.data.content[2].feedback.tag").value("TRANSLATION"))
-                .andExpect(jsonPath("$.data.content[2].feedback.problem").value("먹는다"))
-                .andExpect(jsonPath("$.data.content[2].feedback.correction").value("eat"))
-                .andExpect(jsonPath("$.data.content[2].feedback.extra").value("직역 수정"));
+                .andExpect(jsonPath("$.data.content[2].feedback.problem").value("학교"))
+                .andExpect(jsonPath("$.data.content[2].feedback.correction").value("school"))
+                .andExpect(jsonPath("$.data.content[2].feedback.extra").value("단어 번역"));
     }
 
     @Test
@@ -262,9 +262,9 @@ class ApiV1LearningNoteControllerTest {
 
                 // content[0]
                 .andExpect(jsonPath("$.data.content[0].feedback.tag").value("GRAMMAR"))
-                .andExpect(jsonPath("$.data.content[0].feedback.problem").value("goes"))
-                .andExpect(jsonPath("$.data.content[0].feedback.correction").value("go"))
-                .andExpect(jsonPath("$.data.content[0].feedback.extra").value("삼인칭 단수 수정"))
+                .andExpect(jsonPath("$.data.content[0].feedback.problem").value("day"))
+                .andExpect(jsonPath("$.data.content[0].feedback.correction").value("days"))
+                .andExpect(jsonPath("$.data.content[0].feedback.extra").value("복수형 수정"))
 
                 // content[1]
                 .andExpect(jsonPath("$.data.content[1].feedback.tag").value("GRAMMAR"))
@@ -274,10 +274,11 @@ class ApiV1LearningNoteControllerTest {
 
                 // content[2]
                 .andExpect(jsonPath("$.data.content[2].feedback.tag").value("GRAMMAR"))
-                .andExpect(jsonPath("$.data.content[2].feedback.problem").value("day"))
-                .andExpect(jsonPath("$.data.content[2].feedback.correction").value("days"))
-                .andExpect(jsonPath("$.data.content[2].feedback.extra").value("복수형 수정"));
+                .andExpect(jsonPath("$.data.content[2].feedback.problem").value("goes"))
+                .andExpect(jsonPath("$.data.content[2].feedback.correction").value("go"))
+                .andExpect(jsonPath("$.data.content[2].feedback.extra").value("삼인칭 단수 수정"));
     }
+
     @Test
     @DisplayName("학습노트 목록 조회 실패 - 잘못된 태그 입력 시 400 반환")
     @WithUserDetails(value = "testUser1", userDetailsServiceBeanName = "testUserDetailsService", setupBefore = TestExecutionEvent.TEST_EXECUTION)

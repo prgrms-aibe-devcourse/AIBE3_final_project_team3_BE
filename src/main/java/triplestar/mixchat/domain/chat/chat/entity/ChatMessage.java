@@ -1,36 +1,35 @@
 package triplestar.mixchat.domain.chat.chat.entity;
 
-import jakarta.persistence.Id;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 
 //mongoDB용 Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Document(collection = "chat_messages")
+@CompoundIndex(name = "idx_room_type_sequence", def = "{'chatRoomId': 1, 'chatRoomType': 1, 'sequence': 1}")
 public class ChatMessage {
     @Id
     private String id; //mongoDB용 ID
 
     private Long chatRoomId; // MySQL ChatRoom 참조 ID
     private Long senderId;   // MySQL Member 참조 ID
+    private Long sequence;   // 채팅방 내 메시지 순서 번호
 
     private String content;
     private MessageType messageType;
 
     public enum MessageType {
         TEXT, IMAGE, FILE, SYSTEM
-    }
-
-    // 대화 타입 (1:1, 그룹, AI 등)을 구분하는 enum 추가
-    public enum chatRoomType {
-        DIRECT, GROUP, AI
     }
 
     @CreatedDate
@@ -41,14 +40,17 @@ public class ChatMessage {
     @Field("updated_at")
     private LocalDateTime updatedAt;
 
-    private chatRoomType chatRoomType; // 대화 타입을 저장하는 필드 추가
+    private ChatRoomType chatRoomType;
 
-    public ChatMessage(Long chatRoomId, Long senderId, String content, MessageType messageType, chatRoomType chatRoomType) {
+    public ChatMessage(Long chatRoomId, Long senderId, Long sequence, String content, MessageType messageType, ChatRoomType chatRoomType) {
         if (chatRoomId == null) {
             throw new IllegalArgumentException("chatRoomId는 null일 수 없습니다.");
         }
         if (senderId == null) {
             throw new IllegalArgumentException("senderId는 null일 수 없습니다.");
+        }
+        if (sequence == null) {
+            throw new IllegalArgumentException("sequence는 null일 수 없습니다.");
         }
         if (messageType == null) {
             throw new IllegalArgumentException("messageType은 null일 수 없습니다.");
@@ -62,9 +64,10 @@ public class ChatMessage {
 
         this.chatRoomId = chatRoomId;
         this.senderId = senderId;
+        this.sequence = sequence;
         this.content = content;
         this.messageType = messageType;
-        this.chatRoomType = chatRoomType; // 필드 할당
+        this.chatRoomType = chatRoomType;
     }
 }
 

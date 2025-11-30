@@ -11,8 +11,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import triplestar.mixchat.domain.chat.chat.dto.MessageReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
+import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
-import triplestar.mixchat.domain.chat.chat.service.ChatInteractionService;
 import triplestar.mixchat.global.security.CustomUserDetails;
 
 @Slf4j
@@ -20,7 +20,7 @@ import triplestar.mixchat.global.security.CustomUserDetails;
 @RequiredArgsConstructor
 public class ApiV1ChatSocketController {
 
-    private final ChatInteractionService chatInteractionService; // ChatInteractionService 주입
+    private final ChatMemberService chatMemberService;
     private final ChatMessageService chatMessageService;
     private final SimpMessageSendingOperations messagingTemplate;
 
@@ -35,8 +35,8 @@ public class ApiV1ChatSocketController {
         Long senderId = userDetails.getId();
         String senderNickname = userDetails.getNickname();
 
-        // 1. 사용자가 해당 채팅방에 메시지를 보낼 권한이 있는지 확인 (ChatInteractionService로 위임)
-        chatInteractionService.verifyUserIsMemberOfRoom(senderId, messageReq.roomId(), messageReq.chatRoomType());
+        // 사용자가 해당 채팅방에 메시지를 보낼 권한이 있는지 확인
+        chatMemberService.verifyUserIsMemberOfRoom(senderId, messageReq.roomId(), messageReq.chatRoomType());
 
         // 2. 권한이 확인되면 메시지 저장 및 전송
         MessageResp messageResp = chatMessageService.saveMessage(
@@ -50,6 +50,6 @@ public class ApiV1ChatSocketController {
 
         String destination = "/topic/" + messageReq.chatRoomType().name().toLowerCase() + "/rooms/" + messageReq.roomId();
         messagingTemplate.convertAndSend(destination, messageResp);
-        log.debug("Message sent to room {}: {}", messageReq.roomId(), messageResp.content());
+        log.debug("채팅방 {}에 메시지 전송 완료: {}", messageReq.roomId(), messageResp.content());
     }
 }

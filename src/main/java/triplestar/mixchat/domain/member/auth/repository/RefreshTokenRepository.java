@@ -15,9 +15,9 @@ public class RefreshTokenRepository {
     private final StringRedisTemplate redisTemplate;
 
     public RefreshTokenRepository(
-            @Value("${redis.prefix.refresh-token}")
+            @Value("${auth.jwt.refresh.redis.prefix}")
             String prefix,
-            @Value("${jwt.refresh-token-expiration-seconds}")
+            @Value("${auth.jwt.refresh.token-expiration-seconds}")
             int expirationSeconds,
             StringRedisTemplate redisTemplate
     ) {

@@ -1,96 +1,102 @@
 package triplestar.mixchat.domain.member.presence.repository;
 
-import java.time.Duration;
-import java.util.HashMap;
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.connection.RedisZSetCommands;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class PresenceRepository {
 
     private final StringRedisTemplate redisTemplate;
-    private final String prefix;
+    private final String key;
     private final int expirationSeconds;
-
-    private static final String SET_KEY_ONLINE_MEMBERS = "online_members";
 
     public PresenceRepository(
             StringRedisTemplate redisTemplate,
-            @Value("${redis.prefix.presence-user}")
-            String prefix,
-            @Value("${redis.expiration.presence-user}")
+            @Value("${presence.redis.key}")
+            String key,
+            @Value("${presence.redis.ttl-seconds}")
             int expirationSeconds
     ) {
         this.redisTemplate = redisTemplate;
-        this.prefix = prefix;
+        this.key = key;
         this.expirationSeconds = expirationSeconds;
     }
 
     public void save(Long memberId) {
-        String key = getKey(memberId);
-        redisTemplate.opsForValue().set(key, "online", Duration.ofSeconds(expirationSeconds));
-        redisTemplate.opsForSet().add(SET_KEY_ONLINE_MEMBERS, memberId.toString());
+        long now = System.currentTimeMillis() / 1000;
+        redisTemplate.opsForZSet().add(key, memberId.toString(), now);
     }
 
-    private String getKey(Long memberId) {
-        return prefix + memberId;
-    }
+    public Set<Long> filterIsOnline(List<Long> memberIds) {
+        long now = System.currentTimeMillis() / 1000;
+        long threshold = now - expirationSeconds;
 
-    public Map<Long, Boolean> isOnlineBulk(List<Long> memberIds) {
-        List<String> keys = memberIds.stream().map(this::getKey).toList();
-        List<String> values = redisTemplate.opsForValue().multiGet(keys);
-        HashMap<Long, Boolean> result = new HashMap<>(memberIds.size());
+        if (memberIds == null || memberIds.isEmpty()) {
+            return Set.of();
+        }
 
-        if (values == null) {
-            for (Long memberId : memberIds) {
-                result.put(memberId, false);
+        // ZMScore를 이용한 특정 key를 일괄 조회
+        // RedisCallback을 사용하여 저수준 Redis 명령어 실행
+        return redisTemplate.execute((RedisCallback<Set<Long>>) connection -> {
+            RedisZSetCommands zSet = connection.zSetCommands();
+
+            byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+
+            byte[][] memberBytes = memberIds.stream()
+                    .map(id -> id.toString().getBytes(StandardCharsets.UTF_8))
+                    .toArray(byte[][]::new);
+
+            // ZMScore 명령어로 특정 멤버들의 점수(접속 시간) 일괄 조회
+            List<Double> scores = zSet.zMScore(keyBytes, memberBytes);
+
+            if (scores == null || scores.isEmpty()) {
+                return Set.of();
             }
-            return result;
-        }
 
-        for (int i = 0; i < memberIds.size(); i++) {
-            result.put(memberIds.get(i), values.get(i) != null);
-        }
-        return result;
+            Set<Long> onlineIds = new HashSet<>();
+
+            for (int i = 0; i < scores.size(); i++) {
+                Double score = scores.get(i);
+                if (score != null && score >= threshold) {
+                    onlineIds.add(memberIds.get(i));
+                }
+            }
+            return onlineIds;
+        });
     }
 
-    // Redis set을 사용하여 온라인 멤버 ID 목록을 가져오는 메서드
     public List<Long> getOnlineMemberIds(long offset, long size) {
-        Set<String> onlineIds = redisTemplate.opsForSet()
-                .members(SET_KEY_ONLINE_MEMBERS);
+        long now = System.currentTimeMillis() / 1000;
+        long threshold = now - expirationSeconds;
+
+        Set<String> onlineIds = redisTemplate.opsForZSet()
+                .rangeByScore(key, threshold, Double.MAX_VALUE, offset, size);
 
         if (onlineIds == null) {
             return List.of();
         }
 
         return onlineIds.stream()
-                .skip(offset)
-                .limit(size)
                 .map(Long::valueOf)
-                .toList();
+                .collect(Collectors.toList());
     }
 
-    @Scheduled(fixedRate = 30000) // 30초마다 실행
-    public void cleanupExpiredPresences() {
-        Set<String> onlineIds = redisTemplate.opsForSet().members(SET_KEY_ONLINE_MEMBERS);
+    public void cleanupExpired() {
+        long now = System.currentTimeMillis() / 1000;
+        long threshold = now - expirationSeconds;
 
-        if (onlineIds == null) {
-            return;
-        }
+        redisTemplate.opsForZSet().removeRangeByScore(key, 0, threshold);
+    }
 
-        // TODO : redis 파이프라인 적용해 round-trip N -> 1로 줄이기
-        onlineIds.forEach(id -> {
-            Long memberId = Long.valueOf(id);
-            String key = getKey(memberId);
-            boolean exists = Boolean.TRUE.equals(redisTemplate.hasKey(key));
-            if (!exists) {
-                redisTemplate.opsForSet().remove(SET_KEY_ONLINE_MEMBERS, id);
-            }
-        });
+    public void remove(Long memberId) {
+        redisTemplate.opsForZSet().remove(key, memberId.toString());
     }
 }

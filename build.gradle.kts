@@ -3,6 +3,8 @@ plugins {
     id("org.springframework.boot") version "3.5.7"
     id("io.spring.dependency-management") version "1.1.7"
 }
+val springCloudVersion by extra("2025.0.0")
+val springAiVersion by extra("1.1.0")
 
 group = "triplestar"
 version = "0.0.1-SNAPSHOT"
@@ -27,6 +29,8 @@ repositories {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.cloud:spring-cloud-function-context")
+    implementation("org.springframework.ai:spring-ai-starter-model-openai")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
     // Lombok
@@ -44,6 +48,9 @@ dependencies {
 
     // Redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
+    // flyway
+    implementation("org.flywaydb:flyway-core")
 
     // Minio
     implementation("io.minio:minio:8.5.3")
@@ -77,6 +84,13 @@ dependencies {
 
     // websocket
     implementation("org.springframework.boot:spring-boot-starter-websocket")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion")
+        mavenBom("org.springframework.ai:spring-ai-bom:$springAiVersion")
+    }
 }
 
 tasks.withType<Test> {

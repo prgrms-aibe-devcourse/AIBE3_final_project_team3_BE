@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomDataResp;
+import triplestar.mixchat.domain.chat.chat.dto.ChatRoomPageDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
@@ -21,6 +22,7 @@ import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.TextMessageReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
@@ -83,22 +85,28 @@ public interface ApiChatController {
     @SignInInRequireResponse
     CustomResponse<MessageResp> sendMessage(
             @Parameter(description = "메시지를 보낼 채팅방의 ID") @PathVariable Long roomId,
-            @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatRoomType chatRoomType,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody TextMessageReq request
     );
 
-    @Operation(summary = "채팅방 메시지 목록 조회", description = "지정된 채팅방의 모든 메시지 내역을 시간순으로 조회합니다.")
-    CustomResponse<ChatRoomDataResp> getMessages(
+    @Operation(
+        summary = "채팅방 메시지 목록 조회 (페이징)",
+        description = "지정된 채팅방의 메시지 내역을 페이징하여 조회합니다. cursor와 size 파라미터를 생략하면 최근 25개 메시지를 반환합니다."
+    )
+    CustomResponse<ChatRoomPageDataResp> getMessages(
             @Parameter(description = "메시지를 조회할 채팅방의 ID") @PathVariable Long roomId,
-            @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatMessage.chatRoomType chatRoomType
+            @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatRoomType chatRoomType,
+            @Parameter(description = "이전 페이지의 마지막 메시지 sequence (생략 시 최신 메시지부터 조회)") @RequestParam(required = false) Long cursor,
+            @Parameter(description = "한 페이지에 조회할 메시지 개수 (기본 25, 최대 100)") @RequestParam(required = false) Integer size,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 
     @Operation(summary = "파일 메시지 전송 (이미지/파일)", description = "지정된 채팅방에 이미지 또는 파일을 전송합니다.")
     @SignInInRequireResponse
     CustomResponse<MessageResp> uploadFile(
             @Parameter(description = "파일을 보낼 채팅방의 ID") @PathVariable Long roomId,
-            @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatRoomType chatRoomType,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
             @Parameter(description = "업로드할 파일") @RequestParam("file") MultipartFile file,
             @Parameter(description = "파일 메시지 타입 (IMAGE 또는 FILE)") @RequestParam("messageType") ChatMessage.MessageType messageType
@@ -108,7 +116,7 @@ public interface ApiChatController {
     @SignInInRequireResponse
     void leaveRoom(
             @Parameter(description = "나갈 채팅방의 ID") @PathVariable Long roomId,
-            @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatRoomType chatRoomType,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 
@@ -116,7 +124,7 @@ public interface ApiChatController {
     @SignInInRequireResponse
     void blockUser(
             @Parameter(description = "차단할 채팅방의 ID") @PathVariable Long roomId,
-            @Parameter(description = "대화방 타입 (DIRECT, GROUP)") @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @Parameter(description = "대화방 타입 (DIRECT, GROUP)") @RequestParam ChatRoomType chatRoomType,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 
@@ -124,7 +132,7 @@ public interface ApiChatController {
     @SignInInRequireResponse
     void reportUser(
             @Parameter(description = "신고할 채팅방의 ID") @PathVariable Long roomId,
-            @Parameter(description = "대화방 타입 (DIRECT, GROUP)") @RequestParam ChatMessage.chatRoomType chatRoomType,
+            @Parameter(description = "대화방 타입 (DIRECT, GROUP)") @RequestParam ChatRoomType chatRoomType,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 }
