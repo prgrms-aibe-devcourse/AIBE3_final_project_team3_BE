@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.ai.common;
+package triplestar.mixchat.global.ai;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;

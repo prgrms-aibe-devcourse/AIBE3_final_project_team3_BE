@@ -1,27 +1,16 @@
-package triplestar.mixchat.domain.ai.systemprompt.service;
+package triplestar.mixchat.domain.ai.chatassist;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.stereotype.Service;
-import triplestar.mixchat.domain.ai.systemprompt.constant.PromptKey;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TempAiReq;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TempAiResp;
-import triplestar.mixchat.domain.ai.systemprompt.entity.SystemPrompt;
-import triplestar.mixchat.domain.ai.systemprompt.repository.SystemPromptRepository;
 
 @Service
 @RequiredArgsConstructor
 public class AiTranslationService {
 
     private final ChatClient chatClient;
-    private final SystemPromptRepository systemPromptRepository;
-
-    private SystemPrompt getPromptByKey(PromptKey key) {
-        return systemPromptRepository.findByPromptKey(key)
-                .orElseThrow(() -> new EntityNotFoundException("해당 이름의 프롬프트가 존재하지 않습니다." + key));
-    }
 
     public TempAiResp sendMessage(TempAiReq req) {
         // getPromptByKey(PromptKey.AI_TRANSLATION_PROMPT);

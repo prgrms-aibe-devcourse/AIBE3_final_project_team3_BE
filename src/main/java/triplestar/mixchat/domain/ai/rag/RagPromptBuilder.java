@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.ai.rag.service;
+package triplestar.mixchat.domain.ai.rag;
 
 import static triplestar.mixchat.domain.ai.rag.context.user.ContextChunkTextKey.LEARNING_NOTE_CORRECTED_CONTENT;
 import static triplestar.mixchat.domain.ai.rag.context.user.ContextChunkTextKey.LEARNING_NOTE_ORIGINAL_CONTENT;
@@ -70,28 +70,23 @@ public class RagPromptBuilder {
     private String formatChatTurn(ChatTurn turn) {
         String roleLabel = switch (turn.sender()) {
             case USER -> "User";
-            case AI -> "Tutor";
+            case AI -> "AiTutor";
         };
 
-        String timeStr = turn.createdAt() != null
-                ? DATE_FORMATTER.format(turn.createdAt())
-                : "unknown";
-
-        return "[" + timeStr + "] " + roleLabel + ": " + turn.content();
+        String timeStr = DATE_FORMATTER.format(turn.createdAt());
+        return "[" + timeStr + "] " + roleLabel + " : " + turn.content();
     }
 
     private String formatLearningNoteChunk(UserContextChunk chunk) {
-        Map<String, String> textMap = chunk.getText();
+        Map<String, String> textMap = chunk.text();
 
         String original = textMap.get(LEARNING_NOTE_ORIGINAL_CONTENT.getKey());
         String corrected = textMap.get(LEARNING_NOTE_CORRECTED_CONTENT.getKey());
 
-        String createdAtStr = chunk.getCreatedAt() != null
-                ? DATE_FORMATTER.format(chunk.getCreatedAt())
-                : "unknown";
+        String createdAtStr = DATE_FORMATTER.format(chunk.createdAt());
 
         StringBuilder sb = new StringBuilder();
-        sb.append("- [").append(createdAtStr).append("] ");
+        sb.append("[").append(createdAtStr).append("]");
         sb.append("Original: ").append(nullToPlaceholder(original));
         sb.append(" | Corrected: ").append(nullToPlaceholder(corrected));
 

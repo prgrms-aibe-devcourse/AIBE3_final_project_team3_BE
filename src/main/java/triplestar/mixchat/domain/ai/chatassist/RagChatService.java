@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.ai.rag.service;
+package triplestar.mixchat.domain.ai.chatassist;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -8,15 +8,16 @@ import triplestar.mixchat.domain.ai.rag.context.chathistory.ChatHistoryProvider;
 import triplestar.mixchat.domain.ai.rag.context.chathistory.ChatTurn;
 import triplestar.mixchat.domain.ai.rag.context.user.ContextRetriever;
 import triplestar.mixchat.domain.ai.rag.context.user.UserContextChunk;
+import triplestar.mixchat.domain.ai.rag.RagPromptBuilder;
 
 @RequiredArgsConstructor
 @Service
 public class RagChatService {
 
-    private final ContextRetriever contextRetriever;      // 학습노트 RAG
-    private final ChatHistoryProvider chatHistoryProvider;
-    private final RagPromptBuilder ragPromptBuilder;
-    private final ChatClient chatClient;                  // Spring AI
+    private final ContextRetriever contextRetriever;            // 컨텍스트 검색기(Sql, 벡터 DB 등)
+    private final ChatHistoryProvider chatHistoryProvider;      // 대화 로그 제공자
+    private final RagPromptBuilder ragPromptBuilder;            // RAG 프롬프트 빌더
+    private final ChatClient chatClient;                        // LLM 채팅 클라이언트
 
     public String chat(Long userId, Long roomId, String userMessage) {
 

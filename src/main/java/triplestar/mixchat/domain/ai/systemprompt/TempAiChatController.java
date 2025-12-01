@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import triplestar.mixchat.domain.ai.chatassist.AiTranslationService;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TempAiReq;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TempAiResp;
-import triplestar.mixchat.domain.ai.systemprompt.service.AiTranslationService;
 import triplestar.mixchat.global.response.CustomResponse;
 
 // Temporary controller for AI chat functionality
@@ -20,7 +20,7 @@ public class TempAiChatController {
     private final AiTranslationService aiTranslationService;
 
     @PostMapping(value = "/temp/chat")
-    public CustomResponse<TempAiResp> chat (@RequestBody TempAiReq req) {
+    public CustomResponse<TempAiResp> chat(@RequestBody TempAiReq req) {
         TempAiResp resp = aiTranslationService.sendMessage(req);
         return CustomResponse.ok("AI chat response placeholder", resp);
     }
