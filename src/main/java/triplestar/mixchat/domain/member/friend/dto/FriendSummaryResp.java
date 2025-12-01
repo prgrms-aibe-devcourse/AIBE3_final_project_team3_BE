@@ -24,16 +24,20 @@ public record FriendSummaryResp(
         List<String> interests,
 
         @Schema(description = "자기소개", example = "안녕하세요.", requiredMode = REQUIRED)
-        String description
+        String description,
+
+        @Schema(description = "온라인 상태 여부", example = "true", requiredMode = REQUIRED)
+        Boolean isOnline
 ) {
-    public static FriendSummaryResp from(Member savedMember) {
+    public static FriendSummaryResp from(Member savedMember, Boolean isOnline) {
         return new FriendSummaryResp(
                 savedMember.getId(),
                 savedMember.getNickname(),
                 savedMember.getCountry().name(),
                 savedMember.getEnglishLevel().name(),
                 savedMember.getInterests(),
-                savedMember.getDescription()
+                savedMember.getDescription(),
+                isOnline
         );
     }
 }

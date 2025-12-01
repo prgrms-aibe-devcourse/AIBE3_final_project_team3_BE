@@ -24,6 +24,7 @@ public class AdminChatRoomService {
     private final ApplicationEventPublisher eventPublisher;
     private final ChatAuthCacheService chatAuthCacheService;
     private final RoomClosedEventPublisher roomClosedEventPublisher;
+
     @Transactional
     public void forceCloseRoom(Long roomId, Long adminId, int reasonCode) {
         RoomCloseReason reason = RoomCloseReason.fromCode(reasonCode);
