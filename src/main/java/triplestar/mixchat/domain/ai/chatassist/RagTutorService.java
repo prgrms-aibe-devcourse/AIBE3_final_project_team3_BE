@@ -12,7 +12,7 @@ import triplestar.mixchat.domain.ai.rag.RagPromptBuilder;
 
 @RequiredArgsConstructor
 @Service
-public class RagChatService {
+public class RagTutorService {
 
     private final ContextRetriever contextRetriever;            // 컨텍스트 검색기(Sql, 벡터 DB 등)
     private final ChatHistoryProvider chatHistoryProvider;      // 대화 로그 제공자

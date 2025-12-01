@@ -14,11 +14,4 @@ public enum PromptKey {
     public String key() {
         return key;
     }
-
-    public static PromptKey from(String key) {
-        for (PromptKey value : values()) {
-            if (value.key.equals(key)) return value;
-        }
-        throw new IllegalArgumentException("지원하지 않는 PromptKey: " + key);
-    }
 }

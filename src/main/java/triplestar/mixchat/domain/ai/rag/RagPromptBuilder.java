@@ -21,7 +21,6 @@ import triplestar.mixchat.domain.ai.systemprompt.service.SystemPromptService;
 public class RagPromptBuilder {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    private static final String AI_TUTOR_PROMPT_KEY = "AI_TUTOR_MAIN";
     private final SystemPromptService systemPromptService;
 
     public String buildPrompt(
@@ -30,7 +29,7 @@ public class RagPromptBuilder {
             List<ChatTurn> chatHistory
     ) {
         // 1) DB에서 최신 버전 시스템 프롬프트 템플릿 가져오기
-        SystemPrompt systemPrompt = systemPromptService.getLatestByKey(PromptKey.from(AI_TUTOR_PROMPT_KEY));
+        SystemPrompt systemPrompt = systemPromptService.getLatestByKey(PromptKey.AI_TUTOR_PROMPT);
         String template = systemPrompt.getContent();
 
         // 2) 치환용 블록들 생성
