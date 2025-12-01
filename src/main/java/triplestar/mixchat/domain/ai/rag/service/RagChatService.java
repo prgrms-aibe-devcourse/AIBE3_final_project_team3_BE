@@ -24,7 +24,7 @@ public class RagChatService {
         List<UserContextChunk> chunks =
                 contextRetriever.retrieve(userId, userMessage, 10);
 
-        // 2) 단기 기억: 최근 대화 로그
+        // 2) 단기 기억: 현재 AI와의 채팅 대화 로그
          List<ChatTurn> history = chatHistoryProvider.getRecentHistory(roomId, 10);
 
         // 3) 프롬프트 생성

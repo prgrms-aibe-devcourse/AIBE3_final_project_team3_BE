@@ -4,6 +4,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import triplestar.mixchat.domain.ai.rag.context.chathistory.ChatTurn.Sender;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
@@ -22,7 +23,7 @@ public class ChatHistoryProvider {
         return messages.stream()
                 .map(msg -> new ChatTurn(
                         // TODO : ChatMessage Entity ai 발신자 구분 필요
-                        ChatTurn.Sender.AI,
+                        Sender.USER,
                         msg.getContent(),
                         msg.getCreatedAt()
                 ))
