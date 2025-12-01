@@ -30,15 +30,14 @@ public class SqlContextRetriever implements ContextRetriever {
     }
 
     @Override
-    public List<UserContextChunk> retrieve(Long userId, String userMessage, int maxItems) {
-        if (maxItems < mintItems || maxItems > this.maxItems) {
+    public List<UserContextChunk> retrieve(Long userId, String userMessage, int itemSize) {
+        if (itemSize < mintItems || itemSize > maxItems) {
             throw new IllegalArgumentException(
-                    "컨텍스트 청크 수는 %d에서 %d 사이여야 합니다.".formatted(mintItems, this.maxItems)
+                    "컨텍스트 청크 수는 %d에서 %d 사이여야 합니다.".formatted(mintItems, maxItems)
             );
         }
 
-        List<LearningNote> notes =
-                learningNoteRepository.findTopNByMemberId(userId, maxItems);
+        List<LearningNote> notes = learningNoteRepository.findTopNByMemberId(userId, itemSize);
 
         // text 맵에 originalContent와 correctedContent를 모두 포함
         return notes.stream()

@@ -12,7 +12,7 @@ public interface LearningNoteRepository extends JpaRepository<LearningNote, Long
                     SELECT ln FROM LearningNote ln
                     WHERE ln.member.id = :memberId
                     ORDER BY ln.createdAt DESC
-                    LIMIT :maxItems
+                    LIMIT :itemSize
     """)
-    List<LearningNote> findTopNByMemberId(Long memberId, int maxItems);
+    List<LearningNote> findTopNByMemberId(Long memberId, int itemSize);
 }
