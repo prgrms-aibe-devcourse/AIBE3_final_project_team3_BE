@@ -1,5 +1,5 @@
 INSERT INTO system_prompts (prompt_key, description, content, version)
-VALUES ('AI_ASSIST_PROMPT',
+VALUES ('AI_ASSIST',
         '영어 번역/교정 JSON 응답 튜터 프롬프트',
         '당신은 Mixchat의 영어 튜터입니다.
 사용자가 입력한 문장을 분석하여 번역과 태그, 교정, 설명을 포함하여 JSON 형식으로 응답합니다.
@@ -72,7 +72,7 @@ feedback: [
 
 -- RAG 시스템 프롬프트 초기 데이터 삽입
 INSERT INTO system_prompts (prompt_key, description, content, version)
-VALUES ('AI_TUTOR_MAIN',
+VALUES ('AI_TUTOR',
         'Mixchat 기본 영어 코치 프롬프트',
 '너는 영어 회화 앱 "Mixchat"의 **AI 복습 코치**야.
 역할:

@@ -1,8 +1,8 @@
 package triplestar.mixchat.domain.ai.systemprompt.constant;
 
 public enum PromptKey {
-    AI_TUTOR_PROMPT("AI_TUTOR_PROMPT"),
-    AI_ASSIST_PROMPT("AI_ASSIST_PROMPT"),
+    AI_TUTOR("AI_TUTOR"),
+    AI_ASSIST("AI_ASSIST"),
     ;
 
     private final String key;

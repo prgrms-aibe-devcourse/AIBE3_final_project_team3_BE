@@ -4,11 +4,11 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
+import triplestar.mixchat.domain.ai.rag.RagPromptBuilder;
 import triplestar.mixchat.domain.ai.rag.context.chathistory.ChatHistoryProvider;
 import triplestar.mixchat.domain.ai.rag.context.chathistory.ChatTurn;
 import triplestar.mixchat.domain.ai.rag.context.user.ContextRetriever;
 import triplestar.mixchat.domain.ai.rag.context.user.UserContextChunk;
-import triplestar.mixchat.domain.ai.rag.RagPromptBuilder;
 
 @RequiredArgsConstructor
 @Service
@@ -22,11 +22,10 @@ public class RagTutorService {
     public String chat(Long userId, Long roomId, String userMessage) {
 
         // 1) 장기 기억: 유저 학습 컨텍스트
-        List<UserContextChunk> chunks =
-                contextRetriever.retrieve(userId, userMessage, 10);
+        List<UserContextChunk> chunks = contextRetriever.retrieve(userId, null, 10);
 
         // 2) 단기 기억: 현재 AI와의 채팅 대화 로그
-         List<ChatTurn> history = chatHistoryProvider.getRecentHistory(roomId, 10);
+        List<ChatTurn> history = chatHistoryProvider.getRecentHistory(roomId, 10);
 
         // 3) 프롬프트 생성
         String prompt = ragPromptBuilder.buildPrompt(userMessage, chunks, history);

@@ -17,7 +17,7 @@ public class AiTranslationService {
     private final SystemPromptService systemPromptService;
 
     public TempAiResp sendMessage(TempAiReq req) {
-        SystemPrompt systemPrompt = systemPromptService.getLatestByKey(PromptKey.AI_ASSIST_PROMPT);
+        SystemPrompt systemPrompt = systemPromptService.getLatestByKey(PromptKey.AI_ASSIST);
         String template = systemPrompt.getContent();
 
         String prompt = template.replace("{{input}}", req.message());
