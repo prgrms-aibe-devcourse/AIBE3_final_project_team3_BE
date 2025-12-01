@@ -1,14 +1,14 @@
 package triplestar.mixchat.domain.member.presence.repository;
 
-import java.time.Duration;
-import java.util.HashMap;
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.connection.RedisZSetCommands;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -35,22 +35,42 @@ public class PresenceRepository {
         redisTemplate.opsForZSet().add(key, memberId.toString(), now);
     }
 
-    public Map<Long, Boolean> isOnlineBulk(List<Long> memberIds) {
+    public Set<Long> filterIsOnline(List<Long> memberIds) {
         long now = System.currentTimeMillis() / 1000;
         long threshold = now - expirationSeconds;
 
-        Map<Long, Boolean> result = new HashMap<>();
-        Set<String> allOnlineIds = redisTemplate.opsForZSet().rangeByScore(key, threshold, Double.MAX_VALUE);
-
-        if (allOnlineIds == null) {
-            return memberIds.stream().collect(Collectors.toMap(id -> id, id -> false));
+        if (memberIds == null || memberIds.isEmpty()) {
+            return Set.of();
         }
 
-        for (Long memberId : memberIds) {
-            boolean isOnline = allOnlineIds.contains(memberId.toString());
-            result.put(memberId, isOnline);
-        }
-        return result;
+        // ZMScore를 이용한 특정 key를 일괄 조회
+        // RedisCallback을 사용하여 저수준 Redis 명령어 실행
+        return redisTemplate.execute((RedisCallback<Set<Long>>) connection -> {
+            RedisZSetCommands zSet = connection.zSetCommands();
+
+            byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+
+            byte[][] memberBytes = memberIds.stream()
+                    .map(id -> id.toString().getBytes(StandardCharsets.UTF_8))
+                    .toArray(byte[][]::new);
+
+            // ZMScore 명령어로 특정 멤버들의 점수(접속 시간) 일괄 조회
+            List<Double> scores = zSet.zMScore(keyBytes, memberBytes);
+
+            if (scores == null || scores.isEmpty()) {
+                return Set.of();
+            }
+
+            Set<Long> onlineIds = new HashSet<>();
+
+            for (int i = 0; i < scores.size(); i++) {
+                Double score = scores.get(i);
+                if (score != null && score >= threshold) {
+                    onlineIds.add(memberIds.get(i));
+                }
+            }
+            return onlineIds;
+        });
     }
 
     public List<Long> getOnlineMemberIds(long offset, long size) {

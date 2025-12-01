@@ -1,6 +1,8 @@
 package triplestar.mixchat.domain.member.friend.service;
 
 import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +14,7 @@ import triplestar.mixchat.domain.member.friend.entity.Friendship;
 import triplestar.mixchat.domain.member.friend.repository.FriendshipRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.domain.member.presence.service.PresenceService;
 
 // 친구 관계 요청 검증은 FriendshipRequestService가 처리
 @Service
@@ -21,6 +24,7 @@ public class FriendshipService {
 
     private final FriendshipRepository friendshipRepository;
     private final MemberRepository memberRepository;
+    private final PresenceService presenceService;
 
     public boolean isFriends(Long memberId1, Long memberId2) {
         Long smallerId = Math.min(memberId1, memberId2);
@@ -51,12 +55,17 @@ public class FriendshipService {
         friendshipRepository.delete(friendship);
     }
 
-    // TODO : presence(online) 추가
     public Page<FriendSummaryResp> getFriends(Long currentMemberId, Pageable pageable) {
-        Page<Long> friendIds = friendshipRepository.findFriendsByMemberId(currentMemberId, pageable);
-        Page<Member> friends = memberRepository.findAllByIdIn(friendIds.getContent(), pageable);
+        Page<Member> friends = friendshipRepository.findFriendsByMemberId(currentMemberId, pageable);
 
-        return friends.map(FriendSummaryResp::from);
+        List<Long> ids = friends.stream()
+                .map(Member::getId)
+                .toList();
+
+        Set<Long> onlineIds = presenceService.filterIsOnline(ids);
+
+        return friends.map(member ->
+                FriendSummaryResp.from(member, onlineIds.contains(member.getId())));
     }
 
     public FriendDetailResp getFriend(Long currentMemberId, Long friendId) {
