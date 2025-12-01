@@ -2,6 +2,7 @@ package triplestar.mixchat.domain.ai.systemprompt.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,10 +11,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationResp;
 
-import java.io.IOException;
-
 @Slf4j
-// @Component
+@Component
 @RequiredArgsConstructor
 public class OllamaTranslationProvider implements TranslationProvider {
 
@@ -85,6 +84,6 @@ public class OllamaTranslationProvider implements TranslationProvider {
 
     @Override
     public int getOrder() {
-        return 2; // 2순위로 변경
+        return 1; // 2순위로 변경
     }
 }

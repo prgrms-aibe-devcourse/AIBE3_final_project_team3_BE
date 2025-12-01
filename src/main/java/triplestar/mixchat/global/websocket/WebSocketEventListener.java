@@ -31,7 +31,6 @@ import triplestar.mixchat.global.security.CustomUserDetails;
 @Slf4j
 @RequiredArgsConstructor
 public class WebSocketEventListener {
-
     private final ChatSubscriberCacheService subscriberCacheService;
     private final ChatMemberService chatMemberService;
     private final ChatMessageService chatMessageService;

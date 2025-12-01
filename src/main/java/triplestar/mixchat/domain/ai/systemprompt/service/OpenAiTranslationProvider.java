@@ -95,6 +95,6 @@ public class OpenAiTranslationProvider implements TranslationProvider {
 
     @Override
     public int getOrder() {
-        return 1; // 1순위
+        return 2; // 1순위
     }
 }
