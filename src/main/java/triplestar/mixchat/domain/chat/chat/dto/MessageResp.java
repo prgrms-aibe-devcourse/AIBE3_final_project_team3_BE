@@ -26,6 +26,12 @@ public record MessageResp(
         @Schema(description = "메시지 내용", example = "안녕하세요!", requiredMode = REQUIRED)
         String content,
 
+        @Schema(description = "번역된 메시지 내용", example = "Hello!")
+        String translatedContent,
+
+        @Schema(description = "자동 번역 요청 여부", example = "true")
+        Boolean isTranslateEnabled,
+
         @NotNull
         @Schema(description = "메시지 발신 시간", requiredMode = REQUIRED)
         LocalDateTime createdAt,
@@ -47,6 +53,8 @@ public record MessageResp(
                 entity.getSenderId(),
                 senderName,
                 entity.getContent(),
+                entity.getTranslatedContent(),
+                entity.isTranslateEnabled(),
                 entity.getCreatedAt(),
                 entity.getMessageType(),
                 entity.getSequence(),
@@ -60,6 +68,8 @@ public record MessageResp(
                 entity.getSenderId(),
                 senderName,
                 entity.getContent(),
+                entity.getTranslatedContent(),
+                entity.isTranslateEnabled(),
                 entity.getCreatedAt(),
                 entity.getMessageType(),
                 entity.getSequence(),

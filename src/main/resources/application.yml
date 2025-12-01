@@ -30,40 +30,15 @@ spring:
 
   ai:
     openai:
-      base-url: https://ollama.yhcho.com/ollama
+      #base-url: https://ollama.yhcho.com/ollama
+      base-url: https://api.openai.com
       api-key: ${OPENAI_API_KEY} # 로컬은 키가 필요 없지만, 라이브러리 검증 통과용으로 입력
       chat:
         options:
-          model:
-
-    google:
-      gemini:
-        api-key: ${GEMINI_API_KEY}
+          #model: ${OPENAI_CHAT_MODEL:exaone3.5:2.4b}
+          model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
 
 swagger:
   redirect:
     # "/"로 들어왔을 때 최종적으로 리다이렉트될 Swagger UI 경로
     path: /swagger-ui/index.html
-
-# AI Provider Fallback 세팅(ollama가 1순위)
-ollama:
-  api:
-    url: https://ollama.yhcho.com/
-    model: llama3:8b
-    key: ${OLLAMA_API_KEY}
-# 2. OpenAI Provider (Fallback)
-# 3. Google Gemini Provider (Fallback)
-#   - Ollama (커스텀 경로 사용)
-#      ollama.api.url 경로는 제가 직접 만든 커스텀 경로입니다. 그 이유는, 저희가 구현한 OllamaTranslationProvider는 Spring
-#  AI 라이브러리를 거치지 않고, WebClient를 사용해 Ollama API에 직접 요청을 보내기 때문입니다.
-#
-#  왜 Ollama만 직접 호출했는가?
-#
-#
-#  저희의 주력 번역기는 팀원 서버의 Ollama입니다. 이렇게 직접 호출 방식으로 구현하면, Spring AI 라이브러리의 제약 없이
-#  Ollama의 'json 모드'나 특정 API 엔드포인트(/api/generate)를 더 세밀하게 제어할 수 있는 장점이 있습니다. 즉, 주력 번역기의
-#  성능과 안정성을 최대한으로 끌어내기 위해 직접 제어 방식을 택한 것입니다.
-#
-#
-#  요약하자면, 경로가 다른 것은 'Spring AI 표준 방식을 쓰는 플러그인(OpenAI, Gemini)'과 '더 세밀한 제어를 위해 직접 구현한
-#  플러그인(Ollama)'의 차이 때문이며, 의도된 설계입니다.
