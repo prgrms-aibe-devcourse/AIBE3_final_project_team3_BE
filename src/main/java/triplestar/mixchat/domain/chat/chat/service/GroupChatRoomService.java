@@ -102,6 +102,8 @@ public class GroupChatRoomService {
                 .findByChatRoomIdAndChatRoomTypeAndMember_Id(roomId, ChatRoomType.GROUP, currentUserId)
                 .orElseThrow(() -> new AccessDeniedException("해당 대화방에 접근할 권한이 없습니다."));
 
+        String leavingMemberNickname = memberToRemove.getMember().getNickname();
+
         // 3. 방장이 나가는 경우 방장 위임 처리
         if (room.isOwner(memberToRemove.getMember())) {
             // 남은 멤버 조회 (본인 제외)
@@ -135,6 +137,15 @@ public class GroupChatRoomService {
         if (remainingMembersCount == 0) {
             groupChatRoomRepository.deleteById(roomId);
             log.info("모든 멤버가 나가 그룹 채팅방이 삭제되었습니다. 방 ID: {}", roomId);
+        } else {
+            // 7. 남은 멤버가 있으면 시스템 메시지 전송
+            String systemMessageContent = String.format("'%s'님이 나갔습니다.", leavingMemberNickname);
+            MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP, false);
+
+            messagingTemplate.convertAndSend(
+                    "/topic/group/rooms/" + roomId,
+                    systemMessage
+            );
         }
     }
 
@@ -176,7 +187,16 @@ public class GroupChatRoomService {
 
         GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers, userId, friendIdSet, 0L);
 
-        // 8. WebSocket으로 방의 모든 멤버에게 알림 (새 멤버 참가 알림)
+        // 8. 시스템 메시지 전송 (새 멤버 입장 알림)
+        String systemMessageContent = String.format("'%s'님이 입장했습니다.", member.getNickname());
+        MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP, false);
+
+        messagingTemplate.convertAndSend(
+                "/topic/group/rooms/" + roomId,
+                systemMessage
+        );
+
+        // 9. WebSocket으로 방의 모든 멤버에게 알림 (방 정보 업데이트)
         allMembers.forEach(cm -> {
             messagingTemplate.convertAndSendToUser(
                     cm.getMember().getId().toString(),
@@ -235,7 +255,7 @@ public class GroupChatRoomService {
         MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP, false);
 
         messagingTemplate.convertAndSend(
-                "/topic/chat/room/" + roomId,
+                "/topic/group/rooms/" + roomId,
                 systemMessage
         );
     }
@@ -268,7 +288,7 @@ public class GroupChatRoomService {
         MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP, false);
 
         messagingTemplate.convertAndSend(
-                "/topic/chat/room/" + roomId,
+                "/topic/group/rooms/" + roomId,
                 systemMessage
         );
     }
