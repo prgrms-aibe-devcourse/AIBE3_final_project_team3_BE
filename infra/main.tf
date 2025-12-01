@@ -199,6 +199,14 @@ resource "aws_security_group" "rds_1" {
     security_groups = [aws_security_group.sg_1.id]
   }
 
+  ingress {
+    description = "Temporary public MySQL access"
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -278,10 +286,10 @@ locals {
   ]
 
   docker_compose_prod_b64        = base64encode(file("${path.module}/../docker-compose-prod.yml"))
-  docker_compose_staging_b64     = base64encode(file("${path.module}/../docker-compose-staging.yml"))
+#  docker_compose_staging_b64     = base64encode(file("${path.module}/../docker-compose-staging.yml"))
   app_env_prod_b64               = base64encode(file("${path.module}/../.env"))
   app_env_prod_properties_b64    = base64encode(file("${path.module}/../.env.prod.properties"))
-  app_env_staging_properties_b64 = base64encode(file("${path.module}/../.env.staging.properties"))
+#  app_env_staging_properties_b64 = base64encode(file("${path.module}/../.env.staging.properties"))
   application_secret_yaml_b64    = base64encode(file("${path.module}/../src/main/resources/application-secret.yml"))
 
   ec2_1_user_data_base = templatefile("${path.module}/templates/user_data.sh.tftpl", {
@@ -304,27 +312,27 @@ locals {
     application_secret_yaml_b64  = local.application_secret_yaml_b64
   })
 
-  ec2_2_user_data_base = templatefile("${path.module}/templates/user_data_2.sh.tftpl", {
-    password_2                     = var.password_2
-    app_2_domain                   = var.app_2_domain
-    app_2_db_name                  = var.app_2_db_name
-    github_access_token_1_owner    = var.github_access_token_1_owner
-    github_access_token_1          = var.github_access_token_1
-    docker_compose_prod_b64        = local.docker_compose_prod_b64
-    docker_compose_staging_b64     = local.docker_compose_staging_b64
-    app_env_prod_b64               = local.app_env_prod_b64
-    app_env_prod_properties_b64    = local.app_env_prod_properties_b64
-    app_env_staging_properties_b64 = local.app_env_staging_properties_b64
-    compose_support_files           = [for file in local.compose_support_files : {
-      path        = file.path
-      content_b64 = file.content_b64
-    }]
-    app_2_s3_bucket             = aws_s3_bucket.staging_bucket.bucket
-    application_secret_yaml_b64 = local.application_secret_yaml_b64
-  })
+#  ec2_2_user_data_base = templatefile("${path.module}/templates/user_data_2.sh.tftpl", {
+#    password_2                     = var.password_2
+#    app_2_domain                   = var.app_2_domain
+#    app_2_db_name                  = var.app_2_db_name
+#    github_access_token_1_owner    = var.github_access_token_1_owner
+#    github_access_token_1          = var.github_access_token_1
+#    docker_compose_prod_b64        = local.docker_compose_prod_b64
+#    docker_compose_staging_b64     = local.docker_compose_staging_b64
+#    app_env_prod_b64               = local.app_env_prod_b64
+#    app_env_prod_properties_b64    = local.app_env_prod_properties_b64
+#    app_env_staging_properties_b64 = local.app_env_staging_properties_b64
+#    compose_support_files           = [for file in local.compose_support_files : {
+#      path        = file.path
+#      content_b64 = file.content_b64
+#    }]
+#    app_2_s3_bucket             = aws_s3_bucket.staging_bucket.bucket
+#    application_secret_yaml_b64 = local.application_secret_yaml_b64
+#  })
 
   ec2_1_user_data_base64 = base64gzip(local.ec2_1_user_data_base)
-  ec2_2_user_data_base64 = base64gzip(local.ec2_2_user_data_base)
+#  ec2_2_user_data_base64 = base64gzip(local.ec2_2_user_data_base)
 }
 
 # 최신 Amazon Linux 2023 AMI 조회 (프리 티어 호환)
@@ -383,26 +391,9 @@ resource "aws_instance" "ec2_1" {
   user_data_base64 = local.ec2_1_user_data_base64
 }
 
-resource "aws_instance" "ec2_2" {
-  ami                         = data.aws_ami.latest_amazon_linux.id
-  instance_type               = "t3.micro"
-  subnet_id                   = aws_subnet.subnet_3.id
-  vpc_security_group_ids      = [aws_security_group.sg_1.id]
-  associate_public_ip_address = true
-  iam_instance_profile        = aws_iam_instance_profile.instance_profile_1.name
-  tags = {
-    Name = "${var.prefix}-ec2-staging-1"
-  }
-  root_block_device {
-    volume_type = "gp3"
-    volume_size = 30
-  }
-  user_data_base64 = local.ec2_2_user_data_base64
-}
-
 resource "aws_db_subnet_group" "app_1" {
   name       = "${var.prefix}-rds-subnet-group"
-  subnet_ids = [aws_subnet.subnet_5.id, aws_subnet.subnet_6.id]
+  subnet_ids = [aws_subnet.subnet_1.id, aws_subnet.subnet_3.id]
 
   tags = {
     Name = "${var.prefix}-rds-subnet-group"
@@ -426,7 +417,7 @@ resource "aws_db_instance" "app_1_db" {
   backup_retention_period    = var.rds_backup_retention_period
   copy_tags_to_snapshot      = true
   multi_az                   = var.rds_multi_az
-  publicly_accessible        = false
+  publicly_accessible        = true
   storage_encrypted          = true
   deletion_protection        = false
   auto_minor_version_upgrade = true
@@ -439,14 +430,6 @@ resource "aws_db_instance" "app_1_db" {
 }
 
 # S3 버킷 설정 시작
-resource "aws_s3_bucket" "staging_bucket" {
-  bucket = "${var.prefix}-staging-${var.nickname}"
-
-  tags = {
-    Name = "${var.prefix}-staging-bucket"
-  }
-}
-
 resource "aws_s3_bucket" "prod_bucket" {
   bucket = "${var.prefix}-prod-${var.nickname}"
 

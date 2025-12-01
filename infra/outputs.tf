@@ -13,8 +13,7 @@ output "prod_s3_bucket" {
   value       = aws_s3_bucket.prod_bucket.bucket
 }
 
-output "staging_s3_bucket" {
-  description = "Bucket name backing staging file storage"
-  value       = aws_s3_bucket.staging_bucket.bucket
-}
-
+# output "staging_s3_bucket" {
+#   description = "Bucket name backing staging file storage"
+#   value       = aws_s3_bucket.staging_bucket.bucket
+# }

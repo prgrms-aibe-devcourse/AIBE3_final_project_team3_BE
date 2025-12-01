@@ -51,10 +51,32 @@ services:
     networks:
       - mixchat-network
 
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:2.11.1
+    container_name: nginx-proxy-manager
+    restart: always
+    env_file:
+      - .env.prod.properties
+    environment:
+      DISABLE_IPV6: 'true'
+    ports:
+      - "80:80"
+      - "81:81"
+      - "443:443"
+    volumes:
+      - npm_data:/data
+      - npm_letsencrypt:/etc/letsencrypt
+    networks:
+      - mixchat-network
+
 volumes:
   redis_data:
     driver: local
   mongo_data:
+    driver: local
+  npm_data:
+    driver: local
+  npm_letsencrypt:
     driver: local
 
 networks:
