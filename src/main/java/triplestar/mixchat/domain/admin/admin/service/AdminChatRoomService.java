@@ -8,26 +8,22 @@ import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.admin.admin.constant.RoomCloseReason;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.entity.GroupChatRoom;
-import triplestar.mixchat.domain.chat.chat.repository.AIChatRoomRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
-import triplestar.mixchat.domain.chat.chat.repository.DirectChatRoomRepository;
 import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
 import triplestar.mixchat.domain.notification.constant.NotificationType;
 import triplestar.mixchat.global.cache.ChatAuthCacheService;
 import triplestar.mixchat.global.notifiaction.NotificationEvent;
+import triplestar.mixchat.global.websocket.RoomClosedEventPublisher;
 
 @Service
 @RequiredArgsConstructor
 public class AdminChatRoomService {
     private final ChatRoomMemberRepository chatRoomMemberRepository;
-    private final DirectChatRoomRepository directChatRoomRepository;
     private final GroupChatRoomRepository groupChatRoomRepository;
-    private final AIChatRoomRepository aiChatRoomRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final ChatAuthCacheService chatAuthCacheService;
-
+    private final RoomClosedEventPublisher roomClosedEventPublisher;
     @Transactional
     public void forceCloseRoom(Long roomId, Long adminId, int reasonCode) {
         RoomCloseReason reason = RoomCloseReason.fromCode(reasonCode);
@@ -62,5 +58,7 @@ public class AdminChatRoomService {
             );
             eventPublisher.publishEvent(event);
         }
+
+        roomClosedEventPublisher.sendRoomClosed(roomId, roomName, reason.getLabel());
     }
 }
