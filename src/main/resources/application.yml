@@ -52,7 +52,7 @@ swagger:
 
 server:
   port: 8080
-  forward-headers-strategy: native
+  forward-headers-strategy: framework
 
 springdoc:
   default-produces-media-type: application/json;charset=UTF-8
