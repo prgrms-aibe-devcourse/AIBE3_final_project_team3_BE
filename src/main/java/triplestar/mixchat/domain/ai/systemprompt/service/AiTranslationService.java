@@ -2,6 +2,7 @@ package triplestar.mixchat.domain.ai.systemprompt.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.ai.systemprompt.constant.PromptKey;
@@ -14,7 +15,7 @@ import triplestar.mixchat.domain.ai.systemprompt.repository.SystemPromptReposito
 @RequiredArgsConstructor
 public class AiTranslationService {
 
-    private final OpenAiChatModel chatModel;
+    private final ChatClient chatClient;
     private final SystemPromptRepository systemPromptRepository;
 
     private SystemPrompt getPromptByKey(PromptKey key) {
@@ -84,12 +85,17 @@ public class AiTranslationService {
                     ]
                 }
                 이 규칙을 항상 지키세요.
+                사용자 입력:
                 {input}
                 """;
 
         // TODO : 프롬프트 템플릿 엔진 도입 고려
         String prompt = systemPrompt.replace("{input}", req.message());
-        String call = chatModel.call(prompt);
+        String call = chatClient
+                .prompt()
+                .user(prompt)
+                .call()
+                .content();
 
         // TODO : 응답 파싱 및 검증 로직 추가 필요
         // TODO : Strict JSON Mode 설정, Function Calling 활용 등

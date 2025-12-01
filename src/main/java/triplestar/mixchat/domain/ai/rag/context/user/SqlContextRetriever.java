@@ -1,7 +1,7 @@
-package triplestar.mixchat.domain.ai.rag.context;
+package triplestar.mixchat.domain.ai.rag.context.user;
 
-import static triplestar.mixchat.domain.ai.rag.context.ContextChunkTextKey.LEARNING_NOTE_CORRECTED_CONTENT;
-import static triplestar.mixchat.domain.ai.rag.context.ContextChunkTextKey.LEARNING_NOTE_ORIGINAL_CONTENT;
+import static triplestar.mixchat.domain.ai.rag.context.user.ContextChunkTextKey.LEARNING_NOTE_CORRECTED_CONTENT;
+import static triplestar.mixchat.domain.ai.rag.context.user.ContextChunkTextKey.LEARNING_NOTE_ORIGINAL_CONTENT;
 
 import java.util.List;
 import java.util.Map;
@@ -38,7 +38,7 @@ public class SqlContextRetriever implements ContextRetriever {
         }
 
         List<LearningNote> notes =
-                learningNoteRepository.findTopNByUserIdOrderByCreatedAtDesc(userId, maxItems);
+                learningNoteRepository.findTopNByMemberId(userId, maxItems);
 
         // text 맵에 originalContent와 correctedContent를 모두 포함
         return notes.stream()
