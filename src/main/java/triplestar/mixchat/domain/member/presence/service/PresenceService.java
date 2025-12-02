@@ -1,10 +1,14 @@
 package triplestar.mixchat.domain.member.presence.service;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.presence.dto.ExpiredPresence;
 import triplestar.mixchat.domain.member.presence.repository.PresenceRepository;
@@ -33,10 +37,26 @@ public class PresenceService {
     }
 
     @Scheduled(fixedRateString = "${presence.scheduled.cleanup-rate-ms}")
+    @Transactional
     public void removeExpiredEntries() {
         List<ExpiredPresence> expiredPresences = presenceRepository.cleanupExpired();
+
         if (expiredPresences.isEmpty()) {
             return;
         }
+
+        // 성능상 이슈 있을 시 배치 처리로 변경 고려
+        expiredPresences.stream().forEach(expiredPresence -> {
+            Long memberId = expiredPresence.memberId();
+            Long lastSeen = expiredPresence.lastSeen();
+
+            LocalDateTime lastSeenDateTime = Instant.ofEpochSecond(lastSeen)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime();
+
+            // 더티체킹 대신 JPQL update 사용
+            memberRepository.updateLastSeen(memberId, lastSeenDateTime);
+        });
     }
 }
+

@@ -40,10 +40,10 @@ public class PresenceRepository {
 
         // 원자성 보장을 위한 Lua 스크립트: 만료된 항목 조회 및 삭제
         CLEANUP_SCRIPT.setScriptText("""
-            local expired = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'WITHSCORES')
-            redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, ARGV[1])
-            return expired
-        """);
+                    local expired = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'WITHSCORES')
+                    redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, ARGV[1])
+                    return expired
+                """);
         CLEANUP_SCRIPT.setResultType(List.class);
     }
 
@@ -116,16 +116,21 @@ public class PresenceRepository {
                 String.valueOf(threshold)
         );
 
-        if (raw == null || raw.isEmpty()) return List.of();
-
-        List<ExpiredPresence> list = new ArrayList<>();
-        for (int i = 0; i < raw.size(); i += 2) {
-            list.add(new ExpiredPresence(
-                    Long.valueOf(raw.get(i)),          // memberId
-                    Long.valueOf(raw.get(i + 1))       // score(last_seen)
-            ));
+        if (raw == null || raw.isEmpty()) {
+            return List.of();
         }
-        return list;
+
+        List<ExpiredPresence> result = new ArrayList<>();
+
+        // raw = ["id1", "score1", "id2", "score2", ...]
+        for (int i = 0; i < raw.size(); i += 2) {
+            Long memberId = Long.valueOf(raw.get(i));
+            Long lastSeen = Long.valueOf(raw.get(i + 1));
+
+            result.add(new ExpiredPresence(memberId, lastSeen));
+        }
+
+        return result;
     }
 
     public void remove(Long memberId) {

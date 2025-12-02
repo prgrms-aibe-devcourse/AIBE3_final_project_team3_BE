@@ -1,5 +1,6 @@
 package triplestar.mixchat.domain.member.member.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -75,13 +76,11 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     Page<Member> findAllByIdIn(List<Long> ids, Pageable pageable);
 
-
-
     @Modifying
     @Query("""
             UPDATE Member m
-            SET m.lastSeenAt = :timestamp
-            WHERE m.id IN :expiredMemberIds
+            SET m.lastSeenAt = :lastSeenAt
+            WHERE m.id = :memberId
     """)
-    void updateLastSeenAtBatch(List<Long> expiredMemberIds, Long timestamp);
+    void updateLastSeen(Long memberId, LocalDateTime lastSeenAt);
 }

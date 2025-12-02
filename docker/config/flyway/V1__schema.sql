@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `members` (
     `membership_grade`   VARCHAR(20)   NOT NULL,
 
     -- 로그인 / 차단 / 삭제 상태
-    `last_sign_in_at`    DATETIME(6),
+    `last_seen_at`    DATETIME(6),
     `is_blocked`         BOOLEAN       NOT NULL DEFAULT FALSE,
     `blocked_at`         DATETIME(6),
     `block_reason`       VARCHAR(255),
