@@ -125,9 +125,9 @@ public class PresenceRepository {
         // raw = ["id1", "score1", "id2", "score2", ...]
         for (int i = 0; i < raw.size(); i += 2) {
             Long memberId = Long.valueOf(raw.get(i));
-            Long lastSeen = Long.valueOf(raw.get(i + 1));
+            Long lastSeenAt = Long.valueOf(raw.get(i + 1));
 
-            result.add(new ExpiredPresence(memberId, lastSeen));
+            result.add(new ExpiredPresence(memberId, lastSeenAt));
         }
 
         return result;

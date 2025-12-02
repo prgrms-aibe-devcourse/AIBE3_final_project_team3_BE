@@ -29,6 +29,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
                 m.interests,
                 m.description,
                 m.profileImageUrl,
+                m.lastSeenAt,
             
                 /* isFriend (boolean) */
                 EXISTS (
@@ -82,5 +83,5 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
             SET m.lastSeenAt = :lastSeenAt
             WHERE m.id = :memberId
     """)
-    void updateLastSeen(Long memberId, LocalDateTime lastSeenAt);
+    void updateLastSeenAt(Long memberId, LocalDateTime lastSeenAt);
 }

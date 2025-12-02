@@ -1,22 +1,34 @@
 package triplestar.mixchat.domain.member.presence.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.presence.repository.PresenceRepository;
 import triplestar.mixchat.testutils.RedisTestContainer;
 
 @Transactional
 @ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 class PresenceServiceTest extends RedisTestContainer {
 
     StringRedisTemplate stringRedisTemplate;
@@ -24,6 +36,8 @@ class PresenceServiceTest extends RedisTestContainer {
 
     PresenceRepository presenceRepository;
     PresenceService presenceService;
+    @Mock
+    MemberRepository memberMockRepository;
 
     @BeforeEach
     void setUp() {
@@ -42,7 +56,7 @@ class PresenceServiceTest extends RedisTestContainer {
                 "test:presence-user:",
                 2
         );
-        presenceService = new PresenceService(presenceRepository);
+        presenceService = new PresenceService(presenceRepository, memberMockRepository);
     }
 
     @Test
@@ -113,5 +127,29 @@ class PresenceServiceTest extends RedisTestContainer {
         // then
         assertThat(onlineIds).contains(memberId1, memberId2);
         assertThat(onlineIds).doesNotContain(memberId3);
+    }
+
+    @Test
+    @DisplayName("cleanupExpired는 만료된 사용자만 MemberRepository.updateLastSeenAt을 호출한다.")
+    void cleanupExpired_test() throws InterruptedException {
+        // given
+        Long memberId1 = 8L;
+        Long memberId2 = 9L;
+
+        // TTL 2초
+        presenceService.heartbeat(memberId1);
+        Thread.sleep(1500);                   // 1.5초 대기
+        presenceService.heartbeat(memberId2);
+        Thread.sleep(1000);                   // id1 만료(2.5초 경과), id2는 유효(1.0초 경과)
+
+        // when
+        presenceService.removeExpiredEntries();
+
+        // then
+        // memberId1 만 업데이트 호출됨
+        verify(memberMockRepository, times(1))
+                .updateLastSeenAt(eq(memberId1), any());
+        verify(memberMockRepository, never())
+                .updateLastSeenAt(eq(memberId2), any());
     }
 }

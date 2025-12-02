@@ -48,14 +48,14 @@ public class PresenceService {
         // 성능상 이슈 있을 시 배치 처리로 변경 고려
         expiredPresences.stream().forEach(expiredPresence -> {
             Long memberId = expiredPresence.memberId();
-            Long lastSeen = expiredPresence.lastSeen();
+            Long lastSeenAt = expiredPresence.lastSeenAt();
 
-            LocalDateTime lastSeenDateTime = Instant.ofEpochSecond(lastSeen)
+            LocalDateTime lastSeenDateTime = Instant.ofEpochSecond(lastSeenAt)
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime();
 
             // 더티체킹 대신 JPQL update 사용
-            memberRepository.updateLastSeen(memberId, lastSeenDateTime);
+            memberRepository.updateLastSeenAt(memberId, lastSeenDateTime);
         });
     }
 }
