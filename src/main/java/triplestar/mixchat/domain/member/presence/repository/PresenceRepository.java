@@ -1,6 +1,7 @@
 package triplestar.mixchat.domain.member.presence.repository;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -9,7 +10,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.RedisZSetCommands;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Repository;
+import triplestar.mixchat.domain.member.presence.dto.ExpiredPresence;
 
 @Repository
 public class PresenceRepository {
@@ -17,6 +20,8 @@ public class PresenceRepository {
     private final StringRedisTemplate redisTemplate;
     private final String key;
     private final int expirationSeconds;
+
+    private static final DefaultRedisScript<List> CLEANUP_SCRIPT;
 
     public PresenceRepository(
             StringRedisTemplate redisTemplate,
@@ -28,6 +33,18 @@ public class PresenceRepository {
         this.redisTemplate = redisTemplate;
         this.key = key;
         this.expirationSeconds = expirationSeconds;
+    }
+
+    static {
+        CLEANUP_SCRIPT = new DefaultRedisScript<>();
+
+        // 원자성 보장을 위한 Lua 스크립트: 만료된 항목 조회 및 삭제
+        CLEANUP_SCRIPT.setScriptText("""
+            local expired = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'WITHSCORES')
+            redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, ARGV[1])
+            return expired
+        """);
+        CLEANUP_SCRIPT.setResultType(List.class);
     }
 
     public void save(Long memberId) {
@@ -89,11 +106,26 @@ public class PresenceRepository {
                 .collect(Collectors.toList());
     }
 
-    public void cleanupExpired() {
+    public List<ExpiredPresence> cleanupExpired() {
         long now = System.currentTimeMillis() / 1000;
         long threshold = now - expirationSeconds;
 
-        redisTemplate.opsForZSet().removeRangeByScore(key, 0, threshold);
+        List<String> raw = (List<String>) redisTemplate.execute(
+                CLEANUP_SCRIPT,
+                List.of(key),
+                String.valueOf(threshold)
+        );
+
+        if (raw == null || raw.isEmpty()) return List.of();
+
+        List<ExpiredPresence> list = new ArrayList<>();
+        for (int i = 0; i < raw.size(); i += 2) {
+            list.add(new ExpiredPresence(
+                    Long.valueOf(raw.get(i)),          // memberId
+                    Long.valueOf(raw.get(i + 1))       // score(last_seen)
+            ));
+        }
+        return list;
     }
 
     public void remove(Long memberId) {

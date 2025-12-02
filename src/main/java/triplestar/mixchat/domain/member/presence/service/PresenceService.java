@@ -5,6 +5,8 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.domain.member.presence.dto.ExpiredPresence;
 import triplestar.mixchat.domain.member.presence.repository.PresenceRepository;
 
 @Service
@@ -12,6 +14,7 @@ import triplestar.mixchat.domain.member.presence.repository.PresenceRepository;
 public class PresenceService {
 
     private final PresenceRepository presenceRepository;
+    private final MemberRepository memberRepository;
 
     public void heartbeat(Long memberId) {
         presenceRepository.save(memberId);
@@ -31,6 +34,9 @@ public class PresenceService {
 
     @Scheduled(fixedRateString = "${presence.scheduled.cleanup-rate-ms}")
     public void removeExpiredEntries() {
-        presenceRepository.cleanupExpired();
+        List<ExpiredPresence> expiredPresences = presenceRepository.cleanupExpired();
+        if (expiredPresences.isEmpty()) {
+            return;
+        }
     }
 }
