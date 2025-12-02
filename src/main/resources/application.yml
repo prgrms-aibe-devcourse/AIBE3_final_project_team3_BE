@@ -44,7 +44,6 @@ swagger:
 
 ollama:
   api:
-    url: ${OLLAMA_API_URL:https://ollama.yhcho.com}
-    username: user1@test.com
-    password: 1234
-    model: ${OLLAMA_MODEL:exaone3.5:2.4b}
+    url: ${OLLAMA_API_URL}
+    key: ${OLLAMA_API_KEY}
+    model: ${OLLAMA_MODEL}

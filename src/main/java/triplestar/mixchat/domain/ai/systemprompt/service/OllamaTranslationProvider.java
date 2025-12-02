@@ -27,11 +27,8 @@ public class OllamaTranslationProvider implements TranslationProvider {
     @Value("${ollama.api.model}")
     private String ollamaModel;
 
-    @Value("${ollama.api.username}")
-    private String username;
-
-    @Value("${ollama.api.password}")
-    private String password;
+    @Value("${ollama.api.key}")
+    private String apiKey;
 
     private WebClient webClient;
 
@@ -39,7 +36,7 @@ public class OllamaTranslationProvider implements TranslationProvider {
     public void init() {
         this.webClient = webClientBuilder
                 .baseUrl(ollamaApiUrl)
-                .defaultHeaders(headers -> headers.setBasicAuth(username, password))
+                .defaultHeaders(headers -> headers.setBearerAuth(apiKey))
                 .build();
     }
 
