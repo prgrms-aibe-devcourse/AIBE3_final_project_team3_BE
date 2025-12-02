@@ -6,6 +6,7 @@ import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -14,6 +15,7 @@ import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationResp;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@Order(1)
 public class OllamaTranslationProvider implements TranslationProvider {
 
     private final WebClient.Builder webClientBuilder;
@@ -25,11 +27,20 @@ public class OllamaTranslationProvider implements TranslationProvider {
     @Value("${ollama.api.model}")
     private String ollamaModel;
 
+    @Value("${ollama.api.username}")
+    private String username;
+
+    @Value("${ollama.api.password}")
+    private String password;
+
     private WebClient webClient;
 
     @PostConstruct
     public void init() {
-        this.webClient = webClientBuilder.baseUrl(ollamaApiUrl).build();
+        this.webClient = webClientBuilder
+                .baseUrl(ollamaApiUrl)
+                .defaultHeaders(headers -> headers.setBasicAuth(username, password))
+                .build();
     }
 
     private record OllamaRequest(String model, String prompt, boolean stream, String format) {}
@@ -80,10 +91,5 @@ public class OllamaTranslationProvider implements TranslationProvider {
                         throw new RuntimeException("Failed to parse Ollama response", e);
                     }
                 });
-    }
-
-    @Override
-    public int getOrder() {
-        return 1; // 2순위로 변경
     }
 }

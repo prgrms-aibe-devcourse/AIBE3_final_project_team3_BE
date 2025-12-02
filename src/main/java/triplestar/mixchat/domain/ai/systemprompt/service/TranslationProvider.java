@@ -5,5 +5,4 @@ import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationResp;
 
 public interface TranslationProvider {
     Mono<TranslationResp> translate(String originalContent);
-    int getOrder();
 }

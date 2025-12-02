@@ -43,6 +43,7 @@ public class GroupChatRoomService {
     private final ChatMemberService chatMemberService;
     private final ChatMessageService chatMessageService;
     private final FriendshipRepository friendshipRepository;
+    private final SystemMessageService systemMessageService;
 
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
         chatMemberService.verifyUserIsMemberOfRoom(memberId, roomId, ChatRoomType.GROUP);
@@ -139,13 +140,7 @@ public class GroupChatRoomService {
             log.info("모든 멤버가 나가 그룹 채팅방이 삭제되었습니다. 방 ID: {}", roomId);
         } else {
             // 7. 남은 멤버가 있으면 시스템 메시지 전송
-            String systemMessageContent = String.format("'%s'님이 나갔습니다.", leavingMemberNickname);
-            MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP, false);
-
-            messagingTemplate.convertAndSend(
-                    "/topic/group/rooms/" + roomId,
-                    systemMessage
-            );
+            systemMessageService.sendLeaveMessage(roomId, leavingMemberNickname, ChatRoomType.GROUP);
         }
     }
 
@@ -188,13 +183,7 @@ public class GroupChatRoomService {
         GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers, userId, friendIdSet, 0L);
 
         // 8. 시스템 메시지 전송 (새 멤버 입장 알림)
-        String systemMessageContent = String.format("'%s'님이 입장했습니다.", member.getNickname());
-        MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP, false);
-
-        messagingTemplate.convertAndSend(
-                "/topic/group/rooms/" + roomId,
-                systemMessage
-        );
+        systemMessageService.sendJoinMessage(roomId, member.getNickname(), ChatRoomType.GROUP);
 
         // 9. WebSocket으로 방의 모든 멤버에게 알림 (방 정보 업데이트)
         allMembers.forEach(cm -> {
@@ -250,14 +239,7 @@ public class GroupChatRoomService {
         chatAuthCacheService.removeMember(roomId, targetMemberId);
 
         // 7. 시스템 메시지 저장 및 전송
-        String systemMessageContent = String.format("'%s'님이 강퇴되었습니다.", targetNickname);
-        // 시스템 메시지는 senderId를 0L, senderNickname을 "System"으로 통일
-        MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP, false);
-
-        messagingTemplate.convertAndSend(
-                "/topic/group/rooms/" + roomId,
-                systemMessage
-        );
+        systemMessageService.sendKickMessage(roomId, targetNickname, ChatRoomType.GROUP);
     }
 
     @Transactional
@@ -284,13 +266,7 @@ public class GroupChatRoomService {
         room.transferOwner(newOwner);
 
         // 5. 시스템 메시지를 저장하고 채팅방 전체에 전송
-        String systemMessageContent = String.format("'%s'님이 '%s'님에게 방장을 위임했습니다.", oldOwnerNickname, newOwnerNickname);
-        MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP, false);
-
-        messagingTemplate.convertAndSend(
-                "/topic/group/rooms/" + roomId,
-                systemMessage
-        );
+        systemMessageService.sendOwnerChangedMessage(roomId, oldOwnerNickname, newOwnerNickname, ChatRoomType.GROUP);
     }
 
     //그룹 채팅방 목록을 DTO로 변환

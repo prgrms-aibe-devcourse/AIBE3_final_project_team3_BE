@@ -1,25 +1,19 @@
 package triplestar.mixchat.domain.ai.systemprompt.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.messages.SystemMessage;
-import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationResp;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
+@Order(2)
 public class OpenAiTranslationProvider implements TranslationProvider {
 
-    private final OpenAiChatModel openAiChatModel;
-    private final ObjectMapper objectMapper;
+    private final ChatClient chatClient;
 
     private static final String SYSTEM_PROMPT = """
         You are Mixchat's English tutor. Analyze the user's sentence and respond ONLY in a single JSON object.
@@ -47,54 +41,20 @@ public class OpenAiTranslationProvider implements TranslationProvider {
         }
         """;
 
-    @Override
-    public Mono<TranslationResp> translate(String originalContent) {
-
-        return Mono.defer(() -> {
-            // 1) 프롬프트 구성
-            Prompt prompt = new Prompt(
-                    new SystemMessage(SYSTEM_PROMPT),
-                    new UserMessage(originalContent)
-            );
-
-            // 2) 동기 LLM 호출
-            ChatResponse response = openAiChatModel.call(prompt);
-
-            // 3) Generation → AssistantMessage → 텍스트 추출
-            String jsonResponse = response.getResult()
-                    .getOutput()
-                    .getText();
-
-            log.debug("OpenAI 원본 응답 (앞 300자): {}",
-                    jsonResponse.length() > 300 ? jsonResponse.substring(0, 300) + "..." : jsonResponse);
-
-            // 4) JSON → TranslationResp 변환
-            try {
-                TranslationResp translation =
-                        objectMapper.readValue(jsonResponse, TranslationResp.class);
-                return Mono.just(translation);
-
-            } catch (Exception e) {
-                log.error("JSON 파싱 실패. 원본 응답: {}", jsonResponse, e);
-
-                // fallback: 혹시 모를 포맷 꼬임을 JsonNode로 한 번 더 시도
-                try {
-                    JsonNode node = objectMapper.readTree(jsonResponse);
-                    TranslationResp fallback = objectMapper.treeToValue(node, TranslationResp.class);
-                    return Mono.just(fallback);
-                } catch (Exception ignore) {
-                    log.error("Fallback JSON 파싱도 실패했습니다.");
-
-                    return Mono.error(new IllegalStateException(
-                            "OpenAI 응답을 TranslationResp로 파싱하는 데 실패했습니다. raw=" + jsonResponse, e
-                    ));
-                }
-            }
-        });
+    public OpenAiTranslationProvider(ChatClient.Builder chatClientBuilder) {
+        this.chatClient = chatClientBuilder
+                .defaultSystem(SYSTEM_PROMPT)
+                .build();
     }
 
     @Override
-    public int getOrder() {
-        return 2; // 1순위
+    public Mono<TranslationResp> translate(String originalContent) {
+        return Mono.fromCallable(() -> chatClient.prompt()
+                        .user(originalContent)
+                        .call()
+                        .entity(TranslationResp.class)
+                )
+                .subscribeOn(Schedulers.boundedElastic()) // Blocking I/O 처리를 위해 별도 스레드 풀 사용
+                .doOnError(e -> log.error("OpenAI 번역 중 오류 발생: {}", e.getMessage(), e));
     }
 }
