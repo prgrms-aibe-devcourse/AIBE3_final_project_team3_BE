@@ -3,15 +3,19 @@ package triplestar.mixchat.domain.chat.chat.service;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
+import triplestar.mixchat.domain.chat.chat.dto.RoomMemberUpdateResp;
+import triplestar.mixchat.domain.chat.chat.dto.SubscriberCountUpdateResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.repository.AIChatRoomRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.DirectChatRoomRepository;
 import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
+import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.cache.ChatAuthCacheService;
@@ -30,6 +34,7 @@ public class ChatMemberService {
     private final DirectChatRoomRepository directChatRoomRepository;
     private final GroupChatRoomRepository groupChatRoomRepository;
     private final AIChatRoomRepository aiChatRoomRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
 
     private Member findMemberById(Long memberId) {
@@ -172,6 +177,31 @@ public class ChatMemberService {
     // 채팅방의 전체 멤버 수 조회 (DB)
     public int getTotalMemberCount(Long roomId, ChatRoomType chatRoomType) {
         return (int) chatRoomMemberRepository.countByChatRoomIdAndChatRoomType(roomId, chatRoomType);
+    }
+
+    // 구독자 수 변경 브로드캐스트
+    public void broadcastSubscriberCount(Long roomId, ChatRoomType chatRoomType) {
+        if (chatRoomType == ChatRoomType.AI) return;
+
+        int subscriberCount = getSubscriberCount(roomId);
+        int totalMemberCount = getTotalMemberCount(roomId, chatRoomType);
+
+        SubscriberCountUpdateResp resp = SubscriberCountUpdateResp.of(subscriberCount, totalMemberCount);
+        String destination = "/topic/" + chatRoomType.name().toLowerCase() + "/rooms/" + roomId;
+        messagingTemplate.convertAndSend(destination, resp);
+    }
+
+    // 멤버 변경(입/퇴장/강퇴) 브로드캐스트
+    public void broadcastMemberUpdate(Long roomId, ChatRoomType chatRoomType, Member member, String type) {
+        if (chatRoomType == ChatRoomType.AI) return;
+
+        int subscriberCount = getSubscriberCount(roomId);
+        int totalMemberCount = getTotalMemberCount(roomId, chatRoomType);
+        MemberSummaryResp memberSummary = MemberSummaryResp.from(member);
+
+        RoomMemberUpdateResp resp = new RoomMemberUpdateResp(roomId, type, memberSummary, totalMemberCount, subscriberCount);
+        String destination = "/topic/" + chatRoomType.name().toLowerCase() + "/rooms/" + roomId;
+        messagingTemplate.convertAndSend(destination, resp);
     }
 }
 

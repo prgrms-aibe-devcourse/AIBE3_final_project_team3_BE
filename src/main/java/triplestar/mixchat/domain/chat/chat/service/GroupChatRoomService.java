@@ -28,6 +28,7 @@ import triplestar.mixchat.domain.member.friend.repository.FriendshipRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.cache.ChatAuthCacheService;
+import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +41,7 @@ public class GroupChatRoomService {
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatAuthCacheService chatAuthCacheService;
+    private final ChatSubscriberCacheService chatSubscriberCacheService;
     private final ChatMemberService chatMemberService;
     private final ChatMessageService chatMessageService;
     private final FriendshipRepository friendshipRepository;
@@ -131,6 +133,14 @@ public class GroupChatRoomService {
         // 5. 캐시에서 멤버 제거
         chatAuthCacheService.removeMember(roomId, currentUserId);
 
+        // Redis 구독자 캐시에서 세션 제거
+        Set<String> memberSessions = chatSubscriberCacheService.getSessionsByMemberId(roomId, currentUserId);
+        if (memberSessions != null) {
+            for (String sessionId : memberSessions) {
+                chatSubscriberCacheService.removeSubscriber(roomId, currentUserId, sessionId);
+            }
+        }
+
         // 6. 남은 멤버 수 확인 후 대화방 삭제
         long remainingMembersCount = chatRoomMemberRepository.countByChatRoomIdAndChatRoomType(
                 roomId, ChatRoomType.GROUP);
@@ -141,6 +151,8 @@ public class GroupChatRoomService {
         } else {
             // 7. 남은 멤버가 있으면 시스템 메시지 전송
             systemMessageService.sendLeaveMessage(roomId, leavingMemberNickname, ChatRoomType.GROUP);
+            // 멤버 업데이트 브로드캐스트
+            chatMemberService.broadcastMemberUpdate(roomId, ChatRoomType.GROUP, memberToRemove.getMember(), "LEAVE");
         }
     }
 
@@ -184,6 +196,8 @@ public class GroupChatRoomService {
 
         // 8. 시스템 메시지 전송 (새 멤버 입장 알림)
         systemMessageService.sendJoinMessage(roomId, member.getNickname(), ChatRoomType.GROUP);
+        // 멤버 업데이트 브로드캐스트
+        chatMemberService.broadcastMemberUpdate(roomId, ChatRoomType.GROUP, member, "JOIN");
 
         // 9. WebSocket으로 방의 모든 멤버에게 알림 (방 정보 업데이트)
         allMembers.forEach(cm -> {
@@ -238,8 +252,18 @@ public class GroupChatRoomService {
         // 6. 캐시에서 멤버 제거
         chatAuthCacheService.removeMember(roomId, targetMemberId);
 
+        // Redis 구독자 캐시에서 세션 제거
+        Set<String> memberSessions = chatSubscriberCacheService.getSessionsByMemberId(roomId, targetMemberId);
+        if (memberSessions != null) {
+            for (String sessionId : memberSessions) {
+                chatSubscriberCacheService.removeSubscriber(roomId, targetMemberId, sessionId);
+            }
+        }
+
         // 7. 시스템 메시지 저장 및 전송
         systemMessageService.sendKickMessage(roomId, targetNickname, ChatRoomType.GROUP);
+        // 멤버 업데이트 브로드캐스트
+        chatMemberService.broadcastMemberUpdate(roomId, ChatRoomType.GROUP, memberToKick.getMember(), "KICK");
     }
 
     @Transactional

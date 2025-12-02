@@ -133,17 +133,27 @@ public class ChatMessageService {
         // 기본값: size = 25, 최대 100
         int pageSize = (size != null && size > 0 && size <= 100) ? size : 25;
 
-        // 메시지 조회 (sequence 내림차순)
+        // 1. 채팅방의 모든 멤버 조회 (읽음 상태 확인 및 입장 시간 확인용)
+        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
+
+        // 2. 요청자의 입장 시간 확인
+        LocalDateTime joinDate = allMembers.stream()
+                .filter(m -> m.getMember().getId().equals(requesterId))
+                .map(ChatMember::getCreatedAt)
+                .findFirst()
+                .orElse(LocalDateTime.MIN);
+
+        // 3. 메시지 조회 (sequence 내림차순 + 입장 시간 이후)
         List<ChatMessage> messages;
         if (cursor == null) {
             // 최신 메시지부터 pageSize개
-            messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(
-                roomId, chatRoomType, PageRequest.of(0, pageSize)
+            messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeAndCreatedAtGreaterThanEqualOrderBySequenceDesc(
+                roomId, chatRoomType, joinDate, PageRequest.of(0, pageSize)
             );
         } else {
             // cursor 이전 메시지 pageSize개
-            messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeAndSequenceLessThanOrderBySequenceDesc(
-                roomId, chatRoomType, cursor, PageRequest.of(0, pageSize)
+            messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeAndSequenceLessThanAndCreatedAtGreaterThanEqualOrderBySequenceDesc(
+                roomId, chatRoomType, cursor, joinDate, PageRequest.of(0, pageSize)
             );
         }
 
@@ -157,9 +167,6 @@ public class ChatMessageService {
                 .collect(Collectors.toList());
         Map<Long, String> senderNames = memberRepository.findAllById(senderIds).stream()
                 .collect(Collectors.toMap(Member::getId, Member::getNickname));
-
-        // 채팅방의 모든 멤버 조회 (읽음 상태 확인용)
-        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
 
         List<MessageResp> messageResps = messages.stream()
                 .map(message -> {
