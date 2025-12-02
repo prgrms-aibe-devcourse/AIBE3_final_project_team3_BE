@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.ai.chatassist;
+package triplestar.mixchat.domain.ai.systemprompt.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
@@ -7,7 +7,6 @@ import triplestar.mixchat.domain.ai.systemprompt.constant.PromptKey;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TempAiReq;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TempAiResp;
 import triplestar.mixchat.domain.ai.systemprompt.entity.SystemPrompt;
-import triplestar.mixchat.domain.ai.systemprompt.service.SystemPromptService;
 
 @Service
 @RequiredArgsConstructor

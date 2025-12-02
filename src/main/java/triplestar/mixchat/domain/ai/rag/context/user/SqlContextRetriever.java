@@ -14,7 +14,7 @@ import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNo
 public class SqlContextRetriever implements ContextRetriever {
 
     private final LearningNoteRepository learningNoteRepository;
-    private final int mintItems;
+    private final int minItems;
     private final int maxItems;
 
     public SqlContextRetriever(
@@ -25,15 +25,15 @@ public class SqlContextRetriever implements ContextRetriever {
             int maxItems
     ) {
         this.learningNoteRepository = learningNoteRepository;
-        this.mintItems = minItems;
+        this.minItems = minItems;
         this.maxItems = maxItems;
     }
 
     @Override
     public List<UserContextChunk> retrieve(Long userId, String userMessage, int itemSize) {
-        if (itemSize < mintItems || itemSize > maxItems) {
+        if (itemSize < minItems || itemSize > maxItems) {
             throw new IllegalArgumentException(
-                    "컨텍스트 청크 수는 %d에서 %d 사이여야 합니다.".formatted(mintItems, maxItems)
+                    "컨텍스트 청크 수는 %d에서 %d 사이여야 합니다.".formatted(minItems, maxItems)
             );
         }
 
