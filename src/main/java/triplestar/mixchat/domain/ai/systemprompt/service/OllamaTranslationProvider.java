@@ -43,37 +43,21 @@ public class OllamaTranslationProvider implements TranslationProvider {
     private record OllamaRequest(String model, String prompt, boolean stream, String format) {}
     private record OllamaResponse(String response) {}
 
+    private static final String SYSTEM_PROMPT = """
+        Translate Korean to English. Correct broken English. Output JSON only.
+
+        Format: {"original_content":"input","corrected_content":"translation or null","feedback":[{"tag":"TRANSLATION|GRAMMAR","problem":"word","correction":"fix","extra":"reason"}]}
+
+        Rules: Korean→English always. Perfect English→null. Broken English→fix.
+        """;
+
     @Override
     public Mono<TranslationResp> translate(String originalContent) {
-        String systemPrompt = """
-            You are Mixchat's English tutor. Analyze the user's sentence and respond in JSON format with translation, tags, corrections, and explanations.
-            
-            RULES:
-            1. If the user's sentence is already a natural and grammatically correct English sentence, respond with a JSON where "corrected_content" is null.
-            2. If the sentence is in Korean, a mix of languages, or is unnatural/incorrect English, translate and correct it into a single, natural English sentence.
-            3. Provide feedback for each issue found, including tag, problem, correction, and extra explanation.
-            4. The output format MUST be a single raw JSON object. Do not include any other text or markdown.
-            
-            JSON Structure:
-            {
-              "original_content": (The user's original input string),
-              "corrected_content": (The corrected, natural English sentence. Null if no changes are needed.),
-              "feedback": [
-                {
-                  "tag": (Issue type: GRAMMAR, VOCABULARY, TRANSLATION),
-                  "problem": (The problematic word/phrase),
-                  "correction": (The corrected word/phrase),
-                  "extra": (Explanation of the correction)
-                }, ...
-              ]
-            }
-            
-            User input:
-            {input}
-            """;
+        // 시스템 프롬프트에 사용자 입력 주입 (Ollama Native API 방식은 프롬프트가 하나)
+        // Chat 포맷을 흉내내기 위해 텍스트로 합침
+        String fullPrompt = SYSTEM_PROMPT + "\n\nUser input:\n" + originalContent;
 
-        String prompt = systemPrompt.replace("{input}", originalContent);
-        OllamaRequest ollamaRequest = new OllamaRequest(ollamaModel, prompt, false, "json");
+        OllamaRequest ollamaRequest = new OllamaRequest(ollamaModel, fullPrompt, false, "json");
 
         return webClient.post()
                 .uri("/api/generate")
@@ -87,6 +71,7 @@ public class OllamaTranslationProvider implements TranslationProvider {
                         log.error("Ollama 응답 JSON 파싱 실패: {}", ollamaResponse.response(), e);
                         throw new RuntimeException("Failed to parse Ollama response", e);
                     }
-                });
+                })
+                .doOnError(e -> log.error("Ollama 번역 중 오류 발생: {}", e.getMessage(), e));
     }
 }

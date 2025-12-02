@@ -1,5 +1,6 @@
 package triplestar.mixchat.domain.chat.chat.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -23,5 +24,22 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
         ChatRoomType chatRoomType,
         Long sequence,
         Pageable pageable
+    );
+
+    // [추가] 페이징 + 입장 시간 필터: 최신 메시지부터 N개
+    List<ChatMessage> findByChatRoomIdAndChatRoomTypeAndCreatedAtGreaterThanEqualOrderBySequenceDesc(
+            Long chatRoomId,
+            ChatRoomType chatRoomType,
+            LocalDateTime joinDate,
+            Pageable pageable
+    );
+
+    // [추가] 페이징 + 입장 시간 필터: cursor 이전 메시지 N개
+    List<ChatMessage> findByChatRoomIdAndChatRoomTypeAndSequenceLessThanAndCreatedAtGreaterThanEqualOrderBySequenceDesc(
+            Long chatRoomId,
+            ChatRoomType chatRoomType,
+            Long sequence,
+            LocalDateTime joinDate,
+            Pageable pageable
     );
 }

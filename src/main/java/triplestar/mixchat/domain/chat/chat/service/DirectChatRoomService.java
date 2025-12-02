@@ -34,6 +34,7 @@ public class DirectChatRoomService {
     private final ChatAuthCacheService chatAuthCacheService;
     private final ChatMessageService chatMessageService;
     private final ChatMemberService chatMemberService;
+    private final SystemMessageService systemMessageService;
     // todo: 각 서비스 Facade패턴 도입 고려
 
     private Member findMemberById(Long memberId) {
@@ -54,37 +55,44 @@ public class DirectChatRoomService {
         Long smallerId = Math.min(member1.getId(), member2.getId());
         Long largerId = Math.max(member1.getId(), member2.getId());
 
-        // 1:1 채팅방 조회 후 없으면 생성
-        DirectChatRoom room = directChatRoomRepository.findByUser1_IdAndUser2_Id(smallerId, largerId) // 정렬된 ID를 쿼리에 사용
-                .orElseGet(() -> {
-                    //Member 객체를 정적팩토리메서드 DirectChatRoom.create에 전달
-                    DirectChatRoom newRoom = DirectChatRoom.create(member1, member2);
-                    DirectChatRoom savedRoom = directChatRoomRepository.save(newRoom);
+        // 1:1 채팅방 조회
+        DirectChatRoom room = directChatRoomRepository.findByUser1_IdAndUser2_Id(smallerId, largerId)
+                .orElse(null);
 
-                    // ChatMember 생성 및 저장
-                    chatRoomMemberRepository.save(new ChatMember(member1, savedRoom.getId(), ChatRoomType.DIRECT));
-                    chatRoomMemberRepository.save(new ChatMember(member2, savedRoom.getId(), ChatRoomType.DIRECT));
+        if (room == null) {
+            // 방이 없으면 생성
+            DirectChatRoom newRoom = DirectChatRoom.create(member1, member2);
+            room = directChatRoomRepository.save(newRoom);
 
-                    // 캐시 관리
-                    chatAuthCacheService.addMember(savedRoom.getId(), member1Id);
-                    chatAuthCacheService.addMember(savedRoom.getId(), member2Id);
+            // ChatMember 생성 및 저장
+            chatRoomMemberRepository.save(new ChatMember(member1, room.getId(), ChatRoomType.DIRECT));
+            chatRoomMemberRepository.save(new ChatMember(member2, room.getId(), ChatRoomType.DIRECT));
 
-                    // DTO 변환
-                    DirectChatRoomResp roomDto = DirectChatRoomResp.from(savedRoom, 0L);
+            // 캐시 관리
+            chatAuthCacheService.addMember(room.getId(), member1Id);
+            chatAuthCacheService.addMember(room.getId(), member2Id);
 
-                    // 웹소켓 메시지 발송
-                    messagingTemplate.convertAndSendToUser(member1.getId().toString(), "/topic/rooms", roomDto);
-                    messagingTemplate.convertAndSendToUser(member2.getId().toString(), "/topic/rooms", roomDto);
+            // DTO 변환 및 알림
+            DirectChatRoomResp roomDto = DirectChatRoomResp.from(room, 0L);
+            messagingTemplate.convertAndSendToUser(member1.getId().toString(), "/topic/rooms", roomDto);
+            messagingTemplate.convertAndSendToUser(member2.getId().toString(), "/topic/rooms", roomDto);
 
-                    // 채팅 시작 첫 메시지 전송 (TODO 해결)
-                    chatMessageService.saveMessage(savedRoom.getId(), member1Id, senderNickname, "1:1 채팅이 시작되었습니다.", ChatMessage.MessageType.SYSTEM, ChatRoomType.DIRECT, false);
-
-                    return savedRoom;
-                });
+            // 채팅 시작 첫 메시지 전송
+            systemMessageService.sendDirectChatStartedMessage(room.getId(), ChatRoomType.DIRECT);
+        } else {
+            // 방이 있으면 멤버십 복구 확인 (나갔다가 다시 들어오는 경우)
+            restoreMemberIfMissing(room.getId(), member1, member1Id);
+            restoreMemberIfMissing(room.getId(), member2, member2Id);
+        }
         
-        // DTO 변환
-        // 이 시점에서는 안읽은 수를 정확히 계산하기 어려우므로 0으로 설정하고, 목록 조회 시 정확한 값을 제공
         return DirectChatRoomResp.from(room, 0L);
+    }
+
+    private void restoreMemberIfMissing(Long roomId, Member member, Long memberId) {
+        if (!chatRoomMemberRepository.existsByChatRoomIdAndChatRoomTypeAndMember_Id(roomId, ChatRoomType.DIRECT, memberId)) {
+            chatRoomMemberRepository.save(new ChatMember(member, roomId, ChatRoomType.DIRECT));
+            chatAuthCacheService.addMember(roomId, memberId);
+        }
     }
 
     // 1:1 채팅방 나가기

@@ -41,6 +41,11 @@ public class SystemMessageService {
         sendSystemMessage(roomId, type, "OWNER_CHANGED", Map.of("oldOwner", oldOwner, "newOwner", newOwner));
     }
 
+    @Transactional
+    public void sendDirectChatStartedMessage(Long roomId, ChatRoomType type) {
+        sendSystemMessage(roomId, type, "DIRECT_CHAT_STARTED", Map.of());
+    }
+
     private void sendSystemMessage(Long roomId, ChatRoomType type, String eventType, Map<String, String> params) {
         try {
             Map<String, Object> contentMap = Map.of(

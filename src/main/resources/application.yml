@@ -44,6 +44,6 @@ swagger:
 
 ollama:
   api:
-    url: ${OLLAMA_API_URL}
-    key: ${OLLAMA_API_KEY}
-    model: ${OLLAMA_MODEL}
+    url: ${OLLAMA_API_URL:http://localhost:11434}
+    key: ${OLLAMA_API_KEY:dummy}
+    model: ${OLLAMA_MODEL:llama3}
