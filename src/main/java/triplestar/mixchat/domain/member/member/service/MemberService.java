@@ -115,7 +115,10 @@ public class MemberService {
     @Transactional
     public void deleteSoftly(Long memberId) {
         Member member = findMemberById(memberId);
-        s3Uploader.deleteFileByUrl(member.getProfileImageUrl());
+        String profileUrl = member.getProfileImageUrl();
+        if (profileUrl != null && !profileUrl.equals(defaultProfileBaseURL)) {
+            s3Uploader.deleteFileByUrl(profileUrl);
+        }
 
         member.deleteSoftly();
         member.updateProfileImageUrl(defaultProfileBaseURL);
