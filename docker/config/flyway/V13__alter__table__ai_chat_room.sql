@@ -1,6 +1,8 @@
 ALTER TABLE ai_chat_rooms
 DROP COLUMN ai_model_id,
-    ADD COLUMN current_sequence BIGINT NOT NULL DEFAULT 0 AFTER ai_persona;
+    DROP COLUMN ai_persona,
+    ADD COLUMN persona_id BIGINT NOT NULL AFTER name,
+    ADD COLUMN current_sequence BIGINT NOT NULL DEFAULT 0 AFTER persona_id;
 
 INSERT INTO members (
     email, password, name, nickname, country,

@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackReq;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackResp;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomPageDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
@@ -73,7 +74,8 @@ public class ApiV1ChatController implements ApiChatController {
             @Valid @RequestBody CreateDirectChatReq request
     ) {
         DirectChatRoomResp roomResp =
-                directChatRoomService.findOrCreateDirectChatRoom(currentUser.getId(), request.partnerId(), currentUser.getNickname());
+                directChatRoomService.findOrCreateDirectChatRoom(currentUser.getId(), request.partnerId(),
+                        currentUser.getNickname());
         return CustomResponse.ok("1:1 채팅방 생성/조회에 성공하였습니다.", roomResp);
     }
 
@@ -90,18 +92,18 @@ public class ApiV1ChatController implements ApiChatController {
 
     @PostMapping("/rooms/ai")
     public CustomResponse<AIChatRoomResp> createAiRoom(
-        @AuthenticationPrincipal CustomUserDetails currentUser,
-        @Valid @RequestBody CreateAIChatReq request
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody CreateAIChatReq request
     ) {
         AIChatRoomResp roomResp =
-            aiChatRoomService.createAIChatRoom(currentUser.getId(), request);
+                aiChatRoomService.createAIChatRoom(currentUser.getId(), request);
         return CustomResponse.ok("AI 채팅방 생성에 성공하였습니다.", roomResp);
     }
 
     @Override
     @GetMapping("/rooms/direct")
     public CustomResponse<List<DirectChatRoomResp>> getDirectChatRooms(
-        @AuthenticationPrincipal CustomUserDetails currentUser
+            @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         List<DirectChatRoomResp> rooms = directChatRoomService.getRoomsForUser(currentUser.getId());
         return CustomResponse.ok("1:1 채팅방 목록 조회에 성공하였습니다.", rooms);
@@ -110,7 +112,7 @@ public class ApiV1ChatController implements ApiChatController {
     @Override
     @GetMapping("/rooms/group")
     public CustomResponse<List<GroupChatRoomResp>> getGroupChatRooms(
-        @AuthenticationPrincipal CustomUserDetails currentUser
+            @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         List<GroupChatRoomResp> rooms = groupChatRoomService.getRoomsForUser(currentUser.getId());
         return CustomResponse.ok("사용자가 속한 그룹 채팅방 목록 조회에 성공하였습니다.", rooms);
@@ -139,7 +141,7 @@ public class ApiV1ChatController implements ApiChatController {
     @Override
     @GetMapping("/rooms/ai")
     public CustomResponse<List<AIChatRoomResp>> getAiChatRooms(
-        @AuthenticationPrincipal CustomUserDetails currentUser
+            @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         List<AIChatRoomResp> rooms = aiChatRoomService.getRoomsForUser(currentUser.getId());
         return CustomResponse.ok("AI 채팅방 목록 조회에 성공하였습니다.", rooms);
@@ -155,7 +157,8 @@ public class ApiV1ChatController implements ApiChatController {
             @Valid @RequestBody TextMessageReq request
     ) {
         MessageResp messageResp =
-                chatMessageService.saveMessage(roomId, currentUser.getId(), currentUser.getNickname(), request.content(), ChatMessage.MessageType.TEXT, chatRoomType, request.isTranslateEnabled());
+                chatMessageService.saveMessage(roomId, currentUser.getId(), currentUser.getNickname(),
+                        request.content(), ChatMessage.MessageType.TEXT, chatRoomType, request.isTranslateEnabled());
         return CustomResponse.ok("메시지 전송에 성공하였습니다.", messageResp);
     }
 
@@ -171,7 +174,8 @@ public class ApiV1ChatController implements ApiChatController {
         // 메시지 조회 전에 읽음 처리 (채팅방 입장 시 자동 읽음)
         chatMemberService.markAsReadOnEnter(currentUser.getId(), roomId, chatRoomType);
 
-        MessagePageResp messagePageResp = chatMessageService.getMessagesWithSenderInfo(roomId, chatRoomType, currentUser.getId(), cursor, size);
+        MessagePageResp messagePageResp = chatMessageService.getMessagesWithSenderInfo(roomId, chatRoomType,
+                currentUser.getId(), cursor, size);
         ChatRoomPageDataResp responseData = ChatRoomPageDataResp.of(chatRoomType, messagePageResp);
         return CustomResponse.ok("메시지 목록과 대화 타입 조회에 성공하였습니다.", responseData);
     }
@@ -187,7 +191,8 @@ public class ApiV1ChatController implements ApiChatController {
     ) {
         String fileUrl = s3Uploader.uploadFile(file, "chat-files");
         MessageResp messageResp =
-                chatMessageService.saveFileMessage(roomId, currentUser.getId(), currentUser.getNickname(), fileUrl, messageType, chatRoomType);
+                chatMessageService.saveFileMessage(roomId, currentUser.getId(), currentUser.getNickname(), fileUrl,
+                        messageType, chatRoomType);
 
         String destination = "/topic/" + chatRoomType.name().toLowerCase() + "/rooms/" + roomId;
         messagingTemplate.convertAndSend(destination, messageResp);

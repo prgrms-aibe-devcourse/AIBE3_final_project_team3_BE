@@ -17,15 +17,15 @@ public record AIChatRoomResp(
         @Schema(description = "채팅방 이름", example = "AI 챗봇방", requiredMode = REQUIRED)
         String name,
 
-        @NotBlank
-        @Schema(description = "AI 페르소나", example = "친절한 비서", requiredMode = REQUIRED)
-        String aiPersona
+        @NotNull
+        @Schema(description = "AI 페르소나 Id", example = "1", requiredMode = REQUIRED)
+        Long aiPersona
 ) {
     public static AIChatRoomResp from(AIChatRoom entity) {
         return new AIChatRoomResp(
                 entity.getId(),
                 entity.getName(),
-                entity.getAiPersona()
+                entity.getPersonaId()
         );
     }
 }
