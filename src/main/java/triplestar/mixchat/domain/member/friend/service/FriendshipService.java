@@ -13,7 +13,6 @@ import triplestar.mixchat.domain.member.friend.dto.FriendSummaryResp;
 import triplestar.mixchat.domain.member.friend.entity.Friendship;
 import triplestar.mixchat.domain.member.friend.repository.FriendshipRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
-import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.presence.service.PresenceService;
 
 // 친구 관계 요청 검증은 FriendshipRequestService가 처리
@@ -23,7 +22,6 @@ import triplestar.mixchat.domain.member.presence.service.PresenceService;
 public class FriendshipService {
 
     private final FriendshipRepository friendshipRepository;
-    private final MemberRepository memberRepository;
     private final PresenceService presenceService;
 
     public boolean isFriends(Long memberId1, Long memberId2) {

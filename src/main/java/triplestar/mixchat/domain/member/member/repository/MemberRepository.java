@@ -1,10 +1,12 @@
 package triplestar.mixchat.domain.member.member.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -27,6 +29,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
                 m.interests,
                 m.description,
                 m.profileImageUrl,
+                m.lastSeenAt,
             
                 /* isFriend (boolean) */
                 EXISTS (
@@ -73,4 +76,12 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Page<Member> findByIds(Long currentUserId, List<Long> onlineMemberIds, Pageable pageable);
 
     Page<Member> findAllByIdIn(List<Long> ids, Pageable pageable);
+
+    @Modifying
+    @Query("""
+            UPDATE Member m
+            SET m.lastSeenAt = :lastSeenAt
+            WHERE m.id = :memberId
+    """)
+    void updateLastSeenAt(Long memberId, LocalDateTime lastSeenAt);
 }

@@ -46,7 +46,7 @@ public class StompHandler implements ExecutorChannelInterceptor {
     public StompHandler(
             AuthJwtProvider authJwtProvider,
             MemberRepository memberRepository,
-            @Lazy ChatMemberService chatMemberService) {
+            ChatMemberService chatMemberService) {
         this.authJwtProvider = authJwtProvider;
         this.memberRepository = memberRepository;
         this.chatMemberService = chatMemberService;
