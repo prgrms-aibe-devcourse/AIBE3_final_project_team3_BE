@@ -44,7 +44,7 @@ public class AIChatRoomService {
 
         UserPrompt persona = userPromptRepository.findById(req.personaId())
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 페르소나 ID입니다. ID: " + req.personaId()));
-        AIChatRoom newRoom = AIChatRoom.create(req.roomName(), persona, req.roomType());
+        AIChatRoom newRoom = AIChatRoom.create(creator, req.roomName(), persona, req.roomType());
         AIChatRoom savedRoom = aiChatRoomRepository.save(newRoom);
 
         ChatMember chatMember = new ChatMember(creator, savedRoom.getId(), ChatRoomType.AI);

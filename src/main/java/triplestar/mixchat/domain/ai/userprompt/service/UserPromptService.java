@@ -9,7 +9,7 @@ import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
 import triplestar.mixchat.domain.ai.userprompt.constant.UserPromptType;
 import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptReq;
-import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptListResp;
+import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptResp;
 import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptDetailResp;
 import triplestar.mixchat.domain.ai.userprompt.repository.UserPromptRepository;
 
@@ -75,16 +75,16 @@ public class UserPromptService {
     }
 
     @Transactional(readOnly = true)
-    public List<UserPromptListResp> list(Long memberId) {
+    public List<UserPromptResp> list(Long memberId) {
         Member member = getMember(memberId);
         MembershipGrade grade = member.getMembershipGrade();
         List<UserPrompt> userPrompts;
         if (grade == MembershipGrade.PREMIUM) {
             userPrompts = userPromptRepository.findForPremium(UserPromptType.PRE_SCRIPTED, UserPromptType.CUSTOM, member.getId());
         } else {
-            userPrompts = userPromptRepository.findByType(UserPromptType.PRE_SCRIPTED);
+            userPrompts = userPromptRepository.findByPromptType(UserPromptType.PRE_SCRIPTED);
         }
-        return userPrompts.stream().map(UserPromptListResp::new).collect(Collectors.toList());
+        return userPrompts.stream().map(UserPromptResp::new).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
