@@ -23,6 +23,8 @@ import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
 import triplestar.mixchat.domain.chat.chat.dto.RoomLastMessageUpdateResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
+import triplestar.mixchat.domain.chat.chat.repository.AIChatRoomRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.DirectChatRoomRepository;
@@ -49,6 +51,7 @@ public class ChatMessageService {
     private final ChatSubscriberCacheService subscriberCacheService;
     private final ChatNotificationService chatNotificationService;
     private final jakarta.persistence.EntityManager entityManager;
+    private final AIChatRoomRepository aIChatRoomRepository;
 
     @Transactional
     public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatRoomType chatRoomType, boolean isTranslateEnabled) {
@@ -71,6 +74,11 @@ public class ChatMessageService {
         // 메시지 생성 및 저장
         ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType, isTranslateEnabled);
         ChatMessage savedMessage = chatMessageRepository.save(message);
+
+        // AI 채팅방인 경우, 읽음 처리 및 알림 생략
+        if (chatRoomType == ChatRoomType.AI) {
+            return MessageResp.from(savedMessage, senderNickname);
+        }
 
         // TEXT 타입만 번역
         if (isTranslateEnabled && messageType == ChatMessage.MessageType.TEXT) {
@@ -264,23 +272,24 @@ public class ChatMessageService {
 
     // Sequence 생성 (비관적 락으로 동시성 제어)
     private Long generateSequence(Long roomId, ChatRoomType chatRoomType) {
-        Long sequence = switch (chatRoomType) {
-            case DIRECT -> {
-                var room = directChatRoomRepository.findByIdWithLock(roomId)
-                        .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId));
-                Long newSeq = room.generateNextSequence();
-                entityManager.flush(); // 즉시 DB에 반영
-                yield newSeq;
-            }
-            case GROUP -> {
-                var room = groupChatRoomRepository.findByIdWithLock(roomId)
-                        .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId));
-                Long newSeq = room.generateNextSequence();
-                entityManager.flush(); // 즉시 DB에 반영
-                yield newSeq;
-            }
-            default -> throw new UnsupportedOperationException("지원하지 않는 채팅방 타입입니다: " + chatRoomType);
+        // 1) room 개별 조회 및 시퀀스 생성
+        Long newSeq = switch (chatRoomType) {
+            case DIRECT -> directChatRoomRepository.findByIdWithLock(roomId)
+                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
+                    .generateNextSequence();
+
+            case GROUP -> groupChatRoomRepository.findByIdWithLock(roomId)
+                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
+                    .generateNextSequence();
+
+            // AI chat은 동시성 문제 없음
+            case AI -> aIChatRoomRepository.findById(roomId)
+                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
+                    .generateNextSequence();
         };
-        return sequence;
+
+        // 2) 즉시 DB 반영
+        entityManager.flush();
+        return newSeq;
     }
 }

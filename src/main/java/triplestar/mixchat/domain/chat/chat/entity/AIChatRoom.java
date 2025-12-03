@@ -17,28 +17,28 @@ public class AIChatRoom extends BaseEntity {
 
     // AI 채팅방에만 필요한 필드 추가
     @Column(nullable = false)
-    private String aiModelId; // 사용되는 AI 모델 ID
-    @Column(nullable = false)
     private String aiPersona; // AI 페르소나 (성격, 역할 등)
+    @Column(nullable = false)
+    private Long currentSequence = 0L; // 채팅방 메시지 순서 번호
 
-    private AIChatRoom(String name, String aiModelId, String aiPersona) {
+    private AIChatRoom(String name, String aiPersona) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("채팅방 이름(name)은 비어 있을 수 없습니다.");
-        }
-        if (aiModelId == null || aiModelId.isBlank()) {
-            throw new IllegalArgumentException("AI 모델 ID는 비어 있을 수 없습니다.");
         }
         if (aiPersona == null || aiPersona.isBlank()) {
             throw new IllegalArgumentException("AI 페르소나는 비어 있을 수 없습니다.");
         }
         this.name = name;
-        this.aiModelId = aiModelId;
         this.aiPersona = aiPersona;
     }
 
     // AI 채팅방 생성용 정적 팩토리 메서드
 
-    public static AIChatRoom create(String name, String aiModelId, String aiPersona) {
-        return new AIChatRoom(name, aiModelId, aiPersona);
+    public static AIChatRoom create(String name, String aiPersona) {
+        return new AIChatRoom(name, aiPersona);
+    }
+
+    public Long generateNextSequence() {
+        return ++this.currentSequence;
     }
 }

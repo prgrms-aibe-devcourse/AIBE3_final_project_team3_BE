@@ -47,6 +47,17 @@ public class ApiV1ChatSocketController {
                 messageReq.isTranslateEnabled()
         );
 
+        if (messageReq.chatRoomType() == ChatRoomType.AI) {
+            String chat = ragTutorService.chat(senderId, messageReq.roomId(), messageReq.content());
+            chatMessageService.saveMessage(
+                    messageReq.roomId(),
+                    BOT_ID,
+                    "AI Tutor",
+                    chat,
+                    MessageType.TEXT,
+                    messageReq.chatRoomType()
+            );
+        }
         log.debug("채팅방 {}에 메시지 전송 완료: {}", messageReq.roomId(), messageResp.content());
     }
 }
