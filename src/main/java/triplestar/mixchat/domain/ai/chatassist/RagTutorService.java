@@ -3,6 +3,7 @@ package triplestar.mixchat.domain.ai.chatassist;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.ai.rag.RagPromptBuilder;
 import triplestar.mixchat.domain.ai.rag.context.chathistory.ChatHistoryProvider;
@@ -10,8 +11,8 @@ import triplestar.mixchat.domain.ai.rag.context.chathistory.ChatTurn;
 import triplestar.mixchat.domain.ai.rag.context.user.ContextRetriever;
 import triplestar.mixchat.domain.ai.rag.context.user.UserContextChunk;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class RagTutorService {
 
     private final ContextRetriever contextRetriever;            // 컨텍스트 검색기(Sql, 벡터 DB 등)
