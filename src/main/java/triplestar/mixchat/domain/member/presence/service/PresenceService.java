@@ -45,7 +45,6 @@ public class PresenceService {
             return;
         }
 
-        // 성능상 이슈 있을 시 배치 처리로 변경 고려
         expiredPresences.stream().forEach(expiredPresence -> {
             Long memberId = expiredPresence.memberId();
             Long lastSeenAt = expiredPresence.lastSeenAt();

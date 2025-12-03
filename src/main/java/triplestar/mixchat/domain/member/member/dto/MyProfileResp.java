@@ -11,8 +11,8 @@ public record MyProfileResp(
         @Schema(description = "회원 고유 ID", example = "123", requiredMode = REQUIRED)
         Long memberId,
 
-        @Schema(description = "이메일", example = "email@.example.com", requiredMode = REQUIRED)
-        String Email,
+        @Schema(description = "이메일", example = "email@example.com", requiredMode = REQUIRED)
+        String email,
 
         @Schema(description = "이름", example = "홍길동", requiredMode = REQUIRED)
         String name,
