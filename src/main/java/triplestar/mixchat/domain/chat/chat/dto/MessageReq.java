@@ -17,11 +17,14 @@ public record MessageReq(
         String content,
 
         @NotNull
-        @Schema(description = "메시지 타입", example = "TALK")
+        @Schema(description = "메시지 타입", example = "TEXT")
         ChatMessage.MessageType messageType,
 
         @NotNull
         @Schema(description = "대화방 타입", example = "GROUP")
-        ChatRoomType chatRoomType // chatRoomType 추가
+        ChatRoomType chatRoomType,
+
+        @Schema(description = "자동 번역 여부", example = "true")
+        boolean isTranslateEnabled
 ) {
 }

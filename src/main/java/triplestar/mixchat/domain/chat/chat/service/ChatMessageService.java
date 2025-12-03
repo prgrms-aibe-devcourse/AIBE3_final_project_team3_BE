@@ -3,6 +3,7 @@ package triplestar.mixchat.domain.chat.chat.service;
 import static java.time.LocalDateTime.now;
 import static java.util.Collections.reverse;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
@@ -47,7 +49,7 @@ public class ChatMessageService {
     private final jakarta.persistence.EntityManager entityManager;
 
     @Transactional
-    public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatRoomType chatRoomType) {
+    public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatRoomType chatRoomType, boolean isTranslateEnabled) {
         // 시스템 메시지가 아닐 경우에만 멤버 검증을 수행
         if (messageType != ChatMessage.MessageType.SYSTEM) {
             chatMemberService.verifyUserIsMemberOfRoom(senderId, roomId, chatRoomType);
@@ -57,8 +59,13 @@ public class ChatMessageService {
         Long sequence = generateSequence(roomId, chatRoomType);
 
         // 메시지 생성 및 저장
-        ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType);
+        ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType, isTranslateEnabled);
         ChatMessage savedMessage = chatMessageRepository.save(message);
+
+        // TEXT 타입만 번역
+        if (isTranslateEnabled && messageType == ChatMessage.MessageType.TEXT) {
+            eventPublisher.publishEvent(new TranslationReq(savedMessage.getId(), savedMessage.getContent()));
+        }
 
         // 1. 발신자 + 구독자 모두를 하나의 Set으로 수집 (읽음 처리 대상)
         Set<Long> memberIdsToMarkRead = new HashSet<>();
@@ -117,7 +124,8 @@ public class ChatMessageService {
         if (messageType != ChatMessage.MessageType.IMAGE && messageType != ChatMessage.MessageType.FILE) {
             throw new IllegalArgumentException("파일 메시지는 IMAGE 또는 FILE 타입이어야 합니다.");
         }
-        return saveMessage(roomId, senderId, senderNickname, fileUrl, messageType, chatRoomType);
+        // 파일 메시지는 번역하지 않으므로 isTranslateEnabled는 항상 false
+        return saveMessage(roomId, senderId, senderNickname, fileUrl, messageType, chatRoomType, false);
     }
 
     // 메시지 목록 조회 (페이징), 발신자 이름 및 unreadCount 포함
@@ -125,17 +133,27 @@ public class ChatMessageService {
         // 기본값: size = 25, 최대 100
         int pageSize = (size != null && size > 0 && size <= 100) ? size : 25;
 
-        // 메시지 조회 (sequence 내림차순)
+        // 1. 채팅방의 모든 멤버 조회 (읽음 상태 확인 및 입장 시간 확인용)
+        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
+
+        // 2. 요청자의 입장 시간 확인
+        LocalDateTime joinDate = allMembers.stream()
+                .filter(m -> m.getMember().getId().equals(requesterId))
+                .map(ChatMember::getCreatedAt)
+                .findFirst()
+                .orElse(LocalDateTime.MIN);
+
+        // 3. 메시지 조회 (sequence 내림차순 + 입장 시간 이후)
         List<ChatMessage> messages;
         if (cursor == null) {
             // 최신 메시지부터 pageSize개
-            messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(
-                roomId, chatRoomType, PageRequest.of(0, pageSize)
+            messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeAndCreatedAtGreaterThanEqualOrderBySequenceDesc(
+                roomId, chatRoomType, joinDate, PageRequest.of(0, pageSize)
             );
         } else {
             // cursor 이전 메시지 pageSize개
-            messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeAndSequenceLessThanOrderBySequenceDesc(
-                roomId, chatRoomType, cursor, PageRequest.of(0, pageSize)
+            messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeAndSequenceLessThanAndCreatedAtGreaterThanEqualOrderBySequenceDesc(
+                roomId, chatRoomType, cursor, joinDate, PageRequest.of(0, pageSize)
             );
         }
 
@@ -149,9 +167,6 @@ public class ChatMessageService {
                 .collect(Collectors.toList());
         Map<Long, String> senderNames = memberRepository.findAllById(senderIds).stream()
                 .collect(Collectors.toMap(Member::getId, Member::getNickname));
-
-        // 채팅방의 모든 멤버 조회 (읽음 상태 확인용)
-        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
 
         List<MessageResp> messageResps = messages.stream()
                 .map(message -> {
