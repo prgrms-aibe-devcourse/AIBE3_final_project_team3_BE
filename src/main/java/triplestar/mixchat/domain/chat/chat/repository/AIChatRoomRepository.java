@@ -1,10 +1,12 @@
 package triplestar.mixchat.domain.chat.chat.repository;
 
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import triplestar.mixchat.domain.ai.userprompt.entity.UserPrompt;
 import triplestar.mixchat.domain.chat.chat.entity.AIChatRoom;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
@@ -19,4 +21,10 @@ public interface AIChatRoomRepository extends JpaRepository<AIChatRoom, Long> {
             WHERE cm.member = :member AND cm.chatRoomType = 'AI'
             """)
     List<AIChatRoom> findAllByMember(@Param("member") Member member);
+
+    @Query("""
+            SELECT ar.persona FROM AIChatRoom ar
+            WHERE ar.id = :roomId
+            """)
+    Optional<UserPrompt> findRoomPersona(Long roomId);
 }

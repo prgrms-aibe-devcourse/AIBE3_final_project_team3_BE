@@ -25,7 +25,7 @@ public record AIChatRoomResp(
         return new AIChatRoomResp(
                 entity.getId(),
                 entity.getName(),
-                entity.getPersonaId()
+                entity.getPersona().getId()
         );
     }
 }

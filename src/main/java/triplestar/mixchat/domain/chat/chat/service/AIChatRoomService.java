@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.ai.userprompt.entity.UserPrompt;
+import triplestar.mixchat.domain.ai.userprompt.repository.UserPromptRepository;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
@@ -29,7 +31,7 @@ public class AIChatRoomService {
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final ChatAuthCacheService chatAuthCacheService;
     private final ChatMemberService chatMemberService;
-//    private final UserPromptRepository userPromptRepository;
+    private final UserPromptRepository userPromptRepository;
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
@@ -40,12 +42,9 @@ public class AIChatRoomService {
     public AIChatRoomResp createAIChatRoom(Long creatorId, CreateAIChatReq request) {
         Member creator = findMemberById(creatorId);
 
-
-          // 페르소나 유효성 검사
-//        userPromptRepository.findById(request.personaId())
-//                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 페르소나 ID입니다. ID: " + request.personaId()));
-
-        AIChatRoom newRoom = AIChatRoom.create(request.roomName(), request.personaId());
+        UserPrompt persona = userPromptRepository.findById(request.personaId())
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 페르소나 ID입니다. ID: " + request.personaId()));
+        AIChatRoom newRoom = AIChatRoom.create(request.roomName(), persona);
         AIChatRoom savedRoom = aiChatRoomRepository.save(newRoom);
 
         ChatMember chatMember = new ChatMember(creator, savedRoom.getId(), ChatRoomType.AI);

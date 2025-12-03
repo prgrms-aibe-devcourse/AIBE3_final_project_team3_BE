@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import triplestar.mixchat.domain.ai.rag.context.chathistory.ChatTurn;
 import triplestar.mixchat.domain.ai.rag.context.user.ContextChunkType;
@@ -19,7 +18,6 @@ import triplestar.mixchat.domain.ai.systemprompt.entity.SystemPrompt;
 import triplestar.mixchat.domain.ai.systemprompt.service.SystemPromptService;
 import triplestar.mixchat.domain.ai.userprompt.entity.UserPrompt;
 import triplestar.mixchat.domain.ai.userprompt.repository.UserPromptRepository;
-import triplestar.mixchat.domain.chat.chat.entity.AIChatRoom;
 import triplestar.mixchat.domain.chat.chat.repository.AIChatRoomRepository;
 
 @Component
@@ -106,13 +104,9 @@ public class RagPromptBuilder {
     }
 
     private String addPersonaPrompt(Long roomId, String prompt) {
-        AIChatRoom aiChatRoom = aiChatRoomRepository.findById(roomId)
+        UserPrompt persona = aiChatRoomRepository.findRoomPersona(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("해당하는 roomId가 존재하지 않음 : " + roomId));
-        Long personaId = aiChatRoom.getPersonaId();
-        UserPrompt userPrompt = userPromptRepository.findById(personaId)
-                .orElseThrow(() -> new EntityNotFoundException("해당하는 페르소나가 존재하지 않음 : " + personaId));
-        String personaContent = userPrompt.getContent();
 
-        return prompt + "\n" + personaContent;
+        return prompt + "\n" + persona.getContent();
     }
 }
