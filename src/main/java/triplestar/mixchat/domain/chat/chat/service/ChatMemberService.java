@@ -63,6 +63,10 @@ public class ChatMemberService {
     // 반환값: 실제로 새로 읽은 메시지가 있으면 currentSequence, 없으면 null
     @Transactional
     public Long markAsReadOnEnter(Long memberId, Long roomId, ChatRoomType chatRoomType) {
+        if (chatRoomType == ChatRoomType.AI) {
+            // AI 채팅방은 읽음 처리 로직이 없음
+            return null;
+        }
         ChatMember member = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_Id(
                 roomId, chatRoomType, memberId
         ).orElseThrow(() -> new AccessDeniedException("해당 대화방에 접근할 권한이 없습니다."));

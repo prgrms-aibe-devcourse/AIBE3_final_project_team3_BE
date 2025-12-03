@@ -90,6 +90,7 @@ public class ApiV1ChatController implements ApiChatController {
         return CustomResponse.ok("그룹 채팅방 생성에 성공하였습니다.", roomResp);
     }
 
+    @Override
     @PostMapping("/rooms/ai")
     public CustomResponse<AIChatRoomResp> createAiRoom(
             @AuthenticationPrincipal CustomUserDetails currentUser,
@@ -143,9 +144,6 @@ public class ApiV1ChatController implements ApiChatController {
     public CustomResponse<List<AIChatRoomResp>> getAiChatRooms(
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        if (true) {
-            return CustomResponse.ok("AI 채팅방 목록 조회에 성공하였습니다.", List.of());
-        }
         List<AIChatRoomResp> rooms = aiChatRoomService.getRoomsForUser(currentUser.getId());
         return CustomResponse.ok("AI 채팅방 목록 조회에 성공하였습니다.", rooms);
     }

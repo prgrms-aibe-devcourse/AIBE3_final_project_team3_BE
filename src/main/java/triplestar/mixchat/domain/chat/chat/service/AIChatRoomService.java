@@ -47,9 +47,6 @@ public class AIChatRoomService {
         AIChatRoom newRoom = AIChatRoom.create(creator, req.roomName(), persona, req.roomType());
         AIChatRoom savedRoom = aiChatRoomRepository.save(newRoom);
 
-        ChatMember chatMember = new ChatMember(creator, savedRoom.getId(), ChatRoomType.AI);
-        chatRoomMemberRepository.save(chatMember);
-
         chatAuthCacheService.addMember(savedRoom.getId(), creatorId);
 
         return AIChatRoomResp.from(savedRoom);
@@ -60,8 +57,7 @@ public class AIChatRoomService {
     }
 
     public List<AIChatRoomResp> getRoomsForUser(Long currentUserId) {
-        Member currentUser = findMemberById(currentUserId);
-        List<AIChatRoom> rooms = aiChatRoomRepository.findAllByMember(currentUser);
+        List<AIChatRoom> rooms = aiChatRoomRepository.findAllByMember_Id(currentUserId);
         return rooms.stream()
                 .map(AIChatRoomResp::from)
                 .collect(Collectors.toList());

@@ -2,6 +2,8 @@ package triplestar.mixchat.domain.chat.chat.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -32,6 +34,7 @@ public class AIChatRoom extends BaseEntity {
     @JoinColumn(name = "persona_id", nullable = false)
     private UserPrompt persona; // AI 페르소나 (성격, 역할 등)
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AiChatRoomType roomType;
 
