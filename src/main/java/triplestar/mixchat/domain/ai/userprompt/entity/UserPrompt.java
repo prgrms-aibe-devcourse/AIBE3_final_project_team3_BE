@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import triplestar.mixchat.domain.ai.userprompt.constant.RolePlayType;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 import triplestar.mixchat.domain.ai.userprompt.constant.UserPromptType;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -24,6 +25,10 @@ public class UserPrompt extends BaseEntity {
 
     @Column(name = "title", length = 255, nullable = false)
     private String title;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role_play_type")
+    private RolePlayType rolePlayType;
 
     @Lob
     @Column(name = "content", nullable = false)
