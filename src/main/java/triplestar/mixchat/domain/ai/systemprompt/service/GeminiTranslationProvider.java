@@ -1,24 +1,56 @@
 package triplestar.mixchat.domain.ai.systemprompt.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationResp;
 
 @Slf4j
-@Component
-@RequiredArgsConstructor
-@Order(3)
+// @Component // Vertex AI 설정 필요 - 당장 사용하지 않으므로 비활성화
+@Order(3) // 가장 마지막(Ollama -> OpenAI -> Gemini)
 public class GeminiTranslationProvider implements TranslationProvider {
 
-    // TODO:'spring-ai-google-gemini-starter' 의존성 추가 시 주석 해제 및 구현
+    private final ChatClient chatClient;
+
+    // 1. AiConfig에서 설정한 "gemini" 빈 주입
+    public GeminiTranslationProvider(@Qualifier("gemini") ChatClient chatClient) {
+        this.chatClient = chatClient;
+    }
+
+    private static final String SYSTEM_PROMPT = """
+        You are a Korean-to-English translation assistant.
+
+        TASK:
+        - If the input is Korean (or mixed with Korean), translate it into natural English.
+        - If the input is already English, fix obvious grammar/wording mistakes and output the improved English.
+        - If the input is already perfect English, return it as-is.
+
+        OUTPUT RULES:
+        - Output ONLY the final English sentence.
+        - Do NOT add explanations, labels, quotes, or JSON.
+        - Just return the translated/corrected sentence itself.
+        """;
 
     @Override
-    public Mono<TranslationResp> translate(String originalContent) {
-        // 실제 구현 시 Gemini API 호출 로직 추가, 의존성 추가 필요
-        log.debug("GeminiTranslationProvider 호출됨 (현재 기능 미구현)");
-        return Mono.empty();
+    public TranslationResp translate(String originalContent) {
+        try {
+            String translatedText = chatClient.prompt()
+                    .system(SYSTEM_PROMPT)
+                    .user(originalContent)
+                    .call()
+                    .content();
+
+            if (translatedText == null || translatedText.isBlank()) {
+                log.warn("Gemini 응답이 비어있음 -> Fallback");
+                return null;
+            }
+
+            return new TranslationResp(originalContent, translatedText.trim());
+
+        } catch (Exception e) {
+            log.error("Gemini 번역 실패: {}", e.getMessage());
+            return null;
+        }
     }
 }
