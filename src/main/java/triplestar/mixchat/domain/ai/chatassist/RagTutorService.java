@@ -18,7 +18,7 @@ public class RagTutorService {
     private final ContextRetriever contextRetriever;            // 컨텍스트 검색기(Sql, 벡터 DB 등)
     private final ChatHistoryProvider chatHistoryProvider;      // 대화 로그 제공자
     private final RagPromptBuilder ragPromptBuilder;            // RAG 프롬프트 빌더
-    private final ChatClient chatClient;                        // LLM 채팅 클라이언트
+    private final ChatClient ollamaChatClient;                        // LLM 채팅 클라이언트
 
     public String chat(Long userId, Long roomId, String userMessage) {
 
@@ -32,7 +32,7 @@ public class RagTutorService {
         String prompt = ragPromptBuilder.buildPrompt(userMessage, chunks, history, roomId);
 
         // 4) LLM 호출
-        return chatClient
+        return ollamaChatClient
                 .prompt()
                 .user(prompt)
                 .call()
