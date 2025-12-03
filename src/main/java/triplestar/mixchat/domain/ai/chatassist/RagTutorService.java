@@ -28,7 +28,7 @@ public class RagTutorService {
         List<ChatTurn> history = chatHistoryProvider.getRecentHistory(roomId, 10);
 
         // 3) 프롬프트 생성
-        String prompt = ragPromptBuilder.buildPrompt(userMessage, chunks, history);
+        String prompt = ragPromptBuilder.buildPrompt(userMessage, chunks, history, roomId);
 
         // 4) LLM 호출
         return chatClient

@@ -3,11 +3,13 @@ package triplestar.mixchat.domain.ai.rag;
 import static triplestar.mixchat.domain.ai.rag.context.user.ContextChunkTextKey.LEARNING_NOTE_CORRECTED_CONTENT;
 import static triplestar.mixchat.domain.ai.rag.context.user.ContextChunkTextKey.LEARNING_NOTE_ORIGINAL_CONTENT;
 
+import jakarta.persistence.EntityNotFoundException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import triplestar.mixchat.domain.ai.rag.context.chathistory.ChatTurn;
 import triplestar.mixchat.domain.ai.rag.context.user.ContextChunkType;
@@ -15,6 +17,10 @@ import triplestar.mixchat.domain.ai.rag.context.user.UserContextChunk;
 import triplestar.mixchat.domain.ai.systemprompt.constant.PromptKey;
 import triplestar.mixchat.domain.ai.systemprompt.entity.SystemPrompt;
 import triplestar.mixchat.domain.ai.systemprompt.service.SystemPromptService;
+import triplestar.mixchat.domain.ai.userprompt.entity.UserPrompt;
+import triplestar.mixchat.domain.ai.userprompt.repository.UserPromptRepository;
+import triplestar.mixchat.domain.chat.chat.entity.AIChatRoom;
+import triplestar.mixchat.domain.chat.chat.repository.AIChatRoomRepository;
 
 @Component
 @RequiredArgsConstructor
@@ -22,11 +28,14 @@ public class RagPromptBuilder {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private final SystemPromptService systemPromptService;
+    private final AIChatRoomRepository aiChatRoomRepository;
+    private final UserPromptRepository userPromptRepository;
 
     public String buildPrompt(
             String userMessage,
             List<UserContextChunk> contextChunks,
-            List<ChatTurn> chatHistory
+            List<ChatTurn> chatHistory,
+            Long roomId
     ) {
         // 1) DB에서 최신 버전 시스템 프롬프트 템플릿 가져오기
         SystemPrompt systemPrompt = systemPromptService.getLatestByKey(PromptKey.AI_TUTOR);
@@ -42,7 +51,7 @@ public class RagPromptBuilder {
                 .replace("{{LEARNING_NOTES}}", learningNotesBlock)
                 .replace("{{USER_MESSAGE}}", userMessage);
 
-        return prompt;
+        return addPersonaPrompt(roomId, prompt);
     }
 
     private String buildChatHistoryBlock(List<ChatTurn> history) {
@@ -94,5 +103,16 @@ public class RagPromptBuilder {
 
     private String nullToPlaceholder(String value) {
         return value != null ? value : "(none)";
+    }
+
+    private String addPersonaPrompt(Long roomId, String prompt) {
+        AIChatRoom aiChatRoom = aiChatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new EntityNotFoundException("해당하는 roomId가 존재하지 않음 : " + roomId));
+        Long personaId = aiChatRoom.getPersonaId();
+        UserPrompt userPrompt = userPromptRepository.findById(personaId)
+                .orElseThrow(() -> new EntityNotFoundException("해당하는 페르소나가 존재하지 않음 : " + personaId));
+        String personaContent = userPrompt.getContent();
+
+        return prompt + "\n" + personaContent;
     }
 }
