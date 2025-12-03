@@ -53,6 +53,14 @@ public class ChatMessageService {
         // 시스템 메시지가 아닐 경우에만 멤버 검증을 수행
         if (messageType != ChatMessage.MessageType.SYSTEM) {
             chatMemberService.verifyUserIsMemberOfRoom(senderId, roomId, chatRoomType);
+
+            // 1:1 채팅방인 경우 상대방이 존재하는지 확인 (차단/나가기 등으로 혼자 남은 경우 메시지 전송 불가)
+            if (chatRoomType == ChatRoomType.DIRECT) {
+                long memberCount = chatRoomMemberRepository.countByChatRoomIdAndChatRoomType(roomId, chatRoomType);
+                if (memberCount < 2) {
+                    throw new IllegalStateException("상대방이 채팅방을 나가 메시지를 보낼 수 없습니다.");
+                }
+            }
         }
 
         // Sequence 생성 (비관적 락으로 동시성 제어)
@@ -130,6 +138,9 @@ public class ChatMessageService {
 
     // 메시지 목록 조회 (페이징), 발신자 이름 및 unreadCount 포함
     public MessagePageResp getMessagesWithSenderInfo(Long roomId, ChatRoomType chatRoomType, Long requesterId, Long cursor, Integer size) {
+        // 보안 검증: 요청자가 해당 채팅방의 멤버인지 확인
+        chatMemberService.verifyUserIsMemberOfRoom(requesterId, roomId, chatRoomType);
+
         // 기본값: size = 25, 최대 100
         int pageSize = (size != null && size > 0 && size <= 100) ? size : 25;
 

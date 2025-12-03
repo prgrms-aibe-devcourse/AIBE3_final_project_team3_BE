@@ -18,9 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
-import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.entity.GroupChatRoom;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
@@ -46,11 +44,6 @@ public class GroupChatRoomService {
     private final ChatMessageService chatMessageService;
     private final FriendshipRepository friendshipRepository;
     private final SystemMessageService systemMessageService;
-
-    public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
-        chatMemberService.verifyUserIsMemberOfRoom(memberId, roomId, ChatRoomType.GROUP);
-    }
-
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
