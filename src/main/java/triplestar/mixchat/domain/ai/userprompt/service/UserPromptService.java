@@ -18,7 +18,6 @@ import jakarta.persistence.EntityNotFoundException;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -30,7 +29,7 @@ public class UserPromptService {
 
     private Member getMember(Long memberId) {
         return memberRepository.findById(memberId)
-                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("멤버를 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("멤버를 찾을 수 없습니다."));
     }
 
     private void checkPremium(Member member) {
@@ -95,7 +94,7 @@ public class UserPromptService {
             throw new AccessDeniedException("프리미엄 등급이 아닙니다.");
         }
         UserPrompt userPrompt = getPrompt(id);
-        if (userPrompt.getType() != UserPromptType.CUSTOM || userPrompt.getMember() == null || !userPrompt.getMember().getId().equals(member.getId())) {
+        if (userPrompt.getPromptType() != UserPromptType.CUSTOM || userPrompt.getMember() == null || !userPrompt.getMember().getId().equals(member.getId())) {
             throw new AccessDeniedException("본인 프롬프트가 아닙니다.");
         }
         return new UserPromptDetailResp(userPrompt);

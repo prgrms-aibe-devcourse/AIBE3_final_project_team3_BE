@@ -55,7 +55,8 @@ public class ApiV1ChatSocketController {
                     "AI Tutor",
                     chat,
                     MessageType.TEXT,
-                    messageReq.chatRoomType()
+                    messageReq.chatRoomType(),
+                    false
             );
         }
         log.debug("채팅방 {}에 메시지 전송 완료: {}", messageReq.roomId(), messageResp.content());

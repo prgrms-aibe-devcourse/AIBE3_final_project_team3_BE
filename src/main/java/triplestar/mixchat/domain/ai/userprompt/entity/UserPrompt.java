@@ -21,7 +21,7 @@ public class UserPrompt extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "prompt_type", nullable = false)
-    private UserPromptType type;
+    private UserPromptType promptType;
 
     @Column(name = "title", length = 255, nullable = false)
     private String title;
@@ -30,15 +30,14 @@ public class UserPrompt extends BaseEntity {
     @Column(name = "role_play_type")
     private RolePlayType rolePlayType;
 
-    @Lob
-    @Column(name = "content", nullable = false)
+    @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    private UserPrompt(Member member, String title, String content, UserPromptType type) {
+    private UserPrompt(Member member, String title, String content, UserPromptType promptType) {
         this.member = member;
         this.title = title;
         this.content = content;
-        this.type = type;
+        this.promptType = promptType;
     }
 
     // 도메인 생성 메소드
@@ -50,7 +49,7 @@ public class UserPrompt extends BaseEntity {
     public void modify(String title, String content, String promptType) {
         this.title = title;
         this.content = content;
-        this.type = UserPromptType.valueOf(promptType);
+        this.promptType = UserPromptType.valueOf(promptType);
     }
 
     public boolean isDefaultPrompt() {

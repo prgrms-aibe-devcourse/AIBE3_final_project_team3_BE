@@ -27,7 +27,7 @@ public class RagTutorService {
         // 2) 단기 기억: 현재 AI와의 채팅 대화 로그
         List<ChatTurn> history = chatHistoryProvider.getRecentHistory(roomId, 10);
 
-        // 3) 프롬프트 생성
+        //3) 프롬프트 생성
         String prompt = ragPromptBuilder.buildPrompt(userMessage, chunks, history, roomId);
 
         // 4) LLM 호출
