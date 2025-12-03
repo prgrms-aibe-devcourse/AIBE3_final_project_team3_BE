@@ -28,6 +28,9 @@ public class ChatMessage {
     private String content;
     private MessageType messageType;
 
+    private boolean isTranslateEnabled; // 번역 요청 여부
+    private String translatedContent; // 번역된 메시지 내용
+
     public enum MessageType {
         TEXT, IMAGE, FILE, SYSTEM
     }
@@ -42,7 +45,7 @@ public class ChatMessage {
 
     private ChatRoomType chatRoomType;
 
-    public ChatMessage(Long chatRoomId, Long senderId, Long sequence, String content, MessageType messageType, ChatRoomType chatRoomType) {
+    public ChatMessage(Long chatRoomId, Long senderId, Long sequence, String content, MessageType messageType, ChatRoomType chatRoomType, boolean isTranslateEnabled) {
         if (chatRoomId == null) {
             throw new IllegalArgumentException("chatRoomId는 null일 수 없습니다.");
         }
@@ -68,6 +71,11 @@ public class ChatMessage {
         this.content = content;
         this.messageType = messageType;
         this.chatRoomType = chatRoomType;
+        this.isTranslateEnabled = isTranslateEnabled;
+    }
+
+    public void setTranslatedContent(String translatedContent) {
+        this.translatedContent = translatedContent;
     }
 }
 

@@ -30,13 +30,20 @@ spring:
 
   ai:
     openai:
-      base-url: https://ollama.yhcho.com/ollama
-      api-key: ${OPENAI_API_KEY} # 로컬은 키가 필요 없지만, 라이브러리 검증 통과용으로 입력
+      base-url: https://api.openai.com
+      api-key: ${OPENAI_API_KEY}
       chat:
         options:
-          model: ${OPENAI_CHAT_MODEL:exaone3.5:2.4b}
+          #model: ${OPENAI_CHAT_MODEL:exaone3.5:2.4b}
+          model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
 
 swagger:
   redirect:
     # "/"로 들어왔을 때 최종적으로 리다이렉트될 Swagger UI 경로
     path: /swagger-ui/index.html
+
+ollama:
+  api:
+    url: ${OLLAMA_API_URL:http://localhost:11434}
+    key: ${OLLAMA_API_KEY:dummy}
+    model: ${OLLAMA_MODEL:llama3}

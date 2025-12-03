@@ -2,6 +2,7 @@ package triplestar.mixchat.domain.admin.admin.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -50,6 +51,7 @@ public class ApiV1AdminController implements  ApiAdminController {
     @Override
     @GetMapping("/reports")
     public CustomResponse<Page<AdminReportListResp>> getReports(
+            @ParameterObject
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<AdminReportListResp> result = adminReportService.getReports(pageable);
@@ -69,6 +71,7 @@ public class ApiV1AdminController implements  ApiAdminController {
     @Override
     @GetMapping("/sentence-game/notes")
     public CustomResponse<Page<AdminSentenceGameNoteResp>> getSentenceGameNoteList(
+            @ParameterObject
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<AdminSentenceGameNoteResp> resp = adminSentenceGameService.getSentenceGameNoteList(pageable);
@@ -79,6 +82,7 @@ public class ApiV1AdminController implements  ApiAdminController {
     @Override
     @GetMapping("/sentence-game")
     public CustomResponse<Page<AdminSentenceGameResp>> getSentenceGameList(
+            @ParameterObject
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<AdminSentenceGameResp> resp = adminSentenceGameService.getSentenceGameList(pageable);

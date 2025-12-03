@@ -3,6 +3,7 @@ package triplestar.mixchat.domain.learningNote.learningNote.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -43,6 +44,7 @@ public class ApiV1LearningNoteController implements ApiLearningNoteController{
     @Override
     @GetMapping
     public CustomResponse<Page<LearningNoteFeedbackResp>> getLearningNotes(
+            @ParameterObject
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable,
             @RequestParam TranslationTagCode tag,
             @RequestParam LearningFilter learningFilter,
