@@ -22,7 +22,7 @@ public class OllamaTranslationProvider implements TranslationProvider {
     @Value("${spring.ai.ollama.base-url}")
     private String ollamaBaseUrl;
 
-    @Value("${spring.ai.ollama.api-key:}")
+    @Value("${spring.ai.ollama.api-key}")
     private String apiKey;
 
     @Value("${spring.ai.ollama.chat.options.model}")

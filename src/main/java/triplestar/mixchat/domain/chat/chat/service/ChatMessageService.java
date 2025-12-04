@@ -15,6 +15,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.ai.chatbot.AiChatBotService;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationReq;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
@@ -24,6 +25,7 @@ import triplestar.mixchat.domain.chat.chat.dto.RoomLastMessageUpdateResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
+import triplestar.mixchat.domain.chat.chat.entity.ChatMessage.MessageType;
 import triplestar.mixchat.domain.chat.chat.repository.AIChatRoomRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
@@ -32,6 +34,7 @@ import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.notification.constant.NotificationType;
+import triplestar.mixchat.global.ai.BotConstant;
 import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
 import triplestar.mixchat.global.notifiaction.NotificationEvent;
 
@@ -52,6 +55,7 @@ public class ChatMessageService {
     private final ChatNotificationService chatNotificationService;
     private final jakarta.persistence.EntityManager entityManager;
     private final AIChatRoomRepository aIChatRoomRepository;
+    private final AiChatBotService aiChatBotService;
 
     @Transactional
     public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatRoomType chatRoomType, boolean isTranslateEnabled) {
@@ -75,9 +79,17 @@ public class ChatMessageService {
         ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType, isTranslateEnabled);
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
-        // AI 채팅방인 경우, 읽음 처리 및 알림 생략
+        // AI 채팅방인 경우 별도로직 수행
         if (chatRoomType == ChatRoomType.AI) {
-            return MessageResp.from(savedMessage, senderNickname);
+            MessageResp resp = MessageResp.from(savedMessage, senderNickname);
+            chatNotificationService.sendChatMessage(roomId, chatRoomType, resp);
+
+            // 사람이 보낸 메시지인 경우 ai 응답 생성 후 saveMessage 재귀 호출
+            // 재귀 호출 후 봇이 보낸 메시지는 저장 및 전송만 수행
+            if (!senderId.equals(BotConstant.BOT_MEMBER_ID)) {
+                String chat = aiChatBotService.chat(senderId, roomId, content);
+                saveMessage(roomId, BotConstant.BOT_MEMBER_ID, "Chat Bot", chat, MessageType.TEXT, chatRoomType, false);
+            }
         }
 
         // TEXT 타입만 번역

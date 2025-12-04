@@ -28,7 +28,6 @@ import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
 @Transactional(readOnly = true)
 public class ChatMemberService {
 
-    private final MemberRepository memberRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final ChatAuthCacheService chatAuthCacheService;
     private final ChatSubscriberCacheService chatSubscriberCacheService;
