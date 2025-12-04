@@ -15,7 +15,7 @@ public class AiChatBotService {
 
     private final RagSqlTutorService ragSqlTutorService;
     private final RagVectorService ragVectorService;
-    private final AiFreeTalkService aiFreeTalkService;
+    private final AiRolePlayService aiRolePlayService;
     private final AIChatRoomRepository aiChatRoomRepository;
 
     @Transactional(readOnly = true)
@@ -30,7 +30,7 @@ public class AiChatBotService {
         AiChatRoomType roomType = aiChatRoom.getRoomType();
 
         return switch (roomType) {
-            case ROLE_PLAY -> aiFreeTalkService.chat(aiChatRoom, userMessage, persona);
+            case ROLE_PLAY -> aiRolePlayService.chat(userId, aiChatRoom, userMessage, persona);
             case TUTOR_PERSONAL -> ragSqlTutorService.chat(userId, aiChatRoom, userMessage, persona);
             case TUTOR_SIMILAR -> ragVectorService.chat(userId, aiChatRoom, userMessage, persona);
         };
