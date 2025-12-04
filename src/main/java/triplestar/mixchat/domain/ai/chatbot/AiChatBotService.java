@@ -23,7 +23,7 @@ public class AiChatBotService {
         AIChatRoom aiChatRoom = aiChatRoomRepository.findByIdWithPersona(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 Id의 방 없음: " + roomId));
 
-        // 페르소나 가져오기
+        // 공통로직 : 페르소나 가져오기
         // ex: 'Engage in a free conversation on any topic. Keep the dialogue natural.'
         String persona = aiChatRoom.getPersona().getContent();
 
