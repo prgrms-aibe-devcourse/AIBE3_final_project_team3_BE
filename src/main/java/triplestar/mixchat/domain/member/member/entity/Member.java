@@ -192,4 +192,8 @@ public class Member extends BaseEntity {
         this.deletedAt = LocalDateTime.now();
         this.description = "삭제된 회원입니다.";
     }
+
+    public boolean isBot() {
+        return this.role == Role.ROLE_BOT;
+    }
 }

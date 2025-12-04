@@ -3,7 +3,6 @@ package triplestar.mixchat.domain.ai.chatassist;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.ai.rag.RagPromptBuilder;
 import triplestar.mixchat.domain.ai.rag.context.chathistory.ChatHistoryProvider;

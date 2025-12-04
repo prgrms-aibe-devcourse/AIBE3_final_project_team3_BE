@@ -18,6 +18,7 @@ import triplestar.mixchat.domain.chat.chat.repository.AIChatRoomRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.global.ai.BotConstant;
 import triplestar.mixchat.global.cache.ChatAuthCacheService;
 
 @Service
@@ -48,6 +49,9 @@ public class AIChatRoomService {
         AIChatRoom savedRoom = aiChatRoomRepository.save(newRoom);
 
         chatAuthCacheService.addMember(savedRoom.getId(), creatorId);
+
+        chatRoomMemberRepository.save(new ChatMember(creator, savedRoom.getId(), ChatRoomType.AI));
+        chatRoomMemberRepository.save(new ChatMember(findMemberById(BotConstant.BOT_MEMBER_ID), savedRoom.getId(), ChatRoomType.AI));
 
         return AIChatRoomResp.from(savedRoom);
     }
