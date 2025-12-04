@@ -1,4 +1,4 @@
-    INSERT INTO system_prompts (prompt_key, description, content, version)
+INSERT INTO system_prompts (prompt_key, description, content, version)
 VALUES ('AI_ASSIST',
         '영어 번역/교정 JSON 응답 튜터 프롬프트',
         '당신은 Mixchat의 영어 튜터입니다.

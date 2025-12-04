@@ -44,6 +44,7 @@ public class GroupChatRoomService {
     private final ChatMessageService chatMessageService;
     private final FriendshipRepository friendshipRepository;
     private final SystemMessageService systemMessageService;
+    private final triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository chatMessageRepository;
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
@@ -79,7 +80,7 @@ public class GroupChatRoomService {
         Page<Long> friendIdPage = friendsByMemberId.map(Member::getId);
         Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
 
-        GroupChatRoomResp roomDto = GroupChatRoomResp.from(savedRoom, chatMembers, creatorId, friendIdSet, 0L);
+        GroupChatRoomResp roomDto = GroupChatRoomResp.from(savedRoom, chatMembers, creatorId, friendIdSet, 0L, null);
         members.forEach(member -> {
             messagingTemplate.convertAndSendToUser(member.getId().toString(), "/topic/rooms", roomDto);
         });
@@ -185,7 +186,7 @@ public class GroupChatRoomService {
         Page<Long> friendIdPage = friendsByMemberId.map(Member::getId);
         Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
 
-        GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers, userId, friendIdSet, 0L);
+        GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers, userId, friendIdSet, 0L, null);
 
         // 8. 시스템 메시지 전송 (새 멤버 입장 알림)
         systemMessageService.sendJoinMessage(roomId, member.getNickname(), ChatRoomType.GROUP);
@@ -323,12 +324,19 @@ public class GroupChatRoomService {
                     long unreadCount = (lastRead == null) ? room.getCurrentSequence() : room.getCurrentSequence() - lastRead;
                     if (unreadCount < 0) unreadCount = 0;
 
+                    // 마지막 메시지 조회 (간단한 방법: 개별 쿼리)
+                    String lastMessageContent = chatMessageRepository
+                            .findTopByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(room.getId(), ChatRoomType.GROUP)
+                            .map(msg -> msg.getContent())
+                            .orElse(null);
+
                     return GroupChatRoomResp.from(
                             room,
                             membersByRoom.getOrDefault(room.getId(), Collections.emptyList()),
                             currentUserId,
                             friendIdSet,
-                            unreadCount
+                            unreadCount,
+                            lastMessageContent
                     );
                 })
                 .collect(Collectors.toList());

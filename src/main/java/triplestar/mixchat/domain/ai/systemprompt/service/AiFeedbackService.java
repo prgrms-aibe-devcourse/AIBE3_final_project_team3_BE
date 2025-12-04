@@ -36,7 +36,7 @@ public class AiFeedbackService {
           "correctedContent": "Corrected English sentence",
           "feedback": [
             {
-              "tag": "GRAMMAR" | "VOCABULARY" | "EXPRESSION" | "NUANCE" | "SPELLING",
+              "tag": "GRAMMAR" | "VOCABULARY" | "TRANSLATION",
               "problem": "incorrect part",
               "correction": "corrected part",
               "extra": "Detailed explanation in Korean"

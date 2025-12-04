@@ -129,6 +129,7 @@ public class ChatMessageService {
 
         // 6. 모든 멤버에게 채팅방 리스트 업데이트 알림 전송 (실시간 정렬용)
         String lastMessageAt = savedMessage.getCreatedAt().toString();
+        String lastMessageContent = savedMessage.getContent();
 
         // 각 멤버별로 unreadCount를 계산해서 개별 전송
         allMembers.forEach(member -> {
@@ -140,7 +141,8 @@ public class ChatMessageService {
                     roomId,
                     chatRoomType,
                     lastMessageAt,
-                    unreadCountForMember
+                    unreadCountForMember,
+                    lastMessageContent
             );
 
             messagingTemplate.convertAndSendToUser(

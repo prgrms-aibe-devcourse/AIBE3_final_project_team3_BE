@@ -17,6 +17,9 @@ public record RoomLastMessageUpdateResp(
         String lastMessageAt,
 
         @Schema(description = "해당 사용자의 안읽은 메시지 수", example = "3", requiredMode = REQUIRED)
-        int unreadCount
+        int unreadCount,
+
+        @Schema(description = "최근 메시지 내용", example = "안녕하세요!")
+        String lastMessageContent
 ) {
 }

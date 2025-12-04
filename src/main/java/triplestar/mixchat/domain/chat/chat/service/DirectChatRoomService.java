@@ -33,6 +33,7 @@ public class DirectChatRoomService {
     private final ChatMessageService chatMessageService;
     private final ChatMemberService chatMemberService;
     private final SystemMessageService systemMessageService;
+    private final triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository chatMessageRepository;
     // todo: 각 서비스 Facade패턴 도입 고려
 
     private Member findMemberById(Long memberId) {
@@ -66,7 +67,7 @@ public class DirectChatRoomService {
             chatAuthCacheService.addMember(room.getId(), member2Id);
 
             // DTO 변환 및 알림
-            DirectChatRoomResp roomDto = DirectChatRoomResp.from(room, 0L);
+            DirectChatRoomResp roomDto = DirectChatRoomResp.from(room, 0L, null);
             messagingTemplate.convertAndSendToUser(member1.getId().toString(), "/topic/rooms", roomDto);
             messagingTemplate.convertAndSendToUser(member2.getId().toString(), "/topic/rooms", roomDto);
 
@@ -77,8 +78,8 @@ public class DirectChatRoomService {
             restoreMemberIfMissing(room.getId(), member1, member1Id);
             restoreMemberIfMissing(room.getId(), member2, member2Id);
         }
-        
-        return DirectChatRoomResp.from(room, 0L);
+
+        return DirectChatRoomResp.from(room, 0L, null);
     }
 
     private void restoreMemberIfMissing(Long roomId, Member member, Long memberId) {
@@ -124,7 +125,13 @@ public class DirectChatRoomService {
                     long unreadCount = (lastRead == null) ? room.getCurrentSequence() : room.getCurrentSequence() - lastRead;
                     if (unreadCount < 0) unreadCount = 0; // 예외 상황에 대비
 
-                    return DirectChatRoomResp.from(room, unreadCount);
+                    // 마지막 메시지 조회
+                    String lastMessageContent = chatMessageRepository
+                            .findTopByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(room.getId(), ChatRoomType.DIRECT)
+                            .map(msg -> msg.getContent())
+                            .orElse(null);
+
+                    return DirectChatRoomResp.from(room, unreadCount, lastMessageContent);
                 })
                 .collect(Collectors.toList());
     }
