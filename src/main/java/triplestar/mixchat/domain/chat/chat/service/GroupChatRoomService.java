@@ -324,10 +324,12 @@ public class GroupChatRoomService {
                     long unreadCount = (lastRead == null) ? room.getCurrentSequence() : room.getCurrentSequence() - lastRead;
                     if (unreadCount < 0) unreadCount = 0;
 
-                    // 마지막 메시지 조회 (간단한 방법: 개별 쿼리)
+                    // 마지막 메시지 조회 (번역된 메시지가 있으면 번역된 내용 사용)
                     String lastMessageContent = chatMessageRepository
                             .findTopByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(room.getId(), ChatRoomType.GROUP)
-                            .map(msg -> msg.getContent())
+                            .map(msg -> msg.isTranslateEnabled() && msg.getTranslatedContent() != null
+                                    ? msg.getTranslatedContent()
+                                    : msg.getContent())
                             .orElse(null);
 
                     return GroupChatRoomResp.from(
