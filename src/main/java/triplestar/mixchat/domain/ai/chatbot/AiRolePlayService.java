@@ -18,6 +18,7 @@ public class AiRolePlayService {
     private final ChatHistoryProvider chatHistoryProvider;
     private final MemberRepository memberRepository;
 
+    // TODO : cache 적용하여 template 캐싱
     public String chat(Long userId, AIChatRoom chatRoom, String userMessage, String persona) {
         String template = systemPromptService.getLatestByKey(PromptKey.AI_ROLE_PLAY).getContent();
 
@@ -27,14 +28,14 @@ public class AiRolePlayService {
 
         String chatHistory = chatHistoryProvider.getRecentHistoryString(chatRoom.getId(), 4);
 
-        String replace = template.replace("{{PERSONA}}", persona)
+        String prompt = template.replace("{{PERSONA}}", persona)
                 .replace("{{USER_ENGLISH_LEVEL}}", userLevel)
                 .replace("{{CHAT_HISTORY}}", chatHistory)
                 .replace("{{USER_MESSAGE}}", userMessage);
 
         return ollamaChatClient
                 .prompt()
-                .user(replace)
+                .user(prompt)
                 .call()
                 .content();
     }
