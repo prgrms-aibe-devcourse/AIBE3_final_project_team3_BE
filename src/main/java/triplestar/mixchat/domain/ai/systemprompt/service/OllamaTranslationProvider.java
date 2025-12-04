@@ -1,6 +1,7 @@
 package triplestar.mixchat.domain.ai.systemprompt.service;
 
 import jakarta.annotation.PostConstruct;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,9 +10,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationResp;
-
-import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -44,20 +42,6 @@ public class OllamaTranslationProvider implements TranslationProvider {
         this.webClient = builder.build();
     }
 
-    private static final String SYSTEM_PROMPT = """
-        You are a Korean-to-English translation assistant.
-
-        TASK:
-        - If the input is Korean (or mixed with Korean), translate it into natural English.
-        - If the input is already English, fix obvious grammar/wording mistakes and output the improved English.
-        - If the input is already perfect English, return it as-is.
-
-        OUTPUT RULES:
-        - Output ONLY the final English sentence.
-        - Do NOT add explanations, labels, quotes, or JSON.
-        - Just return the translated/corrected sentence itself.
-        """;
-
     private record ChatRequest(String model, List<Message> messages, boolean stream) {}
     private record Message(String role, String content) {}
     private record ChatResponse(Message message) {}
@@ -66,12 +50,12 @@ public class OllamaTranslationProvider implements TranslationProvider {
     public TranslationResp translate(String originalContent) {
         try {
             ChatRequest request = new ChatRequest(
-                model,
-                List.of(
-                    new Message("system", SYSTEM_PROMPT),
-                    new Message("user", originalContent)
-                ),
-                false
+                    model,
+                    List.of(
+                            new Message("system", SYSTEM_PROMPT),
+                            new Message("user", originalContent)
+                    ),
+                    false
             );
 
             Mono<ChatResponse> responseMono = webClient.post()

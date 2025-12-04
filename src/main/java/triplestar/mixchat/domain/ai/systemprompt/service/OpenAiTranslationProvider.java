@@ -19,20 +19,6 @@ public class OpenAiTranslationProvider implements TranslationProvider {
         this.chatClient = chatClient;
     }
 
-    private static final String SYSTEM_PROMPT = """
-        You are a Korean-to-English translation assistant.
-
-        TASK:
-        - If the input is Korean (or mixed with Korean), translate it into natural English.
-        - If the input is already English, fix obvious grammar/wording mistakes and output the improved English.
-        - If the input is already perfect English, return it as-is.
-
-        OUTPUT RULES:
-        - Output ONLY the final English sentence.
-        - Do NOT add explanations, labels, quotes, or JSON.
-        - Just return the translated/corrected sentence itself.
-        """;
-
     @Override
     public TranslationResp translate(String originalContent) {
         try {

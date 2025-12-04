@@ -52,28 +52,32 @@ public class AiFeedbackService {
 
     public AiFeedbackResp analyze(AiFeedbackReq req) {
         String userMessage = String.format("Original: %s\nTranslated: %s", req.originalContent(), req.translatedContent());
+        int maxRetries = 3;
 
-        try {
-            String response = chatClient.prompt()
-                    .system(SYSTEM_PROMPT)
-                    .user(userMessage)
-                    .call()
-                    .content();
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                String response = chatClient.prompt()
+                        .system(SYSTEM_PROMPT)
+                        .user(userMessage)
+                        .call()
+                        .content();
 
-            if (response == null || response.isBlank()) {
-                throw new RuntimeException("AI 응답이 비어있습니다.");
+                if (response == null || response.isBlank()) {
+                    throw new IllegalStateException("AI 응답이 비어있습니다.");
+                }
+
+                // JSON 파싱 (Markdown 코드 블록 제거 처리)
+                String json = response.replaceAll("```json", "").replaceAll("```", "").trim();
+                return objectMapper.readValue(json, AiFeedbackResp.class);
+
+            } catch (Exception e) {
+                log.error("AI 분석 실패 (시도 {}/{}): {}", attempt, maxRetries, e.getMessage());
+                if (attempt == maxRetries) {
+                    throw new IllegalStateException("AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.", e);
+                }
             }
-
-            // JSON 파싱 (Markdown 코드 블록 제거 처리)
-            String json = response.replaceAll("```json", "").replaceAll("```", "").trim();
-            return objectMapper.readValue(json, AiFeedbackResp.class);
-
-        } catch (JsonProcessingException e) {
-            log.error("AI 응답 JSON 파싱 실패: {}", e.getMessage());
-            throw new RuntimeException("AI 분석 결과를 처리하는 중 오류가 발생했습니다.", e);
-        } catch (Exception e) {
-            log.error("AI 분석 요청 실패: {}", e.getMessage());
-            throw new RuntimeException("AI 분석 중 오류가 발생했습니다.", e);
         }
+
+        throw new IllegalStateException("AI 분석에 실패했습니다.");
     }
 }

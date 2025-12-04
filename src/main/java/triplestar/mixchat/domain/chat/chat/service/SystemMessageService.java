@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
@@ -18,7 +17,6 @@ import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 public class SystemMessageService {
 
     private final ChatMessageService chatMessageService;
-    private final SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -55,14 +53,11 @@ public class SystemMessageService {
             String content = objectMapper.writeValueAsString(contentMap);
 
             // 시스템 메시지 저장 (senderId=0L, senderName="System")
-            MessageResp systemMessage = chatMessageService.saveMessage(
+            // ChatMessageService.saveMessage 내부에서 알림 전송까지 수행함
+            chatMessageService.saveMessage(
                     roomId, 0L, "System", content,
                     ChatMessage.MessageType.SYSTEM, type, false
             );
-
-            // 브로드캐스트
-            String destination = "/topic/" + type.name().toLowerCase() + "/rooms/" + roomId;
-            messagingTemplate.convertAndSend(destination, systemMessage);
 
         } catch (JsonProcessingException e) {
             log.error("시스템 메시지 생성 실패: roomId={}, event={}", roomId, eventType, e);

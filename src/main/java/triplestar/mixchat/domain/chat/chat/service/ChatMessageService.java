@@ -13,17 +13,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationReq;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
 import triplestar.mixchat.domain.chat.chat.dto.RoomLastMessageUpdateResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
-import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.DirectChatRoomRepository;
@@ -48,7 +47,7 @@ public class ChatMessageService {
     private final DirectChatRoomRepository directChatRoomRepository;
     private final GroupChatRoomRepository groupChatRoomRepository;
     private final ChatSubscriberCacheService subscriberCacheService;
-    private final SimpMessageSendingOperations messagingTemplate;
+    private final ChatNotificationService chatNotificationService;
     private final jakarta.persistence.EntityManager entityManager;
 
     @Transactional
@@ -147,14 +146,18 @@ public class ChatMessageService {
                     lastMessageContent
             );
 
-            messagingTemplate.convertAndSendToUser(
+            chatNotificationService.sendRoomListUpdate(
                     member.getMember().getId().toString(),
-                    "/topic/rooms/update",
                     updateResp
             );
         });
 
-        return MessageResp.withUnreadCount(savedMessage, senderNickname, unreadCount);
+        MessageResp response = MessageResp.withUnreadCount(savedMessage, senderNickname, unreadCount);
+
+        // 7. 현재 채팅방(Topic)에 메시지 전송
+        chatNotificationService.sendChatMessage(roomId, chatRoomType, response);
+
+        return response;
     }
 
     @Transactional

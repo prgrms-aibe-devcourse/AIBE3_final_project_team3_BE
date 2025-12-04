@@ -2,7 +2,6 @@ package triplestar.mixchat.domain.ai.systemprompt.service;
 
 import jakarta.annotation.PostConstruct;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -18,6 +17,13 @@ import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 @Service
 @RequiredArgsConstructor
 public class AiTranslationService {
+
+    private record TranslationUpdatePayload(
+            String type,
+            String messageId,
+            String originalContent,
+            String translatedContent
+    ) {}
 
     private final List<TranslationProvider> translationProviders;
     private final ChatMessageRepository chatMessageRepository;
@@ -84,12 +90,11 @@ public class AiTranslationService {
                 updatedMessage.getChatRoomType().name().toLowerCase(),
                 updatedMessage.getChatRoomId());
 
-        // 클라이언트에게 전달할 최종 DTO
-        Map<String, Object> payload = Map.of(
-                "type", "TRANSLATION_UPDATE",
-                "messageId", updatedMessage.getId(),
-                "originalContent", updatedMessage.getContent(),
-                "translatedContent", updatedMessage.getTranslatedContent()
+        TranslationUpdatePayload payload = new TranslationUpdatePayload(
+                "TRANSLATION_UPDATE",
+                updatedMessage.getId(),
+                updatedMessage.getContent(),
+                updatedMessage.getTranslatedContent()
         );
 
         messagingTemplate.convertAndSend(destination, payload);
