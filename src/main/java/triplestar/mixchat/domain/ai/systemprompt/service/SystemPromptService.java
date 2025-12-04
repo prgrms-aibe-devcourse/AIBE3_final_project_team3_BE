@@ -1,6 +1,7 @@
 package triplestar.mixchat.domain.ai.systemprompt.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.ai.systemprompt.constant.PromptKey;
@@ -14,6 +15,7 @@ public class SystemPromptService {
 
     private final SystemPromptRepository systemPromptRepository;
 
+    @Cacheable(value = "systemPrompts")
     public SystemPrompt getLatestByKey(String promptKey) {
         return systemPromptRepository.findTopByPromptKeyOrderByVersionDesc(promptKey)
                 .orElseThrow(() -> new IllegalArgumentException(

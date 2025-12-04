@@ -2,60 +2,40 @@ package triplestar.mixchat.domain.ai.rag.context.chathistory;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.ai.chat.messages.AbstractMessage;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.content.MediaContent;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
-import triplestar.mixchat.domain.ai.rag.context.chathistory.ChatTurn.Sender;
+import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.global.ai.BotConstant;
 
 @Component
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ChatHistoryProvider {
 
     private final ChatMessageRepository chatMessageRepository;
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    public List<ChatTurn> getRecentHistory(Long roomId, int maxTurns) {
-        List<ChatMessage> messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(
+    public List<Message> getRecentHistory(Long roomId, int maxTurns) {
+        List<ChatMessage> messages = chatMessageRepository.
+                findByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(
                 roomId, ChatRoomType.AI, Pageable.ofSize(maxTurns)
         );
 
         return messages.stream()
-                .map(msg -> new ChatTurn(
-                        msg.getSenderId().equals(BotConstant.BOT_MEMBER_ID) ? Sender.AI : Sender.USER,
-                        msg.getContent(),
-                        msg.getCreatedAt()
-                ))
+                // 타입 추론 이슈로 명시적 Message 캐스팅
+                .<Message>map(turn ->
+                        turn.getSenderId().equals(BotConstant.BOT_MEMBER_ID)
+                                ? new AssistantMessage(turn.getContent())
+                                : new UserMessage(turn.getContent())
+                )
                 .toList();
-    }
-
-    public String getRecentHistoryString(Long roomId, int maxTurns) {
-        List<ChatTurn> chatTurns = getRecentHistory(roomId, maxTurns);
-
-        return buildChatHistoryBlock(chatTurns);
-    }
-
-    private String buildChatHistoryBlock(List<ChatTurn> history) {
-        if (history == null || history.isEmpty()) {
-            return "(이전 대화가 없습니다. 첫 대화라고 생각하고 자연스럽게 시작해 주세요.)";
-        }
-
-        return history.stream()
-                .map(this::formatChatTurn)
-                .collect(Collectors.joining("\n"));
-    }
-
-    private String formatChatTurn(ChatTurn turn) {
-        String roleLabel = switch (turn.sender()) {
-            case USER -> "User";
-            case AI -> "AiTutor";
-        };
-
-        String timeStr = DATE_FORMATTER.format(turn.createdAt());
-        return "[" + timeStr + "] " + roleLabel + " : " + turn.content();
     }
 }

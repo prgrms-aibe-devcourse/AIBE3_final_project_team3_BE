@@ -22,12 +22,7 @@ public class RagPromptBuilder {
     private final SystemPromptService systemPromptService;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    public String buildPrompt(
-            String userMessage,
-            List<UserContextChunk> contextChunks,
-            String chatHistory,
-            String persona
-    ) {
+    public String buildPrompt(List<UserContextChunk> contextChunks, String persona) {
         // 1) DB에서 최신 버전 시스템 프롬프트 템플릿 가져오기
         SystemPrompt systemPrompt = systemPromptService.getLatestByKey(PromptKey.AI_TUTOR);
         String template = systemPrompt.getContent();
@@ -36,9 +31,7 @@ public class RagPromptBuilder {
         String learningNotesBlock = buildLearningNotesBlock(contextChunks);
 
         // 3) 템플릿 플레이스홀더 치환
-        return template.replace("{{CHAT_HISTORY}}", chatHistory)
-                .replace("{{LEARNING_NOTES}}", learningNotesBlock)
-                .replace("{{USER_MESSAGE}}", userMessage)
+        return template.replace("{{LEARNING_NOTES}}", learningNotesBlock)
                 .replace("{{PERSONA}}", persona);
     }
 

@@ -273,9 +273,6 @@ VALUES ('AI_TUTOR',
     [학습노트]
     {{LEARNING_NOTES}}
 
-    [사용자 입력]
-    {{USER_MESSAGE}}
-
     이제 규칙과 맥락에 따라 자연스럽게 답변해라.
 '
            ,
@@ -305,12 +302,6 @@ VALUES ('AI_TUTOR',
       [학습노트]
       {{LEARNING_NOTES}}
 
-      [최근 대화]
-      {{CHAT_HISTORY}}
-
-      [사용자 입력]
-      {{USER_MESSAGE}}
-
       이제 위 규칙과 맥락을 모두 반영해서 한 번의 자연스러운 답변을 출력해라.',
         3);
 
@@ -326,12 +317,6 @@ VALUES ('AI_ROLE_PLAY', 'Mixchat 자유 대화 프롬프트',
 
     [유저 영어 수준]
     {{USER_ENGLISH_LEVEL}}
-
-    [최근 대화]
-    {{CHAT_HISTORY}}
-
-    [사용자 입력]
-    {{USER_MESSAGE}}
 
     이제 위 맥락을 모두 반영해서 자연스럽게 영어로만 답변해라.',
 1);

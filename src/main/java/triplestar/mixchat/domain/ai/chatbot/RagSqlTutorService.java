@@ -3,6 +3,7 @@ package triplestar.mixchat.domain.ai.chatbot;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.Message;
 import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.ai.rag.RagPromptBuilder;
 import triplestar.mixchat.domain.ai.rag.context.chathistory.ChatHistoryProvider;
@@ -25,15 +26,17 @@ public class RagSqlTutorService {
         List<UserContextChunk> chunks = contextRetriever.retrieve(userId, null, 10);
 
         // 2) 단기 기억: 현재 AI와의 채팅 대화 로그
-        String chatHistory = chatHistoryProvider.getRecentHistoryString(chatRoom.getId(), 10);
+        List<Message> recentHistory = chatHistoryProvider.getRecentHistory(chatRoom.getId(), 10);
 
         //3) 프롬프트 생성
-        String prompt = ragPromptBuilder.buildPrompt(userMessage, chunks, chatHistory, persona);
+        String prompt = ragPromptBuilder.buildPrompt(chunks, persona);
 
         // 4) LLM 호출
         return ollamaChatClient
                 .prompt()
-                .user(prompt)
+                .system(prompt)
+                .messages(recentHistory)
+                .user(userMessage)
                 .call()
                 .content();
     }
