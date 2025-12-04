@@ -19,7 +19,6 @@ import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
-import triplestar.mixchat.domain.chat.chat.dto.SubscriberCountUpdateResp;
 import triplestar.mixchat.domain.chat.chat.dto.UnreadCountUpdateEvent;
 import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;

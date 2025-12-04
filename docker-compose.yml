@@ -111,6 +111,15 @@ services:
     networks:
       - mixchat-network
 
+  elasticsearch:
+    image: elasticsearch:8.17.3
+    volumes:
+      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    environment:
+      discovery.type: single-node
 networks:
   mixchat-network:
     driver: bridge
@@ -120,3 +129,4 @@ volumes:
   redis_data:
   minio_data:
   mongo_data:
+  elasticsearch_data:

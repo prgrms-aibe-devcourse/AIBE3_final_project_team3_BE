@@ -36,7 +36,9 @@ spring:
         options:
           #model: ${OPENAI_CHAT_MODEL:exaone3.5:2.4b}
           model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
-
+      embedding:
+        options:
+          model: text-embedding-3-small
 swagger:
   redirect:
     # "/"로 들어왔을 때 최종적으로 리다이렉트될 Swagger UI 경로
