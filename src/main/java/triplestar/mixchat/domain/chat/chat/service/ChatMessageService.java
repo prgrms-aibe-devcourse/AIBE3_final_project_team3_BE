@@ -16,12 +16,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationReq;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
+import triplestar.mixchat.domain.chat.chat.dto.RoomLastMessageUpdateResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
-import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.DirectChatRoomRepository;
@@ -46,6 +47,7 @@ public class ChatMessageService {
     private final DirectChatRoomRepository directChatRoomRepository;
     private final GroupChatRoomRepository groupChatRoomRepository;
     private final ChatSubscriberCacheService subscriberCacheService;
+    private final ChatNotificationService chatNotificationService;
     private final jakarta.persistence.EntityManager entityManager;
 
     @Transactional
@@ -53,6 +55,14 @@ public class ChatMessageService {
         // 시스템 메시지가 아닐 경우에만 멤버 검증을 수행
         if (messageType != ChatMessage.MessageType.SYSTEM) {
             chatMemberService.verifyUserIsMemberOfRoom(senderId, roomId, chatRoomType);
+
+            // 1:1 채팅방인 경우 상대방이 존재하는지 확인 (차단/나가기 등으로 혼자 남은 경우 메시지 전송 불가)
+            if (chatRoomType == ChatRoomType.DIRECT) {
+                long memberCount = chatRoomMemberRepository.countByChatRoomIdAndChatRoomType(roomId, chatRoomType);
+                if (memberCount < 2) {
+                    throw new IllegalStateException("상대방이 채팅방을 나가 메시지를 보낼 수 없습니다.");
+                }
+            }
         }
 
         // Sequence 생성 (비관적 락으로 동시성 제어)
@@ -116,7 +126,38 @@ public class ChatMessageService {
             }
         }
 
-        return MessageResp.withUnreadCount(savedMessage, senderNickname, unreadCount);
+        // 6. 모든 멤버에게 채팅방 리스트 업데이트 알림 전송 (실시간 정렬용)
+        String lastMessageAt = savedMessage.getCreatedAt().toString();
+        String lastMessageContent = savedMessage.isTranslateEnabled() && savedMessage.getTranslatedContent() != null
+                ? savedMessage.getTranslatedContent()
+                : savedMessage.getContent();
+
+        // 각 멤버별로 unreadCount를 계산해서 개별 전송
+        allMembers.forEach(member -> {
+            // 해당 멤버의 안읽은 메시지 수 계산 (현재 sequence - 마지막 읽은 sequence)
+            long memberLastRead = member.getLastReadSequence();
+            int unreadCountForMember = (int) Math.max(0, sequence - memberLastRead);
+
+            RoomLastMessageUpdateResp updateResp = new RoomLastMessageUpdateResp(
+                    roomId,
+                    chatRoomType,
+                    lastMessageAt,
+                    unreadCountForMember,
+                    lastMessageContent
+            );
+
+            chatNotificationService.sendRoomListUpdate(
+                    member.getMember().getId().toString(),
+                    updateResp
+            );
+        });
+
+        MessageResp response = MessageResp.withUnreadCount(savedMessage, senderNickname, unreadCount);
+
+        // 7. 현재 채팅방(Topic)에 메시지 전송
+        chatNotificationService.sendChatMessage(roomId, chatRoomType, response);
+
+        return response;
     }
 
     @Transactional
@@ -130,6 +171,9 @@ public class ChatMessageService {
 
     // 메시지 목록 조회 (페이징), 발신자 이름 및 unreadCount 포함
     public MessagePageResp getMessagesWithSenderInfo(Long roomId, ChatRoomType chatRoomType, Long requesterId, Long cursor, Integer size) {
+        // 보안 검증: 요청자가 해당 채팅방의 멤버인지 확인
+        chatMemberService.verifyUserIsMemberOfRoom(requesterId, roomId, chatRoomType);
+
         // 기본값: size = 25, 최대 100
         int pageSize = (size != null && size > 0 && size <= 100) ? size : 25;
 

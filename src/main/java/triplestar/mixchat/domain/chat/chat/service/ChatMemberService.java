@@ -36,12 +36,6 @@ public class ChatMemberService {
     private final AIChatRoomRepository aiChatRoomRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
-
-    private Member findMemberById(Long memberId) {
-        return memberRepository.findById(memberId)
-                .orElseThrow(() -> new AccessDeniedException("사용자를 찾을 수 없습니다. ID: " + memberId));
-    }
-
     //사용자가 특정 대화방의 멤버인지 확인 (캐시 적용)
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId, ChatRoomType chatRoomType) {
         if (roomId == null || memberId == null || chatRoomType == null) {
@@ -63,16 +57,6 @@ public class ChatMemberService {
 
         // 3. DB에 존재하면, 그 결과를 캐시에 저장 (다음 조회를 위해)
         chatAuthCacheService.addMember(roomId, memberId);
-    }
-
-    // 읽음 처리
-    @Transactional
-    public void updateLastReadSequence(Long memberId, Long roomId, ChatRoomType chatRoomType, Long sequence) {
-        ChatMember member = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_Id(
-                roomId, chatRoomType, memberId
-        ).orElseThrow(() -> new AccessDeniedException("해당 대화방에 접근할 권한이 없습니다."));
-
-        member.updateLastReadSequence(sequence);
     }
 
     // 채팅방 입장 시 자동 읽음 처리 (해당 방의 최신 sequence까지 읽음 처리)

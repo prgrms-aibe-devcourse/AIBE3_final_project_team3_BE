@@ -2,7 +2,6 @@ package triplestar.mixchat.domain.ai.systemprompt.service;
 
 import jakarta.annotation.PostConstruct;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -18,6 +17,13 @@ import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 @Service
 @RequiredArgsConstructor
 public class AiTranslationService {
+
+    private record TranslationUpdatePayload(
+            String type,
+            String messageId,
+            String originalContent,
+            String translatedContent
+    ) {}
 
     private final List<TranslationProvider> translationProviders;
     private final ChatMessageRepository chatMessageRepository;
@@ -49,24 +55,24 @@ public class AiTranslationService {
             try {
                 log.info("'{}'로 번역 시도...", providerName);
 
-                TranslationResp translationResp = provider.translate(req.originalContent())
-                        .block(java.time.Duration.ofSeconds(30));
+                TranslationResp translationResp = provider.translate(req.originalContent());
 
                 if (translationResp == null) {
                     log.warn("'{}' 응답 없음. 다음 프로바이더를 시도합니다.", providerName);
                     continue;
                 }
 
-                String translatedContent = translationResp.correctedContent();
+                String translatedContent = translationResp.translatedContent();
 
                 if (translatedContent != null && !translatedContent.isBlank()) {
-                    log.info("번역 성공 (Provider: {}): messageId={}, translatedText={}", providerName, req.chatMessageId(), translatedContent);
+                    log.info("번역 성공 (Provider: {}): messageId={}, original='{}', translated='{}'",
+                            providerName, req.chatMessageId(), req.originalContent(), translatedContent);
                     chatMessage.setTranslatedContent(translatedContent);
                     ChatMessage updatedMessage = chatMessageRepository.save(chatMessage);
-                    notifyClientOfUpdate(updatedMessage, translationResp);
+                    notifyClientOfUpdate(updatedMessage);
                     return;
                 } else {
-                    log.debug("번역이 필요하지 않음 (Provider: {}): messageId={}", providerName, req.chatMessageId());
+                    log.info("번역이 필요하지 않음 (Provider: {}): messageId={}", providerName, req.chatMessageId());
                     return;
                 }
 
@@ -79,17 +85,16 @@ public class AiTranslationService {
         log.warn("모든 번역 프로바이더 실패: messageId={}", req.chatMessageId());
     }
 
-    private void notifyClientOfUpdate(ChatMessage updatedMessage, TranslationResp translationResp) {
+    private void notifyClientOfUpdate(ChatMessage updatedMessage) {
         String destination = String.format("/topic/%s/rooms/%d",
                 updatedMessage.getChatRoomType().name().toLowerCase(),
                 updatedMessage.getChatRoomId());
 
-        // 클라이언트에게 전달할 최종 DTO
-        Map<String, Object> payload = Map.of(
-                "type", "TRANSLATION_UPDATE",
-                "messageId", updatedMessage.getId(),
-                "translatedContent", updatedMessage.getTranslatedContent(),
-                "feedback", translationResp.feedback()
+        TranslationUpdatePayload payload = new TranslationUpdatePayload(
+                "TRANSLATION_UPDATE",
+                updatedMessage.getId(),
+                updatedMessage.getContent(),
+                updatedMessage.getTranslatedContent()
         );
 
         messagingTemplate.convertAndSend(destination, payload);

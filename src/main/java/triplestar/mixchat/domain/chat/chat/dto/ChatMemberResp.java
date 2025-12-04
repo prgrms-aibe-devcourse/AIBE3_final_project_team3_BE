@@ -12,9 +12,12 @@ public record ChatMemberResp(
         String nickname,
 
         @Schema(description = "친구 여부", example = "false")
-        boolean isFriend
+        boolean isFriend,
+
+        @Schema(description = "프로필 이미지 URL", example = "https://example.com/profile.jpg")
+        String profileImageUrl
 ) {
     public static ChatMemberResp from(Member member, boolean isFriend) {
-        return new ChatMemberResp(member.getId(), member.getNickname(), isFriend);
+        return new ChatMemberResp(member.getId(), member.getNickname(), isFriend, member.getProfileImageUrl());
     }
 }

@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackReq;
+import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackResp;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomPageDataResp;
@@ -34,6 +36,13 @@ import triplestar.mixchat.global.springdoc.SuccessResponse;
 @SuccessResponse
 @SecurityRequirement(name = "Authorization")
 public interface ApiChatController {
+
+    @Operation(summary = "AI 피드백 분석 요청", description = "원문과 번역문(또는 사용자 의도)을 비교하여 AI에게 교정 및 피드백을 요청합니다.")
+    @SignInInRequireResponse
+    CustomResponse<AiFeedbackResp> analyzeFeedback(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody AiFeedbackReq req
+    );
 
     @Operation(summary = "1:1 채팅방 생성/조회", description = "특정 사용자와의 1:1 채팅방이 없으면 새로 생성하고, 있으면 기존 채팅방 정보를 반환합니다.")
     @SignInInRequireResponse

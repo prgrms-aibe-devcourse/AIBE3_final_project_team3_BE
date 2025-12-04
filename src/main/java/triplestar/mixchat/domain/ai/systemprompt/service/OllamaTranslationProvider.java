@@ -1,8 +1,7 @@
 package triplestar.mixchat.domain.ai.systemprompt.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
-import java.io.IOException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,64 +13,70 @@ import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationResp;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 @Order(1)
+@RequiredArgsConstructor
 public class OllamaTranslationProvider implements TranslationProvider {
 
     private final WebClient.Builder webClientBuilder;
-    private final ObjectMapper objectMapper;
 
-    @Value("${ollama.api.url}")
-    private String ollamaApiUrl;
+    @Value("${spring.ai.ollama.base-url}")
+    private String ollamaBaseUrl;
 
-    @Value("${ollama.api.model}")
-    private String ollamaModel;
-
-    @Value("${ollama.api.key}")
+    @Value("${spring.ai.ollama.api-key:}")
     private String apiKey;
+
+    @Value("${spring.ai.ollama.chat.options.model}")
+    private String model;
 
     private WebClient webClient;
 
     @PostConstruct
     public void init() {
-        this.webClient = webClientBuilder
-                .baseUrl(ollamaApiUrl)
-                .defaultHeaders(headers -> headers.setBearerAuth(apiKey))
-                .build();
+        WebClient.Builder builder = webClientBuilder.baseUrl(ollamaBaseUrl);
+
+        // API Key가 있으면 Bearer 토큰으로 추가
+        if (apiKey != null && !apiKey.isBlank()) {
+            builder.defaultHeader("Authorization", "Bearer " + apiKey);
+        }
+
+        this.webClient = builder.build();
     }
 
-    private record OllamaRequest(String model, String prompt, boolean stream, String format) {}
-    private record OllamaResponse(String response) {}
-
-    private static final String SYSTEM_PROMPT = """
-        Translate Korean to English. Correct broken English. Output JSON only.
-
-        Format: {"original_content":"input","corrected_content":"translation or null","feedback":[{"tag":"TRANSLATION|GRAMMAR","problem":"word","correction":"fix","extra":"reason"}]}
-
-        Rules: Korean→English always. Perfect English→null. Broken English→fix.
-        """;
+    private record ChatRequest(String model, List<Message> messages, boolean stream) {}
+    private record Message(String role, String content) {}
+    private record ChatResponse(Message message) {}
 
     @Override
-    public Mono<TranslationResp> translate(String originalContent) {
-        // 시스템 프롬프트에 사용자 입력 주입 (Ollama Native API 방식은 프롬프트가 하나)
-        // Chat 포맷을 흉내내기 위해 텍스트로 합침
-        String fullPrompt = SYSTEM_PROMPT + "\n\nUser input:\n" + originalContent;
+    public TranslationResp translate(String originalContent) {
+        try {
+            ChatRequest request = new ChatRequest(
+                    model,
+                    List.of(
+                            new Message("system", SYSTEM_PROMPT),
+                            new Message("user", originalContent)
+                    ),
+                    false
+            );
 
-        OllamaRequest ollamaRequest = new OllamaRequest(ollamaModel, fullPrompt, false, "json");
+            Mono<ChatResponse> responseMono = webClient.post()
+                    .uri("/api/chat")
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(ChatResponse.class);
 
-        return webClient.post()
-                .uri("/api/generate")
-                .bodyValue(ollamaRequest)
-                .retrieve()
-                .bodyToMono(OllamaResponse.class)
-                .map(ollamaResponse -> {
-                    try {
-                        return objectMapper.readValue(ollamaResponse.response(), TranslationResp.class);
-                    } catch (IOException e) {
-                        log.error("Ollama 응답 JSON 파싱 실패: {}", ollamaResponse.response(), e);
-                        throw new RuntimeException("Failed to parse Ollama response", e);
-                    }
-                })
-                .doOnError(e -> log.error("Ollama 번역 중 오류 발생: {}", e.getMessage(), e));
+            ChatResponse response = responseMono.block();
+
+            if (response == null || response.message() == null || response.message().content() == null) {
+                log.warn("Ollama 응답이 비어있음 -> Fallback");
+                return null;
+            }
+
+            String translatedText = response.message().content().trim();
+            return new TranslationResp(originalContent, translatedText);
+
+        } catch (Exception e) {
+            log.error("Ollama 번역 오류: {}", e.getMessage());
+            return null;
+        }
     }
 }

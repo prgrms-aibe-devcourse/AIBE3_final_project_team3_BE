@@ -18,9 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
-import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.entity.GroupChatRoom;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
@@ -46,11 +44,7 @@ public class GroupChatRoomService {
     private final ChatMessageService chatMessageService;
     private final FriendshipRepository friendshipRepository;
     private final SystemMessageService systemMessageService;
-
-    public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
-        chatMemberService.verifyUserIsMemberOfRoom(memberId, roomId, ChatRoomType.GROUP);
-    }
-
+    private final triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository chatMessageRepository;
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
@@ -86,7 +80,7 @@ public class GroupChatRoomService {
         Page<Long> friendIdPage = friendsByMemberId.map(Member::getId);
         Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
 
-        GroupChatRoomResp roomDto = GroupChatRoomResp.from(savedRoom, chatMembers, creatorId, friendIdSet, 0L);
+        GroupChatRoomResp roomDto = GroupChatRoomResp.from(savedRoom, chatMembers, creatorId, friendIdSet, 0L, null);
         members.forEach(member -> {
             messagingTemplate.convertAndSendToUser(member.getId().toString(), "/topic/rooms", roomDto);
         });
@@ -192,7 +186,7 @@ public class GroupChatRoomService {
         Page<Long> friendIdPage = friendsByMemberId.map(Member::getId);
         Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
 
-        GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers, userId, friendIdSet, 0L);
+        GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers, userId, friendIdSet, 0L, null);
 
         // 8. 시스템 메시지 전송 (새 멤버 입장 알림)
         systemMessageService.sendJoinMessage(roomId, member.getNickname(), ChatRoomType.GROUP);
@@ -330,12 +324,21 @@ public class GroupChatRoomService {
                     long unreadCount = (lastRead == null) ? room.getCurrentSequence() : room.getCurrentSequence() - lastRead;
                     if (unreadCount < 0) unreadCount = 0;
 
+                    // 마지막 메시지 조회 (번역된 메시지가 있으면 번역된 내용 사용)
+                    String lastMessageContent = chatMessageRepository
+                            .findTopByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(room.getId(), ChatRoomType.GROUP)
+                            .map(msg -> msg.isTranslateEnabled() && msg.getTranslatedContent() != null
+                                    ? msg.getTranslatedContent()
+                                    : msg.getContent())
+                            .orElse(null);
+
                     return GroupChatRoomResp.from(
                             room,
                             membersByRoom.getOrDefault(room.getId(), Collections.emptyList()),
                             currentUserId,
                             friendIdSet,
-                            unreadCount
+                            unreadCount,
+                            lastMessageContent
                     );
                 })
                 .collect(Collectors.toList());

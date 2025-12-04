@@ -17,6 +17,7 @@ public interface GroupChatRoomRepository extends JpaRepository<GroupChatRoom, Lo
         SELECT DISTINCT gcr FROM GroupChatRoom gcr
         JOIN ChatMember cm ON cm.chatRoomId = gcr.id
         WHERE cm.member.id = :memberId AND cm.chatRoomType = 'GROUP'
+        ORDER BY gcr.modifiedAt DESC
         """)
     List<GroupChatRoom> findAllByMemberId(@Param("memberId") Long memberId);
 
