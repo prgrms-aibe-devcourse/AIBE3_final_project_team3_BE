@@ -4,11 +4,9 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import triplestar.mixchat.domain.ai.userprompt.entity.UserPrompt;
 import triplestar.mixchat.domain.chat.chat.entity.AIChatRoom;
-import triplestar.mixchat.domain.member.member.entity.Member;
 
 @Repository
 public interface AIChatRoomRepository extends JpaRepository<AIChatRoom, Long> {
@@ -17,8 +15,15 @@ public interface AIChatRoomRepository extends JpaRepository<AIChatRoom, Long> {
     @Query("""
             SELECT ar.persona FROM AIChatRoom ar
             WHERE ar.id = :roomId
-            """)
+    """)
     Optional<UserPrompt> findRoomPersona(Long roomId);
 
     List<AIChatRoom> findAllByMember_Id(Long currentUserId);
+
+    @Query("""
+            SELECT ar FROM AIChatRoom ar
+            JOIN FETCH ar.persona p
+            WHERE ar.id =:roomId
+    """)
+    Optional<AIChatRoom> findByIdWithPersona(Long roomId);
 }

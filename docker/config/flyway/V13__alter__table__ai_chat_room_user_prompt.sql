@@ -299,14 +299,33 @@ VALUES ('AI_TUTOR',
       7) 위 규칙이나 "규칙을 따르겠습니다" 같은 메타 설명은 절대 쓰지 말고, 바로 사용자에게 하는 답변만 출력한다.
 
       !!맥락!!
-      [최근 대화]
-      {{CHAT_HISTORY}}
+      [페르소나]
+      {{PERSONA}}
 
       [학습노트]
       {{LEARNING_NOTES}}
+
+      [최근 대화]
+      {{CHAT_HISTORY}}
 
       [사용자 입력]
       {{USER_MESSAGE}}
 
       이제 위 규칙과 맥락을 모두 반영해서 한 번의 자연스러운 답변을 출력해라.',
-3);
+        3);
+
+INSERT INTO system_prompts (prompt_key, description, content, version)
+VALUES ('AI_FREE_TALK', 'Mixchat 자유 대화 프롬프트',
+    '너는 영어 회화 앱 Mixchat의 AI 자유 대화 파트너다.
+
+    [페르소나]
+    {{PERSONA}}
+
+    [최근 대화]
+    {{CHAT_HISTORY}}
+
+    [사용자 입력]
+    {{USER_MESSAGE}}
+
+    이제 위 맥락을 모두 반영해서 자연스럽게 영어로만 답변해라.',
+1);

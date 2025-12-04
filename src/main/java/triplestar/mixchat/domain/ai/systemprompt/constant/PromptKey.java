@@ -1,8 +1,11 @@
 package triplestar.mixchat.domain.ai.systemprompt.constant;
 
+// AI 시스템 프롬프트 키
+// DB에 저장된 프롬프트를 식별하는 데 사용
 public enum PromptKey {
     AI_TUTOR("AI_TUTOR"),
     AI_ASSIST("AI_ASSIST"),
+    AI_FREE_TALK("AI_FREE_TALK"),
     ;
 
     private final String key;
