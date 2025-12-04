@@ -18,7 +18,7 @@ public record GroupChatRoomResp(
         @Schema(description = "채팅방 이름", example = "그룹 채팅방", requiredMode = REQUIRED)
         String name,
 
-        @Schema(description = "채팅방 설명", example = "스터디 그룹입니다.", requiredMode = REQUIRED)
+        @Schema(description = "채팅방 설명", example = "친구들과 함께하는 방", requiredMode = REQUIRED)
         String description,
 
         @Schema(description = "채팅방 주제", example = "스터디", requiredMode = REQUIRED)
@@ -30,7 +30,7 @@ public record GroupChatRoomResp(
         @Schema(description = "멤버 수", example = "5", requiredMode = REQUIRED)
         Integer memberCount,
 
-        @Schema(description = "생성일시", requiredMode = REQUIRED)
+        @Schema(description = "생성시각", requiredMode = REQUIRED)
         LocalDateTime createdAt,
 
         @Schema(description = "방장 ID", requiredMode = REQUIRED)
@@ -40,7 +40,10 @@ public record GroupChatRoomResp(
         Long unreadCount,
 
         @Schema(description = "채팅방 멤버 목록", requiredMode = REQUIRED)
-        List<ChatMemberResp> members
+        List<ChatMemberResp> members,
+
+        @Schema(description = "마지막 메시지 시각", requiredMode = REQUIRED)
+        LocalDateTime lastMessageAt
 ) {
     public static GroupChatRoomResp from(GroupChatRoom entity, List<ChatMember> chatMembers, Long currentUserId, Set<Long> friendIdSet, Long unreadCount) {
         List<ChatMemberResp> memberDtos = chatMembers.stream()
@@ -50,7 +53,6 @@ public record GroupChatRoomResp(
                 })
                 .collect(Collectors.toList());
 
-        // 비밀번호 설정 여부 확인
         boolean hasPassword = entity.getPassword() != null && !entity.getPassword().trim().isEmpty();
 
         return new GroupChatRoomResp(
@@ -63,7 +65,8 @@ public record GroupChatRoomResp(
                 entity.getCreatedAt(),
                 entity.getOwner().getId(),
                 unreadCount,
-                memberDtos
+                memberDtos,
+                entity.getModifiedAt()
         );
     }
 }

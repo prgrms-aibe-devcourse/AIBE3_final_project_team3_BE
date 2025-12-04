@@ -28,6 +28,7 @@ public interface DirectChatRoomRepository extends JpaRepository<DirectChatRoom, 
         JOIN FETCH r.user1
         JOIN FETCH r.user2
         WHERE cm.member.id = :memberId
+        ORDER BY r.modifiedAt DESC
         """)
     List<Object[]> findRoomsAndLastReadByMemberId(@Param("memberId") Long memberId);
 }

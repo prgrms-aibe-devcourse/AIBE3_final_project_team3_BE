@@ -13,12 +13,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
+import triplestar.mixchat.domain.chat.chat.dto.RoomLastMessageUpdateResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
@@ -46,6 +48,7 @@ public class ChatMessageService {
     private final DirectChatRoomRepository directChatRoomRepository;
     private final GroupChatRoomRepository groupChatRoomRepository;
     private final ChatSubscriberCacheService subscriberCacheService;
+    private final SimpMessageSendingOperations messagingTemplate;
     private final jakarta.persistence.EntityManager entityManager;
 
     @Transactional
@@ -123,6 +126,29 @@ public class ChatMessageService {
                 );
             }
         }
+
+        // 6. 모든 멤버에게 채팅방 리스트 업데이트 알림 전송 (실시간 정렬용)
+        String lastMessageAt = savedMessage.getCreatedAt().toString();
+
+        // 각 멤버별로 unreadCount를 계산해서 개별 전송
+        allMembers.forEach(member -> {
+            // 해당 멤버의 안읽은 메시지 수 계산 (현재 sequence - 마지막 읽은 sequence)
+            long memberLastRead = member.getLastReadSequence();
+            int unreadCountForMember = (int) Math.max(0, sequence - memberLastRead);
+
+            RoomLastMessageUpdateResp updateResp = new RoomLastMessageUpdateResp(
+                    roomId,
+                    chatRoomType,
+                    lastMessageAt,
+                    unreadCountForMember
+            );
+
+            messagingTemplate.convertAndSendToUser(
+                    member.getMember().getId().toString(),
+                    "/topic/rooms/update",
+                    updateResp
+            );
+        });
 
         return MessageResp.withUnreadCount(savedMessage, senderNickname, unreadCount);
     }

@@ -16,8 +16,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackReq;
+import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackResp;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
-import triplestar.mixchat.domain.chat.chat.dto.ChatRoomDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomPageDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
@@ -26,13 +28,11 @@ import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.JoinGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
-import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
-import triplestar.mixchat.domain.chat.chat.dto.UnreadCountUpdateEvent;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.TextMessageReq;
 import triplestar.mixchat.domain.chat.chat.dto.TransferOwnerReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
-import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
+import triplestar.mixchat.domain.ai.systemprompt.service.AiFeedbackService;
 import triplestar.mixchat.domain.chat.chat.service.AIChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
@@ -54,6 +54,17 @@ public class ApiV1ChatController implements ApiChatController {
     private final ChatMessageService chatMessageService;
     private final S3Uploader s3Uploader;
     private final SimpMessagingTemplate messagingTemplate;
+    private final AiFeedbackService aiFeedbackService;
+
+    @Override
+    @PostMapping("/feedback")
+    public CustomResponse<AiFeedbackResp> analyzeFeedback(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody AiFeedbackReq req
+    ) {
+        AiFeedbackResp response = aiFeedbackService.analyze(req);
+        return CustomResponse.ok("AI 피드백 분석 성공", response);
+    }
 
     @Override
     @PostMapping("/rooms/direct")
@@ -178,10 +189,8 @@ public class ApiV1ChatController implements ApiChatController {
         MessageResp messageResp =
                 chatMessageService.saveFileMessage(roomId, currentUser.getId(), currentUser.getNickname(), fileUrl, messageType, chatRoomType);
 
-        messagingTemplate.convertAndSend(
-                "/topic/chat/room/" + roomId,
-                messageResp
-        );
+        String destination = "/topic/" + chatRoomType.name().toLowerCase() + "/rooms/" + roomId;
+        messagingTemplate.convertAndSend(destination, messageResp);
 
         return CustomResponse.ok("파일 업로드 및 메시지 전송에 성공하였습니다.", messageResp);
     }
