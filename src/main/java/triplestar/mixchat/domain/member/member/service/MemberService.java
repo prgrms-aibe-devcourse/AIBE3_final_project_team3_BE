@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
+import triplestar.mixchat.domain.member.member.dto.MyProfileResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.presence.service.PresenceService;
@@ -37,6 +38,10 @@ public class MemberService {
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다."));
+    }
+
+    public MyProfileResp getMyProfile(Long currentUserId) {
+        return MyProfileResp.from(findMemberById(currentUserId));
     }
 
     public MemberDetailResp getMemberDetails(Long currentUserId, Long memberId) {
@@ -110,7 +115,10 @@ public class MemberService {
     @Transactional
     public void deleteSoftly(Long memberId) {
         Member member = findMemberById(memberId);
-        s3Uploader.deleteFileByUrl(member.getProfileImageUrl());
+        String profileUrl = member.getProfileImageUrl();
+        if (profileUrl != null && !profileUrl.equals(defaultProfileBaseURL)) {
+            s3Uploader.deleteFileByUrl(profileUrl);
+        }
 
         member.deleteSoftly();
         member.updateProfileImageUrl(defaultProfileBaseURL);

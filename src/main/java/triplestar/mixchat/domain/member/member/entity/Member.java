@@ -65,7 +65,8 @@ public class Member extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private MembershipGrade membershipGrade;
 
-    private LocalDateTime lastSignInAt;
+    @Column(nullable = false)
+    private LocalDateTime lastSeenAt;
 
     @Column(nullable = false)
     private boolean isBlocked;

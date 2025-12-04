@@ -1,18 +1,21 @@
-package triplestar.mixchat.domain.member.friend.dto;
+package triplestar.mixchat.domain.member.member.dto;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
 import java.util.List;
-import triplestar.mixchat.domain.member.member.constant.Country;
-import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
-@Schema(description = "친구 상세 조회 응답 DTO")
-public record FriendDetailResp(
+@Schema(description = "회원 상세 조회 응답 DTO")
+public record MyProfileResp(
         @Schema(description = "회원 고유 ID", example = "123", requiredMode = REQUIRED)
         Long memberId,
+
+        @Schema(description = "이메일", example = "email@example.com", requiredMode = REQUIRED)
+        String email,
+
+        @Schema(description = "이름", example = "홍길동", requiredMode = REQUIRED)
+        String name,
 
         @Schema(description = "닉네임", example = "MixMaster", requiredMode = REQUIRED)
         String nickname,
@@ -30,13 +33,19 @@ public record FriendDetailResp(
         String description,
 
         @Schema(description = "프로필 이미지 URL", example = "https://cdn.example.com/profile/123_photo.jpg", requiredMode = REQUIRED)
-        String profileImageUrl,
-
-        @Schema(description = "친구관계 생성 날짜", example = "2024-07-25T10:30:00", requiredMode = REQUIRED)
-        LocalDateTime createdAt,
-
-        @Schema(description = "마지막으로 온라인 상태였던 시간 (ISO 8601 형식)",
-                example = "2024-10-01T14:30:00", requiredMode = REQUIRED)
-        LocalDateTime lastSeenAt
+        String profileImageUrl
 ) {
+    public static MyProfileResp from(Member member) {
+        return new MyProfileResp(
+                member.getId(),
+                member.getEmail(),
+                member.getName(),
+                member.getNickname(),
+                member.getCountry().name(),
+                member.getEnglishLevel().name(),
+                member.getInterests(),
+                member.getDescription(),
+                member.getProfileImageUrl()
+        );
+    }
 }
