@@ -32,16 +32,6 @@ public class ChatHistoryProvider {
                         roomId, ChatRoomType.AI, Pageable.ofSize(maxTurns)
                 );
 
-        log.info("getRecentHistory returned {} messages", messages.size());
-        log.info("Messages: {}", messages.stream()
-                .map(msg -> String.format("[%s] %s: %s",
-                        msg.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                        msg.getSenderId(),
-                        msg.getContent()
-                ))
-                .toList()
-        );
-
         List<Message> history = messages.stream()
                 // 타입 추론 이슈로 명시적 Message 캐스팅
                 .<Message>map(turn ->
