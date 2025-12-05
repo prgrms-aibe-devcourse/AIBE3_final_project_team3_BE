@@ -42,25 +42,27 @@ public class Comment extends BaseEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(nullable = false)
-    private int likeCount = 0;
-
     @Builder
     public Comment(Member author, Post post, Comment parent, String content) {
+        if (author == null) {
+            throw new IllegalArgumentException("작성자는 필수입니다.");
+        }
+        if (post == null) {
+            throw new IllegalArgumentException("게시글은 필수입니다.");
+        }
+        if (content == null || content.isBlank()) {
+            throw new IllegalArgumentException("내용은 필수입니다.");
+        }
         this.author = author;
         this.post = post;
-        this.parent = parent;
         this.content = content;
-        this.likeCount = 0;
-    }
-
-    public void incrementLikeCount() {
-        this.likeCount++;
-    }
-
-    public void decrementLikeCount() {
-        if (this.likeCount > 0) {
-            this.likeCount--;
+        if (parent != null) {
+            this.parent = parent;
+            parent.getReplies().add(this);
         }
+    }
+
+    public void updateContent(String content) {
+        this.content = content;
     }
 }
