@@ -1,6 +1,5 @@
 package triplestar.mixchat.domain.ai.systemprompt.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -68,6 +67,7 @@ public class AiFeedbackService {
 
                 // JSON 파싱 (Markdown 코드 블록 제거 처리)
                 String json = response.replaceAll("```json", "").replaceAll("```", "").trim();
+
                 return objectMapper.readValue(json, AiFeedbackResp.class);
 
             } catch (Exception e) {

@@ -7,7 +7,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,9 +15,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.Feedback;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
-import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteDocumentRepository;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
 import triplestar.mixchat.domain.learningNote.learningNote.service.LearningNoteEmbeddingService;
+import triplestar.mixchat.domain.learningNote.learningNote.service.LearningNoteSearchService;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -29,34 +28,31 @@ import triplestar.mixchat.domain.translation.translation.constant.TranslationTag
 @ActiveProfiles("test")
 @SpringBootTest
 @Transactional
-@DisplayName("학습노트 임베딩 ES 저장 통합 테스트")
-@TestInstance(TestInstance.Lifecycle.PER_CLASS) // ✅ BeforeAll에서 DB 초기화 보장
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@DisplayName("학습노트 임베딩 저장 + 검색(KNN) 통합 테스트")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-class LearningNoteEmbeddingTest {
+public class LearningNoteSearchIntegrationTest {
 
     @Autowired
     private MemberRepository memberRepository;
 
     @Autowired
+    private LearningNoteRepository learningNoteRepository;
+
+    @Autowired
     private LearningNoteEmbeddingService embeddingService;
 
     @Autowired
-    private LearningNoteDocumentRepository documentRepository;
-
-    @Autowired
-    private EmbeddingModel embeddingModel;
+    private LearningNoteSearchService searchService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private LearningNoteRepository learningNoteRepository;
-
-    private Member testMember;
+    private Member member;
 
     @BeforeEach
-    void setUp() {
-        testMember = memberRepository.save(
+    void setup() {
+        member = memberRepository.save(
                 Member.createMember(
                         "search_test@example.com",
                         Password.encrypt("Password1!", passwordEncoder),
@@ -71,43 +67,46 @@ class LearningNoteEmbeddingTest {
     }
 
     @Test
-    @DisplayName("학습노트 저장 후 임베딩 생성 -> ES에 문서가 저장된다")
-    void embedding_is_saved_to_elasticsearch() {
-        // given
-        LearningNote note = LearningNote.create(
-                testMember,
-                "I goes to 학교.",
-                "I go to school."
+    @DisplayName("ES KNN 검색이 유사한 학습노트를 반환해야 한다")
+    void search_knn_success() {
+
+        // ⭐ 1) 저장할 학습노트 1
+        LearningNote note1 = LearningNote.create(
+                member,
+                "I goes to school yesterday.",
+                "I went to school yesterday."
         );
+        Feedback fb1 = Feedback.create(note1, TranslationTagCode.GRAMMAR, "goes", "went", "과거형으로 수정");
+        note1.addFeedback(fb1);
+        note1 = learningNoteRepository.save(note1);
 
-        Feedback fb1 = Feedback.create(
-                note,
-                TranslationTagCode.GRAMMAR,
-                "goes",
-                "go",
-                "삼인칭 단수 수정"
+        // ⭐ 2) 저장할 학습노트 2
+        LearningNote note2 = LearningNote.create(
+                member,
+                "She don't likes apple.",
+                "She doesn't like apples."
         );
-        note.addFeedback(fb1);
+        Feedback fb2 = Feedback.create(note2, TranslationTagCode.GRAMMAR, "don't", "doesn't", "삼인칭 단수 수정");
+        note2.addFeedback(fb2);
+        note2 = learningNoteRepository.save(note2);
 
-        // JPA로 먼저 저장해서 ID 발급
-        note = learningNoteRepository.save(note);
+        // ⭐ 3) ES에 임베딩 저장
+        embeddingService.index(note1);
+        embeddingService.index(note2);
 
-        // when: 임베딩 생성 + ES 저장
-        embeddingService.index(note);
+        // ⭐ 4) 검색 수행 (쿼리 문장과 가장 비슷한 노트를 찾아야 함)
+        String query = "I went to school yesterday";
 
-        // then: ES에 문서가 실제로 저장됐는지 확인
-        var savedDoc = documentRepository.findById(note.getId());
+        List<LearningNote> results = searchService.searchRelevantNotes(member.getId(), query);
 
-        assertThat(savedDoc).isPresent();
-        assertThat(savedDoc.get().getEmbedding()).isNotNull();
+        // ⭐ 5) 검증
+        assertThat(results).isNotEmpty();
+        assertThat(results.get(0).getId()).isEqualTo(note1.getId()); // note1이 가장 유사해야 함
 
-        float[] vector = savedDoc.get().getEmbedding();
-        assertThat(vector.length).isGreaterThan(10);
-
-        System.out.println("임베딩 벡터 길이 = " + vector.length);
-        System.out.print("임베딩 벡터 + = ");
-        for(int i=0; i<vector.length; i++) {
-            System.out.print(" " + vector[i]);
-        }
+        System.out.println("\n=== 검색 결과 ===");
+        results.forEach(n ->
+                System.out.println("• Note ID: " + n.getId() + " / Original: " + n.getOriginalContent())
+        );
     }
 }
+

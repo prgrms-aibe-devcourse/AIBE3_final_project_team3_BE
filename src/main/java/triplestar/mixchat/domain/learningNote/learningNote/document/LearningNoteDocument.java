@@ -9,7 +9,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 @Getter
 @Document(indexName = "learning_note_embeddings")
 public class LearningNoteDocument {
-    @Field(type = FieldType.Dense_Vector, dims = 1536)
+    @Field(type = FieldType.Dense_Vector, dims = 384)
     private float[] embedding;
 
     @Id
