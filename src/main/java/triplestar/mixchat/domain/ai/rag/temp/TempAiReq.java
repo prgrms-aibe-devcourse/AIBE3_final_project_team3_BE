@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.ai.systemprompt.dto;
+package triplestar.mixchat.domain.ai.rag.temp;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 

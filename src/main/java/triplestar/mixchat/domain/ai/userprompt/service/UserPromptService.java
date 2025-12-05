@@ -9,7 +9,7 @@ import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
 import triplestar.mixchat.domain.ai.userprompt.constant.UserPromptType;
 import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptReq;
-import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptListResp;
+import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptResp;
 import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptDetailResp;
 import triplestar.mixchat.domain.ai.userprompt.repository.UserPromptRepository;
 
@@ -18,7 +18,6 @@ import jakarta.persistence.EntityNotFoundException;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -30,7 +29,7 @@ public class UserPromptService {
 
     private Member getMember(Long memberId) {
         return memberRepository.findById(memberId)
-                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("멤버를 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("멤버를 찾을 수 없습니다."));
     }
 
     private void checkPremium(Member member) {
@@ -76,16 +75,16 @@ public class UserPromptService {
     }
 
     @Transactional(readOnly = true)
-    public List<UserPromptListResp> list(Long memberId) {
+    public List<UserPromptResp> list(Long memberId) {
         Member member = getMember(memberId);
         MembershipGrade grade = member.getMembershipGrade();
         List<UserPrompt> userPrompts;
         if (grade == MembershipGrade.PREMIUM) {
             userPrompts = userPromptRepository.findForPremium(UserPromptType.PRE_SCRIPTED, UserPromptType.CUSTOM, member.getId());
         } else {
-            userPrompts = userPromptRepository.findByType(UserPromptType.PRE_SCRIPTED);
+            userPrompts = userPromptRepository.findByPromptType(UserPromptType.PRE_SCRIPTED);
         }
-        return userPrompts.stream().map(UserPromptListResp::new).collect(Collectors.toList());
+        return userPrompts.stream().map(UserPromptResp::new).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -95,7 +94,7 @@ public class UserPromptService {
             throw new AccessDeniedException("프리미엄 등급이 아닙니다.");
         }
         UserPrompt userPrompt = getPrompt(id);
-        if (userPrompt.getType() != UserPromptType.CUSTOM || userPrompt.getMember() == null || !userPrompt.getMember().getId().equals(member.getId())) {
+        if (userPrompt.getPromptType() != UserPromptType.CUSTOM || userPrompt.getMember() == null || !userPrompt.getMember().getId().equals(member.getId())) {
             throw new AccessDeniedException("본인 프롬프트가 아닙니다.");
         }
         return new UserPromptDetailResp(userPrompt);

@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import triplestar.mixchat.domain.ai.rag.context.chathistory.ChatTurn;
 import triplestar.mixchat.domain.ai.rag.context.user.ContextChunkType;
 import triplestar.mixchat.domain.ai.rag.context.user.UserContextChunk;
 import triplestar.mixchat.domain.ai.systemprompt.constant.PromptKey;
@@ -20,39 +19,20 @@ import triplestar.mixchat.domain.ai.systemprompt.service.SystemPromptService;
 @RequiredArgsConstructor
 public class RagPromptBuilder {
 
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private final SystemPromptService systemPromptService;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    public String buildPrompt(
-            String userMessage,
-            List<UserContextChunk> contextChunks,
-            List<ChatTurn> chatHistory
-    ) {
+    public String buildPrompt(List<UserContextChunk> contextChunks, String persona) {
         // 1) DB에서 최신 버전 시스템 프롬프트 템플릿 가져오기
         SystemPrompt systemPrompt = systemPromptService.getLatestByKey(PromptKey.AI_TUTOR);
         String template = systemPrompt.getContent();
 
         // 2) 치환용 블록들 생성
-        String historyBlock = buildChatHistoryBlock(chatHistory);
         String learningNotesBlock = buildLearningNotesBlock(contextChunks);
 
         // 3) 템플릿 플레이스홀더 치환
-        String prompt = template
-                .replace("{{CHAT_HISTORY}}", historyBlock)
-                .replace("{{LEARNING_NOTES}}", learningNotesBlock)
-                .replace("{{USER_MESSAGE}}", userMessage);
-
-        return prompt;
-    }
-
-    private String buildChatHistoryBlock(List<ChatTurn> history) {
-        if (history == null || history.isEmpty()) {
-            return "(이전 대화가 없습니다. 첫 대화라고 생각하고 자연스럽게 시작해 주세요.)";
-        }
-
-        return history.stream()
-                .map(this::formatChatTurn)
-                .collect(Collectors.joining("\n"));
+        return template.replace("{{LEARNING_NOTES}}", learningNotesBlock)
+                .replace("{{PERSONA}}", persona);
     }
 
     private String buildLearningNotesBlock(List<UserContextChunk> chunks) {
@@ -64,16 +44,6 @@ public class RagPromptBuilder {
                 .filter(chunk -> chunk.type() == ContextChunkType.LEARNING_NOTE)
                 .map(this::formatLearningNoteChunk)
                 .collect(Collectors.joining("\n"));
-    }
-
-    private String formatChatTurn(ChatTurn turn) {
-        String roleLabel = switch (turn.sender()) {
-            case USER -> "User";
-            case AI -> "AiTutor";
-        };
-
-        String timeStr = DATE_FORMATTER.format(turn.createdAt());
-        return "[" + timeStr + "] " + roleLabel + " : " + turn.content();
     }
 
     private String formatLearningNoteChunk(UserContextChunk chunk) {
