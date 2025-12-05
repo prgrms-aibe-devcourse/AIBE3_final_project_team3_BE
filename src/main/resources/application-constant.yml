@@ -11,7 +11,7 @@ presence:
     key: "presence:"
     ttl-seconds: 90
   scheduled:
-    cleanup-rate-ms: "#{5 * 60 * 1000}"  # 5 minutes
+    cleanup-rate-ms: "#{1 * 15 * 1000}"  # 5 minutes
 
 auth:
   jwt:

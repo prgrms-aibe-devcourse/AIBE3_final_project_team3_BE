@@ -6,6 +6,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.presence.dto.ExpiredPresence;
 import triplestar.mixchat.domain.member.presence.repository.PresenceRepository;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PresenceService {
@@ -39,6 +41,7 @@ public class PresenceService {
     @Scheduled(fixedRateString = "${presence.scheduled.cleanup-rate-ms}")
     @Transactional
     public void removeExpiredEntries() {
+        log.info("Starting cleanup of expired presence entries.");
         List<ExpiredPresence> expiredPresences = presenceRepository.cleanupExpired();
 
         if (expiredPresences.isEmpty()) {
@@ -56,6 +59,7 @@ public class PresenceService {
             // 더티체킹 대신 JPQL update 사용
             memberRepository.updateLastSeenAt(memberId, lastSeenDateTime);
         });
+        log.info("Completed cleanup of expired presence entries. Processed {} entries.", expiredPresences.size());
     }
 }
 
