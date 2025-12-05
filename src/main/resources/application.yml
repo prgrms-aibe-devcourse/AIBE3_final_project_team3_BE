@@ -30,11 +30,27 @@ spring:
 
   ai:
     openai:
-      base-url: https://ollama.yhcho.com/ollama
-      api-key: ${OPENAI_API_KEY} # 로컬은 키가 필요 없지만, 라이브러리 검증 통과용으로 입력
+      base-url: https://api.openai.com
+      api-key: ${OPENAI_API_KEY}
       chat:
         options:
-          model: ${OPENAI_CHAT_MODEL:exaone3.5:2.4b}
+          model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
+
+    ollama:
+      base-url: ${OLLAMA_API_URL:https://ollama.yhcho.com/ollama}
+      api-key: ${OLLAMA_API_KEY}
+      chat:
+        options:
+          model: ${OLLAMA_MODEL:exaone3.5:2.4b}
+
+#    vertex: #실행 자체만으로 계정이 필요해 일단 비활성화
+#      ai:
+#        gemini:
+#          project-id: ${VERTEX_AI_PROJECT_ID}
+#          location: ${VERTEX_AI_LOCATION:us-central1}
+#          chat:
+#            options:
+#              model: ${VERTEX_AI_MODEL:gemini-1.5-flash}
 
 swagger:
   redirect:

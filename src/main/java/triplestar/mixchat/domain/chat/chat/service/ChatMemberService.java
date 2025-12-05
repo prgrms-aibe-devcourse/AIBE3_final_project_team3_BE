@@ -3,18 +3,22 @@ package triplestar.mixchat.domain.chat.chat.service;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
+import triplestar.mixchat.domain.chat.chat.dto.RoomMemberUpdateResp;
+import triplestar.mixchat.domain.chat.chat.dto.SubscriberCountUpdateResp;
+import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.repository.AIChatRoomRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.DirectChatRoomRepository;
 import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
+import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.global.ai.BotConstant;
 import triplestar.mixchat.global.cache.ChatAuthCacheService;
 import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
 
@@ -24,24 +28,23 @@ import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
 @Transactional(readOnly = true)
 public class ChatMemberService {
 
-    private final MemberRepository memberRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final ChatAuthCacheService chatAuthCacheService;
     private final ChatSubscriberCacheService chatSubscriberCacheService;
     private final DirectChatRoomRepository directChatRoomRepository;
     private final GroupChatRoomRepository groupChatRoomRepository;
     private final AIChatRoomRepository aiChatRoomRepository;
-
-
-    private Member findMemberById(Long memberId) {
-        return memberRepository.findById(memberId)
-                .orElseThrow(() -> new AccessDeniedException("사용자를 찾을 수 없습니다. ID: " + memberId));
-    }
+    private final SimpMessagingTemplate messagingTemplate;
 
     //사용자가 특정 대화방의 멤버인지 확인 (캐시 적용)
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId, ChatRoomType chatRoomType) {
         if (roomId == null || memberId == null || chatRoomType == null) {
             throw new AccessDeniedException("사용자, 대화방 정보 또는 대화 타입이 유효하지 않습니다.");
+        }
+
+        if (memberId.equals(BotConstant.BOT_MEMBER_ID)) {
+            // 봇 사용자는 모든 방에 접근 허용
+            return;
         }
 
         // 1. 캐시에서 먼저 확인
@@ -61,20 +64,15 @@ public class ChatMemberService {
         chatAuthCacheService.addMember(roomId, memberId);
     }
 
-    // 읽음 처리
-    @Transactional
-    public void updateLastReadSequence(Long memberId, Long roomId, ChatRoomType chatRoomType, Long sequence) {
-        ChatMember member = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_Id(
-                roomId, chatRoomType, memberId
-        ).orElseThrow(() -> new AccessDeniedException("해당 대화방에 접근할 권한이 없습니다."));
-
-        member.updateLastReadSequence(sequence);
-    }
-
     // 채팅방 입장 시 자동 읽음 처리 (해당 방의 최신 sequence까지 읽음 처리)
     // 반환값: 실제로 새로 읽은 메시지가 있으면 currentSequence, 없으면 null
     @Transactional
     public Long markAsReadOnEnter(Long memberId, Long roomId, ChatRoomType chatRoomType) {
+        if (chatRoomType == ChatRoomType.AI) {
+            // AI 채팅방은 읽음 처리 로직이 없음
+            return null;
+        }
+
         ChatMember member = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_Id(
                 roomId, chatRoomType, memberId
         ).orElseThrow(() -> new AccessDeniedException("해당 대화방에 접근할 권한이 없습니다."));
@@ -103,7 +101,7 @@ public class ChatMemberService {
             case GROUP -> groupChatRoomRepository.findById(roomId)
                     .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
                     .getCurrentSequence();
-            default -> throw new UnsupportedOperationException("지원하지 않는 채팅방 타입입니다: " + chatRoomType);
+            default -> throw new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId);
         };
     }
 
@@ -173,6 +171,31 @@ public class ChatMemberService {
     // 채팅방의 전체 멤버 수 조회 (DB)
     public int getTotalMemberCount(Long roomId, ChatRoomType chatRoomType) {
         return (int) chatRoomMemberRepository.countByChatRoomIdAndChatRoomType(roomId, chatRoomType);
+    }
+
+    // 구독자 수 변경 브로드캐스트
+    public void broadcastSubscriberCount(Long roomId, ChatRoomType chatRoomType) {
+        if (chatRoomType == ChatRoomType.AI) return;
+
+        int subscriberCount = getSubscriberCount(roomId);
+        int totalMemberCount = getTotalMemberCount(roomId, chatRoomType);
+
+        SubscriberCountUpdateResp resp = SubscriberCountUpdateResp.of(subscriberCount, totalMemberCount);
+        String destination = "/topic/" + chatRoomType.name().toLowerCase() + "/rooms/" + roomId;
+        messagingTemplate.convertAndSend(destination, resp);
+    }
+
+    // 멤버 변경(입/퇴장/강퇴) 브로드캐스트
+    public void broadcastMemberUpdate(Long roomId, ChatRoomType chatRoomType, Member member, String type) {
+        if (chatRoomType == ChatRoomType.AI) return;
+
+        int subscriberCount = getSubscriberCount(roomId);
+        int totalMemberCount = getTotalMemberCount(roomId, chatRoomType);
+        MemberSummaryResp memberSummary = MemberSummaryResp.from(member);
+
+        RoomMemberUpdateResp resp = new RoomMemberUpdateResp(roomId, type, memberSummary, totalMemberCount, subscriberCount);
+        String destination = "/topic/" + chatRoomType.name().toLowerCase() + "/rooms/" + roomId;
+        messagingTemplate.convertAndSend(destination, resp);
     }
 }
 

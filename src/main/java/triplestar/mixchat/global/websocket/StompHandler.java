@@ -114,7 +114,6 @@ public class StompHandler implements ExecutorChannelInterceptor {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities());
         accessor.setUser(authentication);
-
         log.info("WebSocket 연결 성공 - memberId: {}, sessionId: {}", member.getId(), accessor.getSessionId());
     }
 

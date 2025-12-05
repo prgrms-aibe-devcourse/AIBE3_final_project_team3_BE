@@ -1,3 +1,5 @@
+import org.gradle.internal.impldep.org.eclipse.jgit.diff.Subsequence.a
+
 plugins {
     java
     id("org.springframework.boot") version "3.5.7"
@@ -32,6 +34,8 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-function-context")
     implementation("org.springframework.ai:spring-ai-starter-model-openai")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
+    implementation("org.springframework.ai:spring-ai-starter-model-ollama")
+    //implementation("org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini")
 
     // Lombok
     compileOnly("org.projectlombok:lombok")

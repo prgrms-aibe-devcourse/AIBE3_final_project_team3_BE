@@ -24,3 +24,9 @@ auth:
 
 notification:
   retention-days: 30
+
+ai:
+  context-retriever:
+    sql:
+      min: 1
+      max: 100

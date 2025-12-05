@@ -40,7 +40,8 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
                     m.interests,
                     m.description,
                     m.profileImageUrl,
-                    f.createdAt
+                    f.createdAt,
+                    m.lastSeenAt
                 )
                 FROM Friendship f
                 JOIN Member m ON (
