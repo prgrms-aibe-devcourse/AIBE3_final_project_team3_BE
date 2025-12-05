@@ -49,4 +49,10 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
             Long chatRoomId,
             ChatRoomType chatRoomType
     );
+
+    List<ChatMessage> findByChatRoomIdAndChatRoomTypeOrderByCreatedAtDescIdDesc(
+            Long roomId,
+            ChatRoomType chatRoomType,
+            Pageable pageable
+    );
 }

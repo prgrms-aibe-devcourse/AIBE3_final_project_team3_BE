@@ -56,19 +56,11 @@ public class AIChatRoomService {
         return AIChatRoomResp.from(savedRoom);
     }
 
-    public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
-        chatMemberService.verifyUserIsMemberOfRoom(memberId, roomId, ChatRoomType.AI);
-    }
-
     public List<AIChatRoomResp> getRoomsForUser(Long currentUserId) {
         List<AIChatRoom> rooms = aiChatRoomRepository.findAllByMember_Id(currentUserId);
         return rooms.stream()
                 .map(AIChatRoomResp::from)
                 .collect(Collectors.toList());
-    }
-
-    public AIChatRoom getAIChatRoom(Long id) {
-        return aiChatRoomRepository.findById(id).orElseThrow(() -> new RuntimeException("AI 채팅방 없음"));
     }
 
     // AI 채팅방 나가기

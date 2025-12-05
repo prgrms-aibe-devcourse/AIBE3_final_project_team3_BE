@@ -101,9 +101,7 @@ public class ChatMemberService {
             case GROUP -> groupChatRoomRepository.findById(roomId)
                     .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
                     .getCurrentSequence();
-            case AI -> aiChatRoomRepository.findById(roomId)
-                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
-                    .getCurrentSequence();
+            default -> throw new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId);
         };
     }
 

@@ -54,7 +54,6 @@ public class ChatMessageService {
     private final ChatSubscriberCacheService subscriberCacheService;
     private final ChatNotificationService chatNotificationService;
     private final jakarta.persistence.EntityManager entityManager;
-    private final AIChatRoomRepository aIChatRoomRepository;
     private final AiChatBotService aiChatBotService;
 
     @Transactional
@@ -79,20 +78,9 @@ public class ChatMessageService {
         ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType, isTranslateEnabled);
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
-        // AI 채팅방인 경우 별도로직 수행
+        // AI 채팅방인 경우 메시지 생성 및 저장 후 별도로직 수행
         if (chatRoomType == ChatRoomType.AI) {
-            MessageResp resp = MessageResp.from(savedMessage, senderNickname);
-            chatNotificationService.sendChatMessage(roomId, chatRoomType, resp);
-
-            // 사람이 보낸 메시지인 경우 ai 응답 생성을 위해 aiCatBotService.chat() 이후 saveMessage 재귀 호출
-            if (!senderId.equals(BotConstant.BOT_MEMBER_ID)) {
-                String chat = aiChatBotService.chat(senderId, roomId, content);
-                return saveMessage(roomId, BotConstant.BOT_MEMBER_ID, "Chat Bot", chat, MessageType.TEXT,
-                        chatRoomType, false);
-            }
-
-            // 재귀 호출 후에는 봇이 보낸 메시지이므로 저장 및 전송만 수행
-            return resp;
+            return saveAiRoomMessage(roomId, senderId, senderNickname, content, chatRoomType, savedMessage);
         }
 
         // TEXT 타입만 번역
@@ -181,6 +169,23 @@ public class ChatMessageService {
         chatNotificationService.sendChatMessage(roomId, chatRoomType, response);
 
         return response;
+    }
+
+    private MessageResp saveAiRoomMessage(Long roomId, Long senderId, String senderNickname, String content,
+                                       ChatRoomType chatRoomType, ChatMessage savedMessage) {
+        // 웹소켓 알림 전송
+        MessageResp resp = MessageResp.from(savedMessage, senderNickname);
+        chatNotificationService.sendChatMessage(roomId, chatRoomType, resp);
+
+        // 사람이 보낸 메시지인 경우 ai 응답 생성을 위해 aiChatBotService.chat() 이후 saveMessage 재귀 호출
+        if (!senderId.equals(BotConstant.BOT_MEMBER_ID)) {
+            String chat = aiChatBotService.chat(senderId, roomId, content);
+            return saveMessage(roomId, BotConstant.BOT_MEMBER_ID, "Chat Bot", chat, MessageType.TEXT,
+                    chatRoomType, false);
+        }
+
+        // 재귀 호출 후에는 봇이 보낸 메시지이므로 저장 및 전송만 수행
+        return resp;
     }
 
     @Transactional
@@ -297,10 +302,7 @@ public class ChatMessageService {
                     .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
                     .generateNextSequence();
 
-            // AI chat은 동시성 문제 없음
-            case AI -> aIChatRoomRepository.findById(roomId)
-                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
-                    .generateNextSequence();
+            case AI -> -1L;
         };
 
         // 2) 즉시 DB 반영

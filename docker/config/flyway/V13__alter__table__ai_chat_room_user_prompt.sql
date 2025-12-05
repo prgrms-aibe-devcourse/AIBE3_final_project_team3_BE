@@ -6,7 +6,6 @@ COLUMN ai_persona,
     ADD COLUMN member_id BIGINT NOT NULL AFTER modified_at,
     ADD COLUMN persona_id BIGINT NOT NULL AFTER name,
     ADD COLUMN room_type VARCHAR(50) NULL AFTER persona_id,
-    ADD COLUMN current_sequence BIGINT NOT NULL DEFAULT 0 AFTER room_type,
 
     ADD KEY idx_ai_chat_rooms_member_id (member_id),
     ADD KEY idx_ai_chat_rooms_persona_id (persona_id),
