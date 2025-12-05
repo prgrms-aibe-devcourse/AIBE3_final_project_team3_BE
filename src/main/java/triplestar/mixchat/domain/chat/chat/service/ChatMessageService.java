@@ -84,12 +84,15 @@ public class ChatMessageService {
             MessageResp resp = MessageResp.from(savedMessage, senderNickname);
             chatNotificationService.sendChatMessage(roomId, chatRoomType, resp);
 
-            // 사람이 보낸 메시지인 경우 ai 응답 생성 후 saveMessage 재귀 호출
-            // 재귀 호출 후 봇이 보낸 메시지는 저장 및 전송만 수행
+            // 사람이 보낸 메시지인 경우 ai 응답 생성을 위해 aiCatBotService.chat() 이후 saveMessage 재귀 호출
             if (!senderId.equals(BotConstant.BOT_MEMBER_ID)) {
                 String chat = aiChatBotService.chat(senderId, roomId, content);
-                saveMessage(roomId, BotConstant.BOT_MEMBER_ID, "Chat Bot", chat, MessageType.TEXT, chatRoomType, false);
+                return saveMessage(roomId, BotConstant.BOT_MEMBER_ID, "Chat Bot", chat, MessageType.TEXT,
+                        chatRoomType, false);
             }
+
+            // 재귀 호출 후에는 봇이 보낸 메시지이므로 저장 및 전송만 수행
+            return resp;
         }
 
         // TEXT 타입만 번역

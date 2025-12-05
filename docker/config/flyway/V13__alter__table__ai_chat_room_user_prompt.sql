@@ -22,6 +22,9 @@ DROP
 COLUMN scenario_id,
     ADD COLUMN role_play_type VARCHAR(50) NULL AFTER title;
 
+ALTER TABLE notifications
+    MODIFY COLUMN content TEXT;
+
 INSERT INTO members (email, password, name, nickname, country,
                      interests, english_level, description, role,
                      membership_grade, last_seen_at, is_blocked, blocked_at,
