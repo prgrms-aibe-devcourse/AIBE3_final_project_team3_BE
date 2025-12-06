@@ -1,7 +1,6 @@
 package triplestar.mixchat.domain.chat.chat.service;
 
 import static java.time.LocalDateTime.now;
-import static java.util.Collections.reverse;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -97,7 +96,7 @@ public class ChatMessageService {
         // 3. Bulk Update: 발신자 + 구독자 모두 한 번에 처리 (쿼리 통합)
         if (!memberIdsToMarkRead.isEmpty()) {
             chatRoomMemberRepository.bulkUpdateLastReadSequence(
-                roomId, chatRoomType, memberIdsToMarkRead, sequence, now()
+                    roomId, chatRoomType, memberIdsToMarkRead, sequence, now()
             );
         }
 
@@ -192,17 +191,17 @@ public class ChatMessageService {
         if (cursor == null) {
             // 최신 메시지부터 pageSize개
             messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeAndCreatedAtGreaterThanEqualOrderBySequenceDesc(
-                roomId, chatRoomType, joinDate, PageRequest.of(0, pageSize)
+                    roomId, chatRoomType, joinDate, PageRequest.of(0, pageSize)
             );
         } else {
             // cursor 이전 메시지 pageSize개
             messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeAndSequenceLessThanAndCreatedAtGreaterThanEqualOrderBySequenceDesc(
-                roomId, chatRoomType, cursor, joinDate, PageRequest.of(0, pageSize)
+                    roomId, chatRoomType, cursor, joinDate, PageRequest.of(0, pageSize)
             );
         }
 
         // 역순 정렬 (오래된 메시지 → 최신 메시지 순으로 표시)
-        reverse(messages);
+//        reverse(messages);
 
         // 발신자 이름 조회
         List<Long> senderIds = messages.stream()
@@ -230,8 +229,8 @@ public class ChatMessageService {
         boolean hasMore = false;
 
         if (!messages.isEmpty()) {
-            // nextCursor는 가장 오래된 메시지의 sequence (역순 정렬 후 첫 번째)
-            nextCursor = messages.get(0).getSequence();
+            // 리스트는 sequence desc 정렬이므로 마지막 요소가 가장 오래된 메시지
+            nextCursor = messages.get(messages.size() - 1).getSequence();
             // hasMore는 조회된 메시지 수가 pageSize와 같으면 true
             hasMore = messages.size() == pageSize;
         }

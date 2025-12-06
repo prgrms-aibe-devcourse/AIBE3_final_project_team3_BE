@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackReq;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackResp;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
-import triplestar.mixchat.domain.chat.chat.dto.ChatRoomDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomPageDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
@@ -22,9 +22,7 @@ import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
-import triplestar.mixchat.domain.chat.chat.dto.TextMessageReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
-import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
@@ -88,15 +86,6 @@ public interface ApiChatController {
     @SignInInRequireResponse
     CustomResponse<List<AIChatRoomResp>> getAiChatRooms(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
-    );
-
-    @Operation(summary = "채팅 메시지 전송", description = "지정된 채팅방에 텍스트 메시지를 전송합니다.")
-    @SignInInRequireResponse
-    CustomResponse<MessageResp> sendMessage(
-            @Parameter(description = "메시지를 보낼 채팅방의 ID") @PathVariable Long roomId,
-            @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatRoomType chatRoomType,
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
-            @Valid @RequestBody TextMessageReq request
     );
 
     @Operation(

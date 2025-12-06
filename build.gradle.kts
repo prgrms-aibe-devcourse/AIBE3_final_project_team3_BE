@@ -63,6 +63,8 @@ dependencies {
     // Testcontainers
     testImplementation("org.testcontainers:testcontainers")
     testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:mysql")
+    testImplementation("org.testcontainers:mongodb")
 
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")

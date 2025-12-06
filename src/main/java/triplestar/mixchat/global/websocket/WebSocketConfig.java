@@ -25,11 +25,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // 메시지 브로커가 /topic 프리픽스가 붙은 목적지의 클라이언트에게 메시지를 전달하도록 설정합니다.
+        // 메시지 브로커가 /topic 프리픽스가 붙은 목적지의 클라이언트에게 메시지를 전달하도록 설정
         registry.enableSimpleBroker("/topic", "/queue");
 
-        // 클라이언트에서 서버로 메시지를 보낼 때 사용하는 프리픽스를 설정합니다.
-        // 예를 들어, 클라이언트는 /app/chat.sendMessage 와 같은 경로로 메시지를 보냅니다.
+        // 클라이언트에서 서버로 메시지를 보낼 때 사용하는 프리픽스를 설정
+        // 예를 들어, 클라이언트는 /app/chat.sendMessage 와 같은 경로로 메시지를 전송
         registry.setApplicationDestinationPrefixes("/app");
 
         // 특정 사용자에게 메시지를 보낼 때 사용하는 프리픽스를 설정합니다.
@@ -38,7 +38,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
-        // StompHandler는 여전히 필요합니다. (인증/인가 처리)
+        // StompHandler(인증/인가 처리)
         registration.interceptors(stompHandler);
     }
 }

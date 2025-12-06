@@ -205,6 +205,53 @@ public class GroupChatRoomService {
         return roomDto;
     }
 
+    @Transactional
+    public void inviteMember(Long roomId, Long inviterId, Long targetMemberId) {
+        // 1. 채팅방 조회
+        GroupChatRoom room = groupChatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다."));
+
+        // 2. 초대하는 사람이 채팅방 멤버인지 확인
+        boolean isInviterMember = chatRoomMemberRepository.existsByChatRoomIdAndChatRoomTypeAndMember_Id(
+                roomId, ChatRoomType.GROUP, inviterId);
+        if (!isInviterMember) {
+            throw new AccessDeniedException("초대 권한이 없습니다. 채팅방 멤버만 초대할 수 있습니다.");
+        }
+
+        // 3. 초대 대상이 이미 멤버인지 확인
+        boolean isTargetAlreadyMember = chatRoomMemberRepository.existsByChatRoomIdAndChatRoomTypeAndMember_Id(
+                roomId, ChatRoomType.GROUP, targetMemberId);
+        if (isTargetAlreadyMember) {
+            throw new IllegalStateException("이미 채팅방에 참여중인 멤버입니다.");
+        }
+
+        // 4. 대상 멤버 조회
+        Member targetMember = findMemberById(targetMemberId);
+
+        // 5. ChatMember 추가
+        ChatMember newMember = new ChatMember(targetMember, roomId, ChatRoomType.GROUP);
+        chatRoomMemberRepository.save(newMember);
+
+        // 6. 캐시 업데이트
+        chatAuthCacheService.addMember(roomId, targetMemberId);
+
+        // 7. 시스템 메시지 전송 (초대 메시지)
+        Member inviter = findMemberById(inviterId);
+        systemMessageService.sendInviteMessage(roomId, inviter.getNickname(), targetMember.getNickname(), ChatRoomType.GROUP);
+
+        // 8. 멤버 업데이트 브로드캐스트
+        chatMemberService.broadcastMemberUpdate(roomId, ChatRoomType.GROUP, targetMember, "JOIN");
+        
+        // 9. 초대된 멤버에게 방 정보 전송 (Optional but good UX)
+        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, ChatRoomType.GROUP);
+        Page<Member> friendsByMemberId = friendshipRepository.findFriendsByMemberId(targetMemberId, Pageable.ofSize(500));
+        Page<Long> friendIdPage = friendsByMemberId.map(Member::getId);
+        Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
+        
+        GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers, targetMemberId, friendIdSet, 0L, null);
+        messagingTemplate.convertAndSendToUser(targetMemberId.toString(), "/topic/rooms", roomDto);
+    }
+
     // 사용자가 속해있는 그룹채팅방 조회(chat 페이지 용도)
     public List<GroupChatRoomResp> getRoomsForUser(Long currentUserId) {
         List<GroupChatRoom> rooms = groupChatRoomRepository.findAllByMemberId(currentUserId);

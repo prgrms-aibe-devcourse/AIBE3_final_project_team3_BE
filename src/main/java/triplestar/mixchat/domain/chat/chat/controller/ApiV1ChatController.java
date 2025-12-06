@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackReq;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackResp;
+import triplestar.mixchat.domain.ai.systemprompt.service.AiFeedbackService;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomPageDataResp;
@@ -26,13 +27,12 @@ import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.InviteGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.JoinGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
-import triplestar.mixchat.domain.chat.chat.dto.TextMessageReq;
 import triplestar.mixchat.domain.chat.chat.dto.TransferOwnerReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
-import triplestar.mixchat.domain.ai.systemprompt.service.AiFeedbackService;
 import triplestar.mixchat.domain.chat.chat.service.AIChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
@@ -136,6 +136,16 @@ public class ApiV1ChatController implements ApiChatController {
         return CustomResponse.ok("그룹 채팅방 참가에 성공하였습니다.", roomResp);
     }
 
+    @PostMapping("/rooms/group/{roomId}/invite")
+    public CustomResponse<Void> inviteMember(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody InviteGroupChatReq request
+    ) {
+        groupChatRoomService.inviteMember(roomId, currentUser.getId(), request.targetMemberId());
+        return CustomResponse.ok("멤버를 초대했습니다.", null);
+    }
+
     @Override
     @GetMapping("/rooms/ai")
     public CustomResponse<List<AIChatRoomResp>> getAiChatRooms(
@@ -143,20 +153,6 @@ public class ApiV1ChatController implements ApiChatController {
     ) {
         List<AIChatRoomResp> rooms = aiChatRoomService.getRoomsForUser(currentUser.getId());
         return CustomResponse.ok("AI 채팅방 목록 조회에 성공하였습니다.", rooms);
-    }
-
-
-    @Override
-    @PostMapping("/rooms/{roomId}/message")
-    public CustomResponse<MessageResp> sendMessage(
-            @PathVariable("roomId") Long roomId,
-            @RequestParam ChatRoomType chatRoomType,
-            @AuthenticationPrincipal CustomUserDetails currentUser,
-            @Valid @RequestBody TextMessageReq request
-    ) {
-        MessageResp messageResp =
-                chatMessageService.saveMessage(roomId, currentUser.getId(), currentUser.getNickname(), request.content(), ChatMessage.MessageType.TEXT, chatRoomType, request.isTranslateEnabled());
-        return CustomResponse.ok("메시지 전송에 성공하였습니다.", messageResp);
     }
 
     @Override
