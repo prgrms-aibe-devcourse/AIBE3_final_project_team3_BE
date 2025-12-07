@@ -97,6 +97,7 @@ public class Member extends BaseEntity {
         this.membershipGrade = MembershipGrade.BASIC;
         this.isBlocked = false;
         this.isDeleted = false;
+        this.lastSeenAt = LocalDateTime.now();
     }
 
     private void validate(String email, Password password, String name, String nickname, Country country,
@@ -191,5 +192,9 @@ public class Member extends BaseEntity {
         this.isDeleted = true;
         this.deletedAt = LocalDateTime.now();
         this.description = "삭제된 회원입니다.";
+    }
+
+    public boolean isBot() {
+        return this.role == Role.ROLE_BOT;
     }
 }

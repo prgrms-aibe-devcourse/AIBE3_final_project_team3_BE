@@ -1,3 +1,5 @@
+import org.gradle.internal.impldep.org.eclipse.jgit.diff.Subsequence.a
+
 plugins {
     java
     id("org.springframework.boot") version "3.5.7"
