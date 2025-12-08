@@ -52,12 +52,25 @@ public class SentenceGameService {
         SentenceGame game = sentenceGameRepository.findById(req.sentenceGameId())
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 문장입니다."));
 
-        boolean correct = game.getCorrectedContent()
-                .equalsIgnoreCase(req.userAnswer().trim());
+        String answer = normalize(game.getCorrectedContent());
+        String userAnswer = normalize(req.userAnswer());
+
+        boolean correct = answer.equals(userAnswer);
 
         return new SentenceGameSubmitResp(
                 correct,
-                game.getCorrectedContent()
+                game.getCorrectedContent(),
+                game.getFeedbacks()
         );
+    }
+
+    private String normalize(String text) {
+        if (text == null) return "";
+
+        return text
+                .toLowerCase()                     // 대소문자 무시 비교를 위해
+                .replaceAll("\\p{Punct}", "")    // 모든 문장부호 제거 (.,!?;:"' 등)
+                .replaceAll("\\s+", " ")           // 여러 공백 → 1칸 공백
+                .trim();                            // 앞뒤 공백 제거
     }
 }

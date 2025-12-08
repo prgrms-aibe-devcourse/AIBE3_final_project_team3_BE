@@ -1,11 +1,14 @@
 package triplestar.mixchat.domain.miniGame.sentenceGame.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import triplestar.mixchat.domain.miniGame.sentenceGame.converter.FeedbackSnapshotConverter;
 import triplestar.mixchat.global.jpa.entity.BaseEntityNoModified;
 
 @Entity
@@ -19,6 +22,10 @@ public class SentenceGame extends BaseEntityNoModified {
 
     @Column(name = "corrected_content", nullable = false)
         private String correctedContent;     // 수정 후 문장
+
+    @Convert(converter = FeedbackSnapshotConverter.class)
+    @Column(columnDefinition = "json")
+    private List<FeedbackSnapshot> feedbacks;
 
     private SentenceGame(
             String originalContent,

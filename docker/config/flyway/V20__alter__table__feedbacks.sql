@@ -1,0 +1,4 @@
+ALTER TABLE feedbacks
+    MODIFY COLUMN problem TEXT NOT NULL,
+    MODIFY COLUMN correction TEXT NOT NULL,
+    MODIFY COLUMN extra TEXT NOT NULL;
