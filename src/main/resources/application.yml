@@ -75,6 +75,3 @@ management:
     distribution:
       percentiles-histogram:
         http.server.requests: true
-  # Actuator 보안 설정 (필요시 Spring Security에서 /actuator/** 경로 설정)
-  server:
-    port: 9090
