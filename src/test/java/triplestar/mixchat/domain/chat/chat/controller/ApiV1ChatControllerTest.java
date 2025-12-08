@@ -39,6 +39,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import triplestar.mixchat.domain.chat.chat.constant.AiChatRoomType;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackReq;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackResp;
 import triplestar.mixchat.domain.ai.systemprompt.service.AiFeedbackService;
@@ -200,8 +201,8 @@ class ApiV1ChatControllerTest {
     @DisplayName("AI 채팅방 생성 성공")
     void createAiRoom_Success() throws Exception {
         // given
-        CreateAIChatReq req = new CreateAIChatReq();
-        AIChatRoomResp resp = new AIChatRoomResp(30L, "AiRoom", "gpt-4", "Persona");
+        CreateAIChatReq req = new CreateAIChatReq("AiRoom", 2L, AiChatRoomType.ROLE_PLAY);
+        AIChatRoomResp resp = new AIChatRoomResp(30L, "AiRoom", 2L);
 
         given(aiChatRoomService.createAIChatRoom(anyLong(), any(CreateAIChatReq.class)))
                 .willReturn(resp);
@@ -309,7 +310,7 @@ class ApiV1ChatControllerTest {
     void getAiChatRooms_Success() throws Exception {
         // given
         List<AIChatRoomResp> list = List.of(
-                new AIChatRoomResp(30L, "aiRoom", "model", "persona")
+                new AIChatRoomResp(30L, "AiRoom", 2L)
         );
         given(aiChatRoomService.getRoomsForUser(anyLong())).willReturn(list);
 
