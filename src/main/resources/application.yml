@@ -16,6 +16,12 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
+    # N+1 문제 확인용 쿼리 로그 (개발/테스트 시에만 활성화)
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
 
   flyway:
     enabled: false
@@ -75,3 +81,6 @@ management:
     distribution:
       percentiles-histogram:
         http.server.requests: true
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
