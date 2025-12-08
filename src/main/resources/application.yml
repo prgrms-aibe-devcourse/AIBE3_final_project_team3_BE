@@ -56,3 +56,25 @@ swagger:
   redirect:
     # "/"로 들어왔을 때 최종적으로 리다이렉트될 Swagger UI 경로
     path: /swagger-ui/index.html
+
+# Actuator + Prometheus 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+
+  endpoint:
+    health:
+      show-details: always
+
+  metrics:
+    tags:
+      application: ${spring.application.name:mixchat}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  # Actuator 보안 설정 (필요시 Spring Security에서 /actuator/** 경로 설정)
+  server:
+    port: 9090

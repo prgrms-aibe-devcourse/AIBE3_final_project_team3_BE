@@ -23,9 +23,7 @@ import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
 import triplestar.mixchat.domain.chat.chat.dto.RoomLastMessageUpdateResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
-import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage.MessageType;
-import triplestar.mixchat.domain.chat.chat.repository.AIChatRoomRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.DirectChatRoomRepository;
@@ -227,9 +225,6 @@ public class ChatMessageService {
                     roomId, chatRoomType, cursor, joinDate, PageRequest.of(0, pageSize)
             );
         }
-
-        // 역순 정렬 (오래된 메시지 → 최신 메시지 순으로 표시)
-//        reverse(messages);
 
         // 발신자 이름 조회
         List<Long> senderIds = messages.stream()

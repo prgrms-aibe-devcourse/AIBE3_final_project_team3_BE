@@ -1,10 +1,8 @@
 package triplestar.mixchat.testutils;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.util.ReflectionTestUtils;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -25,7 +23,6 @@ public class TestMemberFactory {
                 List.of("음악"),
                 "테스트 회원입니다."
         );
-        ReflectionTestUtils.setField(member, "lastSeenAt", LocalDateTime.now());
         member.updateProfileImageUrl("profile/uuid-1234.png");
         return member;
     }
@@ -41,7 +38,6 @@ public class TestMemberFactory {
                 List.of("음악"),
                 "테스트 관리자입니다."
         );
-        ReflectionTestUtils.setField(admin, "lastSeenAt", LocalDateTime.now());
         admin.updateProfileImageUrl("profile/uuid-1234.png");
         return admin;
     }

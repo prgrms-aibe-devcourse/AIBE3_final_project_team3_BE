@@ -1,5 +1,3 @@
-import org.gradle.internal.impldep.org.eclipse.jgit.diff.Subsequence.a
-
 plugins {
     java
     id("org.springframework.boot") version "3.5.7"
@@ -90,6 +88,10 @@ dependencies {
 
     // websocket
     implementation("org.springframework.boot:spring-boot-starter-websocket")
+
+    // Actuator + Prometheus
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 }
 
 dependencyManagement {

@@ -47,6 +47,8 @@ public class SecurityConfig {
                                 .requestMatchers("/api/*/admin/**").hasRole("ADMIN")
                                 // WEBSOCKET 요청 허용
                                 .requestMatchers("/ws-stomp/**").permitAll()
+                                // actuator 요청 허용
+                                .requestMatchers("/actuator/**").permitAll()
                                 // 나머지 모든 요청은 인증 필요
                                 .requestMatchers("/**").authenticated()
                 )
