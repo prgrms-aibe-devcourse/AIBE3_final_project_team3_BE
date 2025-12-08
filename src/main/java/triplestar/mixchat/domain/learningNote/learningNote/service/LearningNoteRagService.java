@@ -46,8 +46,7 @@ public class LearningNoteRagService {
             return;
         }
 
-        // 학습노트 제외를 위한 id 저장
-        List<Long> excludeIds = recentNotes.stream().map(LearningNote::getId).toList();
+
 
         Map<Long, Double> scoreMap = new HashMap<>();
 
@@ -75,6 +74,8 @@ public class LearningNoteRagService {
         }
 
         // 결과에서 제외할 학습노트 제거
+        List<Long> excludeIds = recentNotes.stream().map(LearningNote::getId).toList();
+
         excludeIds.forEach(scoreMap::remove);
 
         // 상위 10개 리턴
