@@ -46,3 +46,8 @@ src/main/resources/application-secret.yml
 
 *.log
 test_output*.log
+
+# QueryDSL Q-Class
+/build/
+/build/generated/
+/build/generated/**/*
