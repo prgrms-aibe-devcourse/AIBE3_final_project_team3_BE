@@ -23,7 +23,7 @@ public class RagSqlTutorService {
     public String chat(Long userId, AIChatRoom chatRoom, String userMessage, String persona) {
 
         // 1) 장기 기억: 유저 학습 컨텍스트
-        List<UserContextChunk> chunks = contextRetriever.retrieve(userId, null, 10);
+        List<UserContextChunk> chunks = contextRetriever.retrieve(chatRoom.getId(), userId, null, 10);
 
         // 2) 단기 기억: 현재 AI와의 채팅 대화 로그
         List<Message> recentHistory = chatHistoryProvider.getRecentHistory(chatRoom.getId(), 10);

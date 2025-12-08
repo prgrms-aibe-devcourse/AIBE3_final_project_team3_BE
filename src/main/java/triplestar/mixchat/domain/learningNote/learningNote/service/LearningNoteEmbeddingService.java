@@ -1,19 +1,27 @@
 package triplestar.mixchat.domain.learningNote.learningNote.service;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.learningNote.learningNote.document.LearningNoteDocument;
 import triplestar.mixchat.domain.learningNote.learningNote.embedding.EmbeddingTextBuilder;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteDocumentRepository;
-import org.springframework.ai.embedding.EmbeddingModel;
 
 @Service
-@RequiredArgsConstructor
 public class LearningNoteEmbeddingService {
     private final EmbeddingModel embeddingModel;
     private final LearningNoteDocumentRepository noteDocumentRepository;
+
+    public LearningNoteEmbeddingService(
+            @Qualifier("openAiEmbeddingModel") EmbeddingModel embeddingModel,
+            LearningNoteDocumentRepository noteDocumentRepository
+    ) {
+        this.embeddingModel = embeddingModel;
+        this.noteDocumentRepository = noteDocumentRepository;
+    }
+
 
     @Transactional
     public void index(LearningNote note) {

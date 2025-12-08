@@ -17,7 +17,7 @@ import triplestar.mixchat.domain.learningNote.learningNote.entity.Feedback;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
 import triplestar.mixchat.domain.learningNote.learningNote.service.LearningNoteEmbeddingService;
-import triplestar.mixchat.domain.learningNote.learningNote.service.LearningNoteSearchService;
+import triplestar.mixchat.domain.learningNote.learningNote.service.LearningNoteSaveService;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -43,70 +43,106 @@ public class LearningNoteSearchIntegrationTest {
     private LearningNoteEmbeddingService embeddingService;
 
     @Autowired
-    private LearningNoteSearchService searchService;
+    private LearningNoteSaveService searchService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    private Member member;
+    private Member userA;
+    private Member userB;
 
     @BeforeEach
     void setup() {
-        member = memberRepository.save(
+        userA = memberRepository.save(
                 Member.createMember(
-                        "search_test@example.com",
+                        "userA@example.com",
                         Password.encrypt("Password1!", passwordEncoder),
-                        "테스터",
-                        "tester",
+                        "UserA",
+                        "userA",
                         Country.KR,
                         EnglishLevel.INTERMEDIATE,
                         List.of("study"),
-                        "검색 테스트"
+                        "검색 테스트 A"
+                )
+        );
+
+        userB = memberRepository.save(
+                Member.createMember(
+                        "userB@example.com",
+                        Password.encrypt("Password1!", passwordEncoder),
+                        "UserB",
+                        "userB",
+                        Country.US,
+                        EnglishLevel.INTERMEDIATE,
+                        List.of("travel"),
+                        "검색 테스트 B"
                 )
         );
     }
 
     @Test
-    @DisplayName("ES KNN 검색이 유사한 학습노트를 반환해야 한다")
-    void search_knn_success() {
+    @DisplayName("최근 학습노트를 기반으로 타 유저의 유사한 학습노트를 검색한다")
+    void search_by_recent_notes_with_other_user_data() {
 
-        // ⭐ 1) 저장할 학습노트 1
-        LearningNote note1 = LearningNote.create(
-                member,
+        LearningNote a1 = LearningNote.create(
+                userA,
                 "I goes to school yesterday.",
                 "I went to school yesterday."
         );
-        Feedback fb1 = Feedback.create(note1, TranslationTagCode.GRAMMAR, "goes", "went", "과거형으로 수정");
-        note1.addFeedback(fb1);
-        note1 = learningNoteRepository.save(note1);
+        a1.addFeedback(Feedback.create(a1, TranslationTagCode.GRAMMAR, "goes", "went", "과거형 수정"));
+        a1 = learningNoteRepository.save(a1);
+        embeddingService.index(a1);
 
-        // ⭐ 2) 저장할 학습노트 2
-        LearningNote note2 = LearningNote.create(
-                member,
+        LearningNote a2 = LearningNote.create(
+                userA,
                 "She don't likes apple.",
                 "She doesn't like apples."
         );
-        Feedback fb2 = Feedback.create(note2, TranslationTagCode.GRAMMAR, "don't", "doesn't", "삼인칭 단수 수정");
-        note2.addFeedback(fb2);
-        note2 = learningNoteRepository.save(note2);
+        a2.addFeedback(Feedback.create(a2, TranslationTagCode.GRAMMAR, "don't", "doesn't", "삼인칭 단수 수정"));
+        a2 = learningNoteRepository.save(a2);
+        embeddingService.index(a2);
 
-        // ⭐ 3) ES에 임베딩 저장
-        embeddingService.index(note1);
-        embeddingService.index(note2);
-
-        // ⭐ 4) 검색 수행 (쿼리 문장과 가장 비슷한 노트를 찾아야 함)
-        String query = "I went to school yesterday";
-
-        List<LearningNote> results = searchService.searchRelevantNotes(member.getId(), query);
-
-        // ⭐ 5) 검증
-        assertThat(results).isNotEmpty();
-        assertThat(results.get(0).getId()).isEqualTo(note1.getId()); // note1이 가장 유사해야 함
-
-        System.out.println("\n=== 검색 결과 ===");
-        results.forEach(n ->
-                System.out.println("• Note ID: " + n.getId() + " / Original: " + n.getOriginalContent())
+        LearningNote b1 = LearningNote.create(
+                userB,
+                "I went to school last night.",
+                "I went to school last night."
         );
+        b1.addFeedback(Feedback.create(b1, TranslationTagCode.GRAMMAR, "went", "went", "문법 동일"));
+        b1 = learningNoteRepository.save(b1);
+        embeddingService.index(b1);
+
+        LearningNote b2 = LearningNote.create(
+                userB,
+                "She doesn't like banana either.",
+                "She doesn't like bananas either."
+        );
+        b2.addFeedback(Feedback.create(b2, TranslationTagCode.GRAMMAR, "doesn't", "doesn't", "유사 문장"));
+        b2 = learningNoteRepository.save(b2);
+        embeddingService.index(b2);
+
+        searchService.saveByRecentNotes(1L, userA.getId());
+
+        List<LearningNote> results = searchService.loadNotesFromCache(1L, userA.getId());
+
+        List<Long> resultIds = results.stream()
+            .map(LearningNote::getId)
+            .toList();
+
+        Long a1Id = a1.getId();
+        Long a2Id = a2.getId();
+        Long b1Id = b1.getId();
+        Long b2Id = b2.getId();
+
+        assertThat(resultIds.contains(a1Id)).isFalse();
+        assertThat(resultIds.contains(a2Id)).isFalse();
+
+        assertThat(resultIds.contains(b1Id)).isTrue();
+        assertThat(resultIds.contains(b2Id)).isTrue();
+
+//        System.out.println("\n=== 검색 결과 ===");
+//        for (LearningNote n : results) {
+//            System.out.println("NoteId=" + n.getId() + " / Original=" + n.getOriginalContent());
+//        }
     }
 }
 

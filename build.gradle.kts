@@ -37,7 +37,6 @@ dependencies {
     implementation("org.springframework.ai:spring-ai-starter-model-ollama")
     //implementation("org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini")
 
-    implementation("org.springframework.ai:spring-ai-starter-model-transformers")   // 임베딩 모델
     // Lombok
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
