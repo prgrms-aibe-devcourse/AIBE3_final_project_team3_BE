@@ -5,6 +5,7 @@ import static triplestar.mixchat.domain.ai.rag.context.user.ContextChunkTextKey.
 
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
@@ -12,6 +13,7 @@ import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNo
 import triplestar.mixchat.domain.learningNote.learningNote.service.LearningNoteRagService;
 
 @Component
+@Slf4j
 public class SqlContextRetriever implements ContextRetriever {
 
     private final LearningNoteRepository learningNoteRepository;
@@ -39,6 +41,11 @@ public class SqlContextRetriever implements ContextRetriever {
         }
 
         List<LearningNote> notes = learningNoteRepository.findTopNByMemberId(userId, itemSize);
+        for (int i = 0; i < notes.size(); i++) {
+            LearningNote note = notes.get(i);
+            log.info("Retrieved LearningNote {}: id={}, originalContent='{}', correctedContent='{}'",
+                    i + 1, note.getId(), note.getOriginalContent(), note.getCorrectedContent());
+        }
 
         // text 맵에 originalContent와 correctedContent를 모두 포함
         return notes.stream()

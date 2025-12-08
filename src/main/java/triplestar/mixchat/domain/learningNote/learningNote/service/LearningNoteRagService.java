@@ -46,8 +46,6 @@ public class LearningNoteRagService {
             return;
         }
 
-
-
         Map<Long, Double> scoreMap = new HashMap<>();
 
         for (LearningNote note : recentNotes) {

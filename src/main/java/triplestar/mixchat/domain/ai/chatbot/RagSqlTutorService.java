@@ -2,6 +2,7 @@ package triplestar.mixchat.domain.ai.chatbot;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import triplestar.mixchat.domain.ai.rag.context.user.ContextRetriever;
 import triplestar.mixchat.domain.ai.rag.context.user.UserContextChunk;
 import triplestar.mixchat.domain.chat.chat.entity.AIChatRoom;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RagSqlTutorService {
@@ -30,6 +32,7 @@ public class RagSqlTutorService {
 
         //3) 프롬프트 생성
         String prompt = ragPromptBuilder.buildPrompt(chunks, persona);
+        log.info(prompt);
 
         // 4) LLM 호출
         return ollamaChatClient

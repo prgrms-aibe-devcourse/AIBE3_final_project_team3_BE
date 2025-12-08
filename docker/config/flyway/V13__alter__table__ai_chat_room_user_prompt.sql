@@ -21,6 +21,10 @@ DROP
 COLUMN scenario_id,
     ADD COLUMN role_play_type VARCHAR(50) NULL AFTER title;
 
+ALTER TABLE system_prompts
+DROP INDEX prompt_key,
+    ADD INDEX idx_prompt_key_version (prompt_key, version);
+
 ALTER TABLE notifications
     MODIFY COLUMN content TEXT;
 
@@ -245,10 +249,6 @@ VALUES
 (NULL, 'PRE_SCRIPTED', '자유 대화', 'FREE_TALK',
  'Engage in a free conversation on any topic. Keep the dialogue natural.',
  NOW(), NOW());
-
-ALTER TABLE system_prompts
-DROP INDEX prompt_key,
-    ADD INDEX idx_prompt_key_version (prompt_key, version);
 
 -- RAG 버전2 데이터 삽입
 INSERT INTO system_prompts (prompt_key, description, content, version)
