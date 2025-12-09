@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.ai.userprompt.entity.UserPrompt;
 import triplestar.mixchat.domain.ai.userprompt.repository.UserPromptRepository;
+import triplestar.mixchat.domain.chat.chat.constant.AiChatRoomType;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
@@ -57,7 +58,9 @@ public class AIChatRoomService {
         chatRoomMemberRepository.save(new ChatMember(creator, savedRoom.getId(), ChatRoomType.AI));
         chatRoomMemberRepository.save(new ChatMember(findMemberById(BotConstant.BOT_MEMBER_ID), savedRoom.getId(), ChatRoomType.AI));
 
-        learningNoteSearchService.saveByRecentNotes(savedRoom.getId(), creatorId);
+        if(req.roomType() == AiChatRoomType.TUTOR_SIMILAR) {
+            learningNoteSearchService.saveByRecentNotes(savedRoom.getId(), creatorId);
+        }
         return AIChatRoomResp.from(savedRoom);
     }
 
