@@ -42,9 +42,6 @@ class ApiV1SentenceGameControllerTest {
     private SentenceGameRepository sentenceGameRepository;
 
     @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
     private MemberRepository memberRepository;
 
     private Member testMember;
