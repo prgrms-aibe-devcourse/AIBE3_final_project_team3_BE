@@ -31,4 +31,11 @@ public interface DirectChatRoomRepository extends JpaRepository<DirectChatRoom, 
         ORDER BY r.modifiedAt DESC
         """)
     List<Object[]> findRoomsAndLastReadByMemberId(@Param("memberId") Long memberId);
+
+    // Load Test Cleanup: 테스트 계정 간의 Direct 채팅방 조회
+    @Query("""
+        SELECT r FROM DirectChatRoom r
+        WHERE r.user1.id IN :testAccountIds AND r.user2.id IN :testAccountIds
+        """)
+    List<DirectChatRoom> findByTestAccounts(@Param("testAccountIds") List<Long> testAccountIds);
 }

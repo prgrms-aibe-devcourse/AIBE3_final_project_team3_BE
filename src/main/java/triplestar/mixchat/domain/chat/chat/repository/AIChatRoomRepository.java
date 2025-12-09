@@ -26,4 +26,11 @@ public interface AIChatRoomRepository extends JpaRepository<AIChatRoom, Long> {
             WHERE ar.id =:roomId
     """)
     Optional<AIChatRoom> findByIdWithPersona(Long roomId);
+
+    // Load Test Cleanup: [LOAD_TEST] 태그가 있는 AI 채팅방 조회
+    @Query("""
+        SELECT ar FROM AIChatRoom ar
+        WHERE ar.name LIKE '[LOAD_TEST]%'
+        """)
+    List<AIChatRoom> findLoadTestRooms();
 }

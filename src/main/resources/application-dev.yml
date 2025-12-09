@@ -18,3 +18,8 @@ spring:
       password: ${REDIS_PASSWORD}
 cookie:
   domain: localhost
+
+# 개발 환경에서는 actuator 포트 분리 없이 기본 포트 사용
+management:
+  server:
+    port: 8080

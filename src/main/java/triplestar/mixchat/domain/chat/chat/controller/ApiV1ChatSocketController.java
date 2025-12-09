@@ -5,18 +5,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessageSendingOperations;
-import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
-import triplestar.mixchat.domain.ai.chatbot.AiChatBotService;
-import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.MessageReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMessage.MessageType;
 import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
-import triplestar.mixchat.global.ai.BotConstant;
 import triplestar.mixchat.global.security.CustomUserDetails;
 
 @Slf4j
@@ -28,15 +23,15 @@ public class ApiV1ChatSocketController {
     private final ChatMessageService chatMessageService;
 
     @MessageMapping("/chats/sendMessage")
-    public void sendMessage(@Payload MessageReq messageReq, Principal principal) {
-        if (principal == null) {
-            throw new AccessDeniedException("Authentication principal not found.");
+    public void sendMessage(Principal principal, @Payload MessageReq messageReq) {
+        if (!(principal instanceof Authentication authentication)) {
+            log.warn("인증 정보가 없이 WebSocket 메시지 전송 요청이 들어왔습니다.");
+            throw new BadCredentialsException("인증 정보가 없습니다.");
         }
+        CustomUserDetails currentUser = (CustomUserDetails) authentication.getPrincipal();
 
-        Authentication authentication = (Authentication) principal;
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        Long senderId = userDetails.getId();
-        String senderNickname = userDetails.getNickname();
+        Long senderId = currentUser.getId();
+        String senderNickname = currentUser.getNickname();
 
         // 사용자가 해당 채팅방에 메시지를 보낼 권한이 있는지 확인
         chatMemberService.verifyUserIsMemberOfRoom(senderId, messageReq.roomId(), messageReq.chatRoomType());

@@ -1,5 +1,3 @@
-import org.gradle.internal.impldep.org.eclipse.jgit.diff.Subsequence.a
-
 plugins {
     java
     id("org.springframework.boot") version "3.5.7"
@@ -65,6 +63,8 @@ dependencies {
     // Testcontainers
     testImplementation("org.testcontainers:testcontainers")
     testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:mysql")
+    testImplementation("org.testcontainers:mongodb")
 
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -88,6 +88,20 @@ dependencies {
 
     // websocket
     implementation("org.springframework.boot:spring-boot-starter-websocket")
+
+    // RabbitMQ for STOMP Relay
+    implementation("org.springframework.boot:spring-boot-starter-amqp")
+    implementation("io.projectreactor.netty:reactor-netty")
+
+    // Actuator + Prometheus
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
+
+    // QueryDSL
+    implementation("com.querydsl:querydsl-jpa:5.1.0:jakarta")
+    annotationProcessor("com.querydsl:querydsl-apt:5.1.0:jakarta")
+    annotationProcessor("jakarta.persistence:jakarta.persistence-api")
+    annotationProcessor("jakarta.annotation:jakarta.annotation-api")
 
     // Elasticsearch
     implementation("org.springframework.boot:spring-boot-starter-data-elasticsearch") // Elasticsearch

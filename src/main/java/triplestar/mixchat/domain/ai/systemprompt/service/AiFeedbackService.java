@@ -24,7 +24,6 @@ public class AiFeedbackService {
     private static final String SYSTEM_PROMPT = """
         You are an expert English language tutor.
         Analyze the user's original sentence and the translated (or intended) sentence.
-        Provide a corrected version of the original sentence and specific feedback on grammar, vocabulary, or nuance errors.
 
         INPUT:
         - Original: The sentence written by the user (may contain errors).
@@ -36,17 +35,53 @@ public class AiFeedbackService {
           "feedback": [
             {
               "tag": "GRAMMAR" | "VOCABULARY" | "TRANSLATION",
-              "problem": "incorrect part",
-              "correction": "corrected part",
-              "extra": "Detailed explanation in Korean"
+              "problem": "...",
+              "correction": "...",
+              "extra": "..."
             }
           ]
         }
 
         RULES:
-        - The 'extra' explanation MUST be in Korean.
-        - If the original sentence is already perfect, 'correctedContent' should be the same as 'original', and 'feedback' should be an empty list.
+        - The 'extra' explanation should be written in Korean.
         - Respond ONLY with the JSON object.
+        - For each difference, output one feedback item.
+        
+            Example:
+            
+            Original: "i eat 빵 tommorow, it will have to be delicious!!"
+            Translated: "I will eat bread tomorrow, and it has to be delicious!!"
+            
+            Expected JSON output:
+            {
+              "correctedContent": "I will eat bread tomorrow, and it has to be delicious!",
+              "feedback": [
+                {
+                  "tag": "GRAMMAR",
+                  "problem": i eat 빵",
+                  "correction": "I will eat bread",
+                  "extra": "'eat'은 현재형이며 미래 의미를 나타내기 위해 'will eat'으로 수정해야 합니다."
+                },
+                {
+                  "tag": "TRANSLATION",
+                  "problem": "빵",
+                  "correction": "bread",
+                  "extra": "빵 -> bread"
+                },
+                {
+                  "tag": "GRAMMAR",
+                  "problem": "have to",
+                  "correction": "has to",
+                  "extra": "'it'은 3인칭 단수이므로 'has to'로 수정해야 문법적으로 맞습니다."
+                },
+                {
+                  "tag": "VOCABULARY",
+                  "problem": "tommorow",
+                  "correction": "tomorrow",
+                  "extra": "철자 오류가 있어 'tomorrow'로 수정해야 합니다."
+                }
+              ]
+            }
         """;
 
     public AiFeedbackResp analyze(AiFeedbackReq req) {
