@@ -30,7 +30,8 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
                 m.description,
                 m.profileImageUrl,
                 m.lastSeenAt,
-            
+                m.role,
+    
                 /* isFriend (boolean) */
                 EXISTS (
                     SELECT f FROM Friendship f

@@ -36,6 +36,9 @@ public record MemberDetailResp(
                 example = "2024-10-01T14:30:00", requiredMode = REQUIRED)
         LocalDateTime lastSeenAt,
 
+        @Schema(description = "회원 역할", example = "MEMBER", requiredMode = REQUIRED)
+        Role role,
+
         @Schema(description = "현재 로그인 사용자와 친구 관계인지 여부", example = "true", requiredMode = REQUIRED)
         boolean isFriend,
 
@@ -45,10 +48,7 @@ public record MemberDetailResp(
 
         @Schema(description = "상대방이 현재 사용자에게 보낸 친구 요청의 ID. 대기 중인 요청이 없으면 null입니다.",
                 example = "51")
-        Long receivedFriendRequestId,
-
-        @JsonIgnore
-        Role role
+        Long receivedFriendRequestId
 ) {
     public static MemberDetailResp forAnonymousViewer(Member member) {
         return new MemberDetailResp(
@@ -60,10 +60,10 @@ public record MemberDetailResp(
                 member.getDescription(),
                 member.getProfileImageUrl(),
                 member.getLastSeenAt(),
+                member.getRole(),
                 false,
                 false,
-                null,
-                member.getRole()
+                null
         );
     }
 }
