@@ -10,3 +10,8 @@ spring:
       host: ${REDIS_HOST:redis}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+
+# 운영 단계에선 actuator 전용 포트 사용
+management:
+  server:
+    port: 9100

@@ -40,6 +40,11 @@ public class SystemMessageService {
     }
 
     @Transactional
+    public void sendInviteMessage(Long roomId, String inviterNickname, String inviteeNickname, ChatRoomType type) {
+        sendSystemMessage(roomId, type, "MEMBER_INVITED", Map.of("inviter", inviterNickname, "invitee", inviteeNickname));
+    }
+
+    @Transactional
     public void sendDirectChatStartedMessage(Long roomId, ChatRoomType type) {
         sendSystemMessage(roomId, type, "DIRECT_CHAT_STARTED", Map.of());
     }

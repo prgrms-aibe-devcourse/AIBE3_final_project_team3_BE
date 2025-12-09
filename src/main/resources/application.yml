@@ -20,13 +20,33 @@ spring:
   flyway:
     enabled: false
 
+  # RabbitMQ Configuration
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    # Connection pool optimization
+    cache:
+      connection:
+        mode: connection
+        size: 10
+
   data:
     mongodb:
       uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/${MONGO_DB}?authSource=admin
 
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
     web:
       pageable:
         max-page-size: 100
+
+  elasticsearch:
+    uris: http://localhost:9200
 
   ai:
     openai:
@@ -35,7 +55,9 @@ spring:
       chat:
         options:
           model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
-
+      embedding:
+        options:
+          model: text-embedding-3-small
     ollama:
       base-url: ${OLLAMA_API_URL:https://ollama.yhcho.com/ollama}
       api-key: ${OLLAMA_API_KEY}
@@ -52,7 +74,30 @@ spring:
 #            options:
 #              model: ${VERTEX_AI_MODEL:gemini-1.5-flash}
 
+
 swagger:
   redirect:
     # "/"로 들어왔을 때 최종적으로 리다이렉트될 Swagger UI 경로
     path: /swagger-ui/index.html
+
+# Actuator + Prometheus 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+
+  endpoint:
+    health:
+      show-details: always
+
+  metrics:
+    tags:
+      application: ${spring.application.name:mixchat}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}

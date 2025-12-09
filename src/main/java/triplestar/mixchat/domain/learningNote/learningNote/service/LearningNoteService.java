@@ -25,6 +25,7 @@ public class LearningNoteService {
     private final LearningNoteRepository learningNoteRepository;
     private final MemberRepository memberRepository;
     private final FeedbackRepository feedbackRepository;
+    private final LearningNoteEmbeddingService embeddingService;
 
     @Transactional
     public Long createWithFeedbacks(LearningNoteCreateReq req, Long memberId) {
@@ -39,8 +40,11 @@ public class LearningNoteService {
             Feedback fb = Feedback.create(note, item.tag(), item.problem(), item.correction(), item.extra());
             note.addFeedback(fb);
         }
+        learningNoteRepository.save(note);
 
-        return learningNoteRepository.save(note).getId();
+        embeddingService.index(note);
+
+        return note.getId();
     }
 
     @Transactional

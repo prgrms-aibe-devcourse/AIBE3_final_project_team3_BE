@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackReq;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackResp;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
-import triplestar.mixchat.domain.chat.chat.dto.ChatRoomDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomPageDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
@@ -22,9 +22,7 @@ import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
-import triplestar.mixchat.domain.chat.chat.dto.TextMessageReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
-import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
@@ -90,15 +88,6 @@ public interface ApiChatController {
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 
-    @Operation(summary = "채팅 메시지 전송", description = "지정된 채팅방에 텍스트 메시지를 전송합니다.")
-    @SignInInRequireResponse
-    CustomResponse<MessageResp> sendMessage(
-            @Parameter(description = "메시지를 보낼 채팅방의 ID") @PathVariable Long roomId,
-            @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatRoomType chatRoomType,
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
-            @Valid @RequestBody TextMessageReq request
-    );
-
     @Operation(
         summary = "채팅방 메시지 목록 조회 (페이징)",
         description = "지정된 채팅방의 메시지 내역을 페이징하여 조회합니다. cursor와 size 파라미터를 생략하면 최근 25개 메시지를 반환합니다."
@@ -142,6 +131,12 @@ public interface ApiChatController {
     void reportUser(
             @Parameter(description = "신고할 채팅방의 ID") @PathVariable Long roomId,
             @Parameter(description = "대화방 타입 (DIRECT, GROUP)") @RequestParam ChatRoomType chatRoomType,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
+    );
+
+    @Operation(summary = "부하테스트 데이터 정리", description = "부하테스트로 생성된 모든 데이터를 일괄 삭제합니다. [LOAD_TEST] 태그가 있는 Group/AI 채팅방과 테스트 계정(1~100) 간의 Direct 채팅방을 삭제합니다.")
+    @SignInInRequireResponse
+    CustomResponse<?> cleanupLoadTestData(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 }
