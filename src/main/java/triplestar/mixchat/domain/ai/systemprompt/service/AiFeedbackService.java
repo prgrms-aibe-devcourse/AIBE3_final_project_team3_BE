@@ -102,6 +102,7 @@ public class AiFeedbackService {
 
                 // JSON 파싱 (Markdown 코드 블록 제거 처리)
                 String json = response.replaceAll("```json", "").replaceAll("```", "").trim();
+
                 return objectMapper.readValue(json, AiFeedbackResp.class);
 
             } catch (Exception e) {

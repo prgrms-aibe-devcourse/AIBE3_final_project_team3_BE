@@ -175,6 +175,15 @@ services:
     networks:
       - mixchat-network
 
+  elasticsearch:
+    image: elasticsearch:8.17.3
+    volumes:
+      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    environment:
+      discovery.type: single-node
 networks:
   mixchat-network:
     driver: bridge
@@ -187,3 +196,4 @@ volumes:
   prometheus_data:
   grafana_data:
   rabbitmq_data:
+  elasticsearch_data:

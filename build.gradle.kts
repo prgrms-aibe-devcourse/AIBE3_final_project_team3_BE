@@ -102,6 +102,11 @@ dependencies {
     annotationProcessor("com.querydsl:querydsl-apt:5.1.0:jakarta")
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")
     annotationProcessor("jakarta.annotation:jakarta.annotation-api")
+
+    // Elasticsearch
+    implementation("org.springframework.boot:spring-boot-starter-data-elasticsearch") // Elasticsearch
+    implementation(kotlin("stdlib-jdk8"))
+    implementation("co.elastic.clients:elasticsearch-java:8.17.3")
 }
 
 dependencyManagement {
@@ -113,4 +118,5 @@ dependencyManagement {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    maxHeapSize = "2048m"
 }

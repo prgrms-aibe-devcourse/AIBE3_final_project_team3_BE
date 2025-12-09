@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.ai.userprompt.entity.UserPrompt;
 import triplestar.mixchat.domain.ai.userprompt.repository.UserPromptRepository;
+import triplestar.mixchat.domain.chat.chat.constant.AiChatRoomType;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
@@ -16,10 +17,12 @@ import triplestar.mixchat.domain.chat.chat.entity.AIChatRoom;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.repository.AIChatRoomRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
+import triplestar.mixchat.domain.learningNote.learningNote.service.LearningNoteRagService;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.ai.BotConstant;
 import triplestar.mixchat.global.cache.ChatAuthCacheService;
+import triplestar.mixchat.global.cache.LearningNoteCacheRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +36,8 @@ public class AIChatRoomService {
     private final ChatAuthCacheService chatAuthCacheService;
     private final ChatMemberService chatMemberService;
     private final UserPromptRepository userPromptRepository;
+    private final LearningNoteCacheRepository learningNoteCacheRepository;
+    private final LearningNoteRagService learningNoteSearchService;
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
@@ -53,6 +58,9 @@ public class AIChatRoomService {
         chatRoomMemberRepository.save(new ChatMember(creator, savedRoom.getId(), ChatRoomType.AI));
         chatRoomMemberRepository.save(new ChatMember(findMemberById(BotConstant.BOT_MEMBER_ID), savedRoom.getId(), ChatRoomType.AI));
 
+        if(req.roomType() == AiChatRoomType.TUTOR_SIMILAR) {
+            learningNoteSearchService.saveByRecentNotes(savedRoom.getId(), creatorId);
+        }
         return AIChatRoomResp.from(savedRoom);
     }
 
@@ -66,6 +74,7 @@ public class AIChatRoomService {
     // AI 채팅방 나가기
     @Transactional
     public void leaveAIChatRoom(Long roomId, Long currentUserId) {
+        learningNoteCacheRepository.delete(roomId, currentUserId);
         chatMemberService.leaveRoom(currentUserId, roomId, ChatRoomType.AI);
     }
 }

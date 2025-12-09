@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
+import triplestar.mixchat.domain.learningNote.learningNote.service.LearningNoteRagService;
 
 @Component
 public class SqlContextRetriever implements ContextRetriever {
@@ -22,7 +23,7 @@ public class SqlContextRetriever implements ContextRetriever {
             @Value("${ai.context-retriever.sql.min}")
             int minItems,
             @Value("${ai.context-retriever.sql.max}")
-            int maxItems
+            int maxItems, LearningNoteRagService learningNoteSearchService
     ) {
         this.learningNoteRepository = learningNoteRepository;
         this.minItems = minItems;
