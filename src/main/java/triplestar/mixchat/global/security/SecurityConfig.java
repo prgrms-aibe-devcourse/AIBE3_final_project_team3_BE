@@ -45,6 +45,8 @@ public class SecurityConfig {
                                 // 회원 조회는 인증 불필요
                                 .requestMatchers(HttpMethod.GET, "/api/v1/members").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/members/*").permitAll()
+                                // 게시글 조회는 인증 불필요
+                                .requestMatchers(HttpMethod.GET, "/api/v1/posts", "/api/v1/posts/**").permitAll()
                                 // NOTE : 테스트용 AI Chat API 임시 허용
                                 .requestMatchers("/api/v1/ai/temp/**").permitAll()
                                 // ADMIN 권한 필요
