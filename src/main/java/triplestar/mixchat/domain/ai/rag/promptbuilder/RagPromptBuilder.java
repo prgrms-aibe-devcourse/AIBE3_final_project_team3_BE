@@ -1,4 +1,4 @@
-package triplestar.mixchat.domain.ai.rag;
+package triplestar.mixchat.domain.ai.rag.promptbuilder;
 
 import static triplestar.mixchat.domain.ai.rag.context.user.ContextChunkTextKey.LEARNING_NOTE_CORRECTED_CONTENT;
 import static triplestar.mixchat.domain.ai.rag.context.user.ContextChunkTextKey.LEARNING_NOTE_ORIGINAL_CONTENT;

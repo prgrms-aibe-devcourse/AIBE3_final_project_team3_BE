@@ -14,7 +14,7 @@ import triplestar.mixchat.domain.learningNote.learningNote.service.LearningNoteR
 
 @Component
 @Slf4j
-public class SqlContextRetriever implements ContextRetriever {
+public class SqlContextRetriever {
 
     private final LearningNoteRepository learningNoteRepository;
     private final int minItems;
@@ -32,8 +32,7 @@ public class SqlContextRetriever implements ContextRetriever {
         this.maxItems = maxItems;
     }
 
-    @Override
-    public List<UserContextChunk> retrieve(Long userId, String userMessage, int itemSize) {
+    public List<UserContextChunk> retrieve(Long userId, int itemSize) {
         if (itemSize < minItems || itemSize > maxItems) {
             throw new IllegalArgumentException(
                     "컨텍스트 청크 수는 %d에서 %d 사이여야 합니다.".formatted(minItems, maxItems)
@@ -43,7 +42,7 @@ public class SqlContextRetriever implements ContextRetriever {
         List<LearningNote> notes = learningNoteRepository.findTopNByMemberId(userId, itemSize);
         for (int i = 0; i < notes.size(); i++) {
             LearningNote note = notes.get(i);
-            log.info("Retrieved LearningNote {}: id={}, originalContent='{}', correctedContent='{}'",
+            log.trace("Retrieved LearningNote {}: id={}, originalContent='{}', correctedContent='{}'",
                     i + 1, note.getId(), note.getOriginalContent(), note.getCorrectedContent());
         }
 
