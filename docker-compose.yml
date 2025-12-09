@@ -147,6 +147,34 @@ services:
     networks:
       - mixchat-network
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    restart: always
+    env_file:
+      - .env
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI
+      - "61613:61613"  # STOMP
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    command: >
+      bash -c "
+      rabbitmq-plugins enable rabbitmq_stomp rabbitmq_web_stomp rabbitmq_management &&
+      rabbitmq-server
+      "
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mixchat-network
+
 networks:
   mixchat-network:
     driver: bridge
@@ -158,3 +186,4 @@ volumes:
   mongo_data:
   prometheus_data:
   grafana_data:
+  rabbitmq_data:

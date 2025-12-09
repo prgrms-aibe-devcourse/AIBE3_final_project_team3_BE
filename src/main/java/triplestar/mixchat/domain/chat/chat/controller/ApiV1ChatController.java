@@ -3,6 +3,7 @@ package triplestar.mixchat.domain.chat.chat.controller;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,8 +30,6 @@ import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.InviteGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.JoinGroupChatReq;
-import triplestar.mixchat.domain.chat.chat.dto.LoadTestCleanupReq;
-import triplestar.mixchat.domain.chat.chat.dto.LoadTestCleanupResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.TransferOwnerReq;
@@ -42,6 +41,7 @@ import triplestar.mixchat.domain.chat.chat.service.DirectChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.GroupChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.LoadTestCleanupService;
 import triplestar.mixchat.global.response.CustomResponse;
+import java.util.Map;
 import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.global.security.CustomUserDetails;
 
@@ -259,11 +259,11 @@ public class ApiV1ChatController implements ApiChatController {
 
     @Override
     @PostMapping("/loadtest/cleanup")
-    public CustomResponse<LoadTestCleanupResp> cleanupLoadTestData(
-            @AuthenticationPrincipal CustomUserDetails currentUser,
-            @Valid @RequestBody LoadTestCleanupReq request
+    @Profile({"dev", "local", "test"})  // 개발/로컬/테스트 환경에서만 활성화
+    public CustomResponse<?> cleanupLoadTestData(
+            @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        LoadTestCleanupResp result = loadTestCleanupService.cleanupLoadTestData(request);
-        return CustomResponse.ok("부하테스트 데이터 정리 완료", result);
+        long deletedCount = loadTestCleanupService.cleanupLoadTestData();
+        return CustomResponse.ok("부하테스트 데이터 정리 완료", Map.of("deletedCount", deletedCount));
     }
 }

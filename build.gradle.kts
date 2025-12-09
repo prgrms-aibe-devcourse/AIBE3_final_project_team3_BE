@@ -89,6 +89,10 @@ dependencies {
     // websocket
     implementation("org.springframework.boot:spring-boot-starter-websocket")
 
+    // RabbitMQ for STOMP Relay
+    implementation("org.springframework.boot:spring-boot-starter-amqp")
+    implementation("io.projectreactor.netty:reactor-netty")
+
     // Actuator + Prometheus
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
