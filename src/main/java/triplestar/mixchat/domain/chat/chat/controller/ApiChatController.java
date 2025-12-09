@@ -21,6 +21,8 @@ import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.LoadTestCleanupReq;
+import triplestar.mixchat.domain.chat.chat.dto.LoadTestCleanupResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.global.response.CustomResponse;
@@ -132,6 +134,13 @@ public interface ApiChatController {
             @Parameter(description = "신고할 채팅방의 ID") @PathVariable Long roomId,
             @Parameter(description = "대화방 타입 (DIRECT, GROUP)") @RequestParam ChatRoomType chatRoomType,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
+    );
+
+    @Operation(summary = "부하테스트 데이터 정리", description = "부하테스트로 생성된 채팅방, 멤버, 메시지 데이터를 일괄 삭제합니다. [LOAD_TEST] 태그가 있는 Group/AI 채팅방과 테스트 계정 간의 Direct 채팅방을 삭제합니다.")
+    @SignInInRequireResponse
+    CustomResponse<LoadTestCleanupResp> cleanupLoadTestData(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody LoadTestCleanupReq request
     );
 }
 

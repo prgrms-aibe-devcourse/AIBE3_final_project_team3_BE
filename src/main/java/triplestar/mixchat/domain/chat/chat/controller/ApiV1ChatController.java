@@ -29,6 +29,8 @@ import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.InviteGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.JoinGroupChatReq;
+import triplestar.mixchat.domain.chat.chat.dto.LoadTestCleanupReq;
+import triplestar.mixchat.domain.chat.chat.dto.LoadTestCleanupResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.TransferOwnerReq;
@@ -38,6 +40,7 @@ import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
 import triplestar.mixchat.domain.chat.chat.service.DirectChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.GroupChatRoomService;
+import triplestar.mixchat.domain.chat.chat.service.LoadTestCleanupService;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.global.security.CustomUserDetails;
@@ -52,6 +55,7 @@ public class ApiV1ChatController implements ApiChatController {
     private final AIChatRoomService aiChatRoomService;
     private final ChatMemberService chatMemberService;
     private final ChatMessageService chatMessageService;
+    private final LoadTestCleanupService loadTestCleanupService;
     private final S3Uploader s3Uploader;
     private final SimpMessagingTemplate messagingTemplate;
     private final AiFeedbackService aiFeedbackService;
@@ -251,5 +255,15 @@ public class ApiV1ChatController implements ApiChatController {
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         // chatMemberService.reportUser(currentUser.getId(), null, roomId, chatRoomType, null);
+    }
+
+    @Override
+    @PostMapping("/loadtest/cleanup")
+    public CustomResponse<LoadTestCleanupResp> cleanupLoadTestData(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody LoadTestCleanupReq request
+    ) {
+        LoadTestCleanupResp result = loadTestCleanupService.cleanupLoadTestData(request);
+        return CustomResponse.ok("부하테스트 데이터 정리 완료", result);
     }
 }
