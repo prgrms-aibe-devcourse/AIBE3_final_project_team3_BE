@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -283,7 +282,7 @@ public class ChatMessageService {
     // AI 채팅방 전용 메시지 조회 (입장 시간 필터 없음)
     private MessagePageResp getMessagePageResp(Long roomId, ChatRoomType chatRoomType, int pageSize) {
         List<ChatMessage> messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeAndCreatedAtGreaterThanEqualOrderBySequenceDesc(
-                roomId, chatRoomType, LocalDateTime.of(2000,01,01,0,0), PageRequest.of(0, pageSize)
+                roomId, chatRoomType, LocalDateTime.of(2000, 1, 1, 0, 0), PageRequest.of(0, pageSize)
         );
 
         List<MessageResp> messageResps = messages.stream()

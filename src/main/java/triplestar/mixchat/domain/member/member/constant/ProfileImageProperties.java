@@ -25,7 +25,6 @@ public class ProfileImageProperties {
     @Value("${member.allowed-image-types}")
     private String allowedImageTypes;
 
-    @Bean
     public String defaultProfileImageUrl() {
         // '/'로 끝나는 endpoint 처리
         String cleanEndpoint = endpoint.replaceAll("/$", "");
@@ -33,12 +32,10 @@ public class ProfileImageProperties {
         return cleanEndpoint + "/" + bucket + "/" + defaultProfileImageName;
     }
 
-    @Bean
     public Long maxProfileImageSizeBytes() {
         return maxProfileImageSizeBytes;
     }
 
-    @Bean
     public Set<String> allowedImageTypes() {
         return Arrays.stream(allowedImageTypes.split(","))
                 .map(String::trim)

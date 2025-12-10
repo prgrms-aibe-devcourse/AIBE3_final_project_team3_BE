@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
 import triplestar.mixchat.domain.member.auth.dto.LogInResp;
 import triplestar.mixchat.domain.member.auth.dto.LogInReq;
+import triplestar.mixchat.domain.member.member.constant.ProfileImageProperties;
 import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
@@ -31,7 +32,7 @@ public class AuthService {
 
     // 로그아웃시 즉시 오프라인 상태 전환을 위한 PresenceService 주입
     private final PresenceService presenceService;
-    private final String defaultProfileBaseURL;
+    private final ProfileImageProperties profileImageProperties;
 
     /**
      * 회원가입
@@ -43,7 +44,7 @@ public class AuthService {
                 req.name(), req.nickname(),
                 req.country(), req.englishLevel(), req.interests(), req.description()
         );
-        member.updateProfileImageUrl(defaultProfileBaseURL);
+        member.updateProfileImageUrl(profileImageProperties.defaultProfileImageUrl());
 
         Member savedMember = memberRepository.save(member);
         return MemberSummaryResp.from(savedMember);
