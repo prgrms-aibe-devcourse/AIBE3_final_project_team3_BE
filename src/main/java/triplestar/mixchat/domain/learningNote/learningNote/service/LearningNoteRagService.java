@@ -96,6 +96,10 @@ public class LearningNoteRagService {
             ids = learningNoteCacheRepository.get(roomId, memberId);
         }
 
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+
         return learningNoteRepository.findAllById(ids);
     }
 }

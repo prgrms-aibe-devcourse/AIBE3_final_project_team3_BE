@@ -27,12 +27,12 @@ public class LearningNoteDocumentRepositoryImpl implements LearningNoteKnnSearch
     ) {
 
         NativeQuery query = NativeQuery.builder()
-                .withQuery(q -> q.knn(knn -> knn
-                        .queryVector(toList(queryVector))
+                .withKnnSearches(knnSearchBuilder -> knnSearchBuilder
                         .field(field)
+                        .queryVector(toList(queryVector))
                         .k(k)
                         .numCandidates(numCandidates)
-                ))
+                )
                 .withPageable(pageable)
                 .build();
 

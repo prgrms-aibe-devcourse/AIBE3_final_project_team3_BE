@@ -176,7 +176,7 @@ services:
       - mixchat-network
 
   elasticsearch:
-    image: elasticsearch:8.17.3
+    image: elasticsearch:8.11.3
     volumes:
       - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
       - elasticsearch_data:/usr/share/elasticsearch/data
