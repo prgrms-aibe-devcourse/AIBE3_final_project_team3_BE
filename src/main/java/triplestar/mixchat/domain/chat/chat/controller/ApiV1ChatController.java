@@ -46,6 +46,8 @@ import java.util.Map;
 import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.global.security.CustomUserDetails;
 
+import triplestar.mixchat.domain.chat.chat.dto.UpdateGroupChatPasswordReq;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/chats")
@@ -60,6 +62,16 @@ public class ApiV1ChatController implements ApiChatController {
     private final S3Uploader s3Uploader;
     private final SimpMessagingTemplate messagingTemplate;
     private final AiFeedbackService aiFeedbackService;
+
+    @PatchMapping("/rooms/group/{roomId}/password")
+    public CustomResponse<Void> updateGroupChatPassword(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody UpdateGroupChatPasswordReq request
+    ) {
+        groupChatRoomService.updatePassword(roomId, currentUser.getId(), request.newPassword());
+        return CustomResponse.ok("비밀번호가 변경되었습니다.", null);
+    }
 
     @Override
     @PostMapping("/feedback")

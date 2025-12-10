@@ -87,4 +87,13 @@ public class GroupChatRoom extends BaseEntity {
     public Long generateNextSequence() {
         return ++this.currentSequence;
     }
+
+    // 비밀번호 변경
+    public void updatePassword(String newPassword) {
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            this.password = null; // 비밀번호 제거 (공개방 전환)
+        } else {
+            this.password = newPassword;
+        }
+    }
 }

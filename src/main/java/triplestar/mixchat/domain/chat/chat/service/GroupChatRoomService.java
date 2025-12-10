@@ -342,6 +342,25 @@ public class GroupChatRoomService {
         systemMessageService.sendOwnerChangedMessage(roomId, oldOwnerNickname, newOwnerNickname, ChatRoomType.GROUP);
     }
 
+    @Transactional
+    public void updatePassword(Long roomId, Long userId, String newPassword) {
+        GroupChatRoom room = groupChatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 그룹 채팅방입니다."));
+
+        // 방장 권한 확인
+        if (!room.isOwner(findMemberById(userId))) {
+            throw new AccessDeniedException("비밀번호를 변경할 권한이 없습니다.");
+        }
+
+        // 새 비밀번호 암호화 (null이 아니면)
+        String encryptedPassword = null;
+        if (newPassword != null && !newPassword.trim().isEmpty()) {
+            encryptedPassword = passwordEncoder.encode(newPassword);
+        }
+
+        room.updatePassword(encryptedPassword);
+    }
+
     //그룹 채팅방 목록을 DTO로 변환
     private List<GroupChatRoomResp> convertToRoomResponses(List<GroupChatRoom> rooms, Long currentUserId) {
         if (rooms.isEmpty()) {
