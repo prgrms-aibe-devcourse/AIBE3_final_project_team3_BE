@@ -15,10 +15,7 @@ public class ChatNotificationService {
 
     private final SimpMessageSendingOperations messagingTemplate;
 
-    /**
-     * 채팅방 구독자들에게 메시지 전송
-     * Destination: /topic/{type}/rooms/{roomId}
-     */
+    // 채팅방 구독자들에게 메시지 전송(/topic/{type}/rooms/{roomId})
     public void sendChatMessage(Long roomId, ChatRoomType type, MessageResp messageResp) {
         String destination = String.format("/topic/%s/rooms/%d", type.name().toLowerCase(), roomId);
         messagingTemplate.convertAndSend(destination, messageResp);

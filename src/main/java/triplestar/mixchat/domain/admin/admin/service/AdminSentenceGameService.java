@@ -1,6 +1,7 @@
 package triplestar.mixchat.domain.admin.admin.service;
 
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,7 @@ import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameResp;
 import triplestar.mixchat.domain.admin.admin.exception.DuplicateSentenceGameException;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
+import triplestar.mixchat.domain.miniGame.sentenceGame.entity.FeedbackSnapshot;
 import triplestar.mixchat.domain.miniGame.sentenceGame.entity.SentenceGame;
 import triplestar.mixchat.domain.miniGame.sentenceGame.repository.SentenceGameRepository;
 
@@ -24,19 +26,33 @@ public class AdminSentenceGameService {
     @Transactional
     public Long createSentenceGame(AdminSentenceGameCreateReq request) {
 
+        LearningNote note = learningNoteRepository.findById(request.learningNoteId())
+                .orElseThrow(() -> new IllegalArgumentException("학습노트를 찾을 수 없습니다. id:" + request.learningNoteId()));
+
         boolean duplicated = sentenceGameRepository.existsByOriginalContentAndCorrectedContent(
-                request.originalContent(),
-                request.correctedContent()
+                note.getOriginalContent(),
+                note.getCorrectedContent()
         );
 
         if (duplicated) {
             throw new DuplicateSentenceGameException();
         }
 
+        List<FeedbackSnapshot> snapshots = note.getFeedbacks().stream()
+                .map(f -> new FeedbackSnapshot(
+                        f.getTag().name(),
+                        f.getProblem(),
+                        f.getCorrection(),
+                        f.getExtra()
+                ))
+                .toList();
+
         SentenceGame game = SentenceGame.createSentenceGame(
-                request.originalContent(),
-                request.correctedContent()
+                note.getOriginalContent(),
+                note.getCorrectedContent(),
+                snapshots
         );
+
         return sentenceGameRepository.save(game).getId();
     }
 

@@ -5,7 +5,10 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.stereotype.Service;
 
 /**
@@ -42,22 +45,49 @@ public class ChatSubscriberCacheService {
         return SESSION_MEMBER_MAPPING_PREFIX + sessionId;
     }
 
+//    // 파이프라인 없이 하면 얼마나 걸리나 테스트용
+//    public void addSubscriber(Long roomId, Long memberId, String sessionId) {
+//        String sessionsKey = getSessionsKey(roomId);
+//        String membersKey = getMembersKey(roomId);
+//        String mappingKey = getSessionMappingKey(sessionId);
+//
+//        // 1. 세션별 구독 추가
+//        redisTemplate.opsForSet().add(sessionsKey, sessionId);
+//        redisTemplate.expire(sessionsKey, SUBSCRIBER_TTL_SECONDS, TimeUnit.SECONDS);
+//
+//        // 2. 세션-멤버 매핑 저장
+//        redisTemplate.opsForValue().set(mappingKey, String.valueOf(memberId), SUBSCRIBER_TTL_SECONDS, TimeUnit.SECONDS);
+//
+//        // 3. 멤버별 집계에 추가 (Set이므로 중복 자동 제거)
+//        redisTemplate.opsForSet().add(membersKey, String.valueOf(memberId));
+//        redisTemplate.expire(membersKey, SUBSCRIBER_TTL_SECONDS, TimeUnit.SECONDS);
+//    }
+
     // 채팅방 구독 시작
     public void addSubscriber(Long roomId, Long memberId, String sessionId) {
         String sessionsKey = getSessionsKey(roomId);
         String membersKey = getMembersKey(roomId);
         String mappingKey = getSessionMappingKey(sessionId);
 
-        // 1. 세션별 구독 추가
-        redisTemplate.opsForSet().add(sessionsKey, sessionId);
-        redisTemplate.expire(sessionsKey, SUBSCRIBER_TTL_SECONDS, TimeUnit.SECONDS);
+        // Redis 왕복을 줄이기 위해 세션/멤버 추가와 TTL 설정을 파이프라인 처리
+        redisTemplate.executePipelined(new SessionCallback<Void>() {
+            @Override
+            @SuppressWarnings("unchecked")
+            public <K, V> Void execute(RedisOperations<K, V> operations) throws DataAccessException {
+                RedisOperations<String, String> redisOps = (RedisOperations<String, String>) operations;
 
-        // 2. 세션-멤버 매핑 저장
-        redisTemplate.opsForValue().set(mappingKey, String.valueOf(memberId), SUBSCRIBER_TTL_SECONDS, TimeUnit.SECONDS);
+                redisOps.opsForSet().add(sessionsKey, sessionId);
+                redisOps.expire(sessionsKey, SUBSCRIBER_TTL_SECONDS, TimeUnit.SECONDS);
 
-        // 3. 멤버별 집계에 추가 (Set이므로 중복 자동 제거)
-        redisTemplate.opsForSet().add(membersKey, String.valueOf(memberId));
-        redisTemplate.expire(membersKey, SUBSCRIBER_TTL_SECONDS, TimeUnit.SECONDS);
+                redisOps.opsForValue().set(mappingKey, String.valueOf(memberId),
+                        SUBSCRIBER_TTL_SECONDS, TimeUnit.SECONDS);
+
+                redisOps.opsForSet().add(membersKey, String.valueOf(memberId));
+                redisOps.expire(membersKey, SUBSCRIBER_TTL_SECONDS, TimeUnit.SECONDS);
+
+                return null;
+            }
+        });
     }
 
     // 채팅방 구독 해제

@@ -55,4 +55,10 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
             ChatRoomType chatRoomType,
             Pageable pageable
     );
+
+    // Load Test Cleanup: 특정 채팅방의 모든 메시지 삭제 (MongoDB)
+    void deleteByChatRoomIdAndChatRoomType(Long chatRoomId, ChatRoomType chatRoomType);
+
+    // Load Test Cleanup: 삭제 전 카운트 확인용
+    long countByChatRoomIdAndChatRoomType(Long chatRoomId, ChatRoomType chatRoomType);
 }

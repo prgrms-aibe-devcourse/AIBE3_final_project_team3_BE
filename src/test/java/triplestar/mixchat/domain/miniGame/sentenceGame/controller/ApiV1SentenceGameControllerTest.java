@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -52,27 +53,33 @@ class ApiV1SentenceGameControllerTest {
 
         sentenceGameRepository.save(SentenceGame.createSentenceGame(
                 "I goed to school.",
-                "I went to school."
+                "I went to school.",
+                List.of()
         ));
         sentenceGameRepository.save(SentenceGame.createSentenceGame(
                 "She don't like apples.",
-                "She doesn't like apples."
+                "She doesn't like apples.",
+                List.of()
         ));
         sentenceGameRepository.save(SentenceGame.createSentenceGame(
                 "He go to work every day.",
-                "He goes to work every day."
+                "He goes to work every day.",
+                List.of()
         ));
         sentenceGameRepository.save(SentenceGame.createSentenceGame(
                 "They was happy.",
-                "They were happy."
+                "They were happy.",
+                List.of()
         ));
         sentenceGameRepository.save(SentenceGame.createSentenceGame(
                 "It have two legs.",
-                "It has two legs."
+                "It has two legs.",
+                List.of()
         ));
         sentenceGameRepository.save(SentenceGame.createSentenceGame(
                 "We is ready.",
-                "We are ready."
+                "We are ready.",
+                List.of()
         ));
     }
 

@@ -19,7 +19,7 @@ import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
 import triplestar.mixchat.domain.member.member.constant.Role;
 import triplestar.mixchat.domain.report.report.constant.ReportCategory;
-import triplestar.mixchat.global.converter.JsonListConverter;
+import triplestar.mixchat.global.converter.StringListConverter;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
 @Entity
@@ -47,7 +47,7 @@ public class Member extends BaseEntity {
     private Country country;
 
     @Column(nullable = false)
-    @Convert(converter = JsonListConverter.class)
+    @Convert(converter = StringListConverter.class)
     private List<String> interests;
 
     @Column(nullable = false)
