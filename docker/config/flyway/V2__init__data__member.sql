@@ -4,7 +4,7 @@ USE mysql_db;
 INSERT INTO members (
     email, password, name, nickname, country,
     interests, english_level, description, role,
-    membership_grade, last_sign_in_at, is_blocked, blocked_at,
+    membership_grade, last_seen_at, is_blocked, blocked_at,
     is_deleted, deleted_at, block_reason, profile_image_url,
     created_at, modified_at
 ) VALUES

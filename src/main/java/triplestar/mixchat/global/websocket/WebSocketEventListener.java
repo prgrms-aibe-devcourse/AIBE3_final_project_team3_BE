@@ -19,7 +19,6 @@ import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
-import triplestar.mixchat.domain.chat.chat.dto.SubscriberCountUpdateResp;
 import triplestar.mixchat.domain.chat.chat.dto.UnreadCountUpdateEvent;
 import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
@@ -31,7 +30,6 @@ import triplestar.mixchat.global.security.CustomUserDetails;
 @Slf4j
 @RequiredArgsConstructor
 public class WebSocketEventListener {
-
     private final ChatSubscriberCacheService subscriberCacheService;
     private final ChatMemberService chatMemberService;
     private final ChatMessageService chatMessageService;
@@ -173,7 +171,7 @@ public class WebSocketEventListener {
             }
 
             // 6. 구독자 수 변경 브로드캐스트
-            broadcastSubscriberCount(roomId, chatRoomType);
+            chatMemberService.broadcastSubscriberCount(roomId, chatRoomType);
 
         } catch (IllegalArgumentException | AccessDeniedException e) {
             // 채팅방 권한 또는 데이터 검증 실패 시 로그만 남기고 클라이언트는 구독 실패로 처리
@@ -220,7 +218,7 @@ public class WebSocketEventListener {
 
         // 구독자 수 변경 브로드캐스트
         ChatRoomType chatRoomType = roomInfo.getChatRoomType();
-        broadcastSubscriberCount(roomId, chatRoomType);
+        chatMemberService.broadcastSubscriberCount(roomId, chatRoomType);
     }
 
     // WebSocket 세션 종료 - 해당 세션이 구독한 방만 제거 (KEYS 사용 방지)
@@ -257,31 +255,12 @@ public class WebSocketEventListener {
             subscriberCacheService.removeSubscriber(roomId, memberId, sessionId);
 
             // 구독자 수 변경 브로드캐스트
-            broadcastSubscriberCount(roomId, chatRoomType);
+            chatMemberService.broadcastSubscriberCount(roomId, chatRoomType);
         }
 
         // [중요] subscriptionIdToRoomInfo 맵에서도 제거 (메모리 누수 방지)
         for (String subId : subscriptionIds) {
             subscriptionIdToRoomInfo.remove(subId);
         }
-    }
-
-    // 구독자 수 변경 브로드캐스트 헬퍼 메서드
-    private void broadcastSubscriberCount(Long roomId, ChatRoomType chatRoomType) {
-        // AI 채팅방은 읽음 처리 및 구독자 추적이 불필요 (1:1 AI 대화)
-        if (chatRoomType == ChatRoomType.AI) {
-            return;
-        }
-
-        // 현재 구독자 수 조회
-        int subscriberCount = chatMemberService.getSubscriberCount(roomId);
-
-        // 전체 멤버 수 조회
-        int totalMemberCount = chatMemberService.getTotalMemberCount(roomId, chatRoomType);
-
-        // 브로드캐스트
-        SubscriberCountUpdateResp resp = SubscriberCountUpdateResp.of(subscriberCount, totalMemberCount);
-        String destination = "/topic/" + chatRoomType.name().toLowerCase() + "/rooms/" + roomId;
-        messagingTemplate.convertAndSend(destination, resp);
     }
 }

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptReq;
-import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptListResp;
+import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptResp;
 import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptDetailResp;
 import triplestar.mixchat.domain.ai.userprompt.service.UserPromptService;
 import triplestar.mixchat.global.response.CustomResponse;
@@ -47,9 +47,9 @@ public class ApiV1PromptController implements ApiPromptController {
 
     @Override
     @GetMapping()
-    public CustomResponse<List<UserPromptListResp>> list(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public CustomResponse<List<UserPromptResp>> list(@AuthenticationPrincipal CustomUserDetails userDetails) {
         Long memberId = userDetails.getId();
-        List<UserPromptListResp> resp = userPromptService.list(memberId);
+        List<UserPromptResp> resp = userPromptService.list(memberId);
         return CustomResponse.ok("프롬프트 목록 조회 성공", resp);
     }
 

@@ -18,9 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
-import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.entity.GroupChatRoom;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
@@ -28,6 +26,7 @@ import triplestar.mixchat.domain.member.friend.repository.FriendshipRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.cache.ChatAuthCacheService;
+import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
 
 @Service
 @RequiredArgsConstructor
@@ -40,14 +39,12 @@ public class GroupChatRoomService {
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatAuthCacheService chatAuthCacheService;
+    private final ChatSubscriberCacheService chatSubscriberCacheService;
     private final ChatMemberService chatMemberService;
     private final ChatMessageService chatMessageService;
     private final FriendshipRepository friendshipRepository;
-
-    public void verifyUserIsMemberOfRoom(Long memberId, Long roomId) {
-        chatMemberService.verifyUserIsMemberOfRoom(memberId, roomId, ChatRoomType.GROUP);
-    }
-
+    private final SystemMessageService systemMessageService;
+    private final triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository chatMessageRepository;
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
@@ -83,7 +80,7 @@ public class GroupChatRoomService {
         Page<Long> friendIdPage = friendsByMemberId.map(Member::getId);
         Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
 
-        GroupChatRoomResp roomDto = GroupChatRoomResp.from(savedRoom, chatMembers, creatorId, friendIdSet, 0L);
+        GroupChatRoomResp roomDto = GroupChatRoomResp.from(savedRoom, chatMembers, creatorId, friendIdSet, 0L, null);
         members.forEach(member -> {
             messagingTemplate.convertAndSendToUser(member.getId().toString(), "/topic/rooms", roomDto);
         });
@@ -101,6 +98,8 @@ public class GroupChatRoomService {
         ChatMember memberToRemove = chatRoomMemberRepository
                 .findByChatRoomIdAndChatRoomTypeAndMember_Id(roomId, ChatRoomType.GROUP, currentUserId)
                 .orElseThrow(() -> new AccessDeniedException("해당 대화방에 접근할 권한이 없습니다."));
+
+        String leavingMemberNickname = memberToRemove.getMember().getNickname();
 
         // 3. 방장이 나가는 경우 방장 위임 처리
         if (room.isOwner(memberToRemove.getMember())) {
@@ -128,6 +127,14 @@ public class GroupChatRoomService {
         // 5. 캐시에서 멤버 제거
         chatAuthCacheService.removeMember(roomId, currentUserId);
 
+        // Redis 구독자 캐시에서 세션 제거
+        Set<String> memberSessions = chatSubscriberCacheService.getSessionsByMemberId(roomId, currentUserId);
+        if (memberSessions != null) {
+            for (String sessionId : memberSessions) {
+                chatSubscriberCacheService.removeSubscriber(roomId, currentUserId, sessionId);
+            }
+        }
+
         // 6. 남은 멤버 수 확인 후 대화방 삭제
         long remainingMembersCount = chatRoomMemberRepository.countByChatRoomIdAndChatRoomType(
                 roomId, ChatRoomType.GROUP);
@@ -135,6 +142,11 @@ public class GroupChatRoomService {
         if (remainingMembersCount == 0) {
             groupChatRoomRepository.deleteById(roomId);
             log.info("모든 멤버가 나가 그룹 채팅방이 삭제되었습니다. 방 ID: {}", roomId);
+        } else {
+            // 7. 남은 멤버가 있으면 시스템 메시지 전송
+            systemMessageService.sendLeaveMessage(roomId, leavingMemberNickname, ChatRoomType.GROUP);
+            // 멤버 업데이트 브로드캐스트
+            chatMemberService.broadcastMemberUpdate(roomId, ChatRoomType.GROUP, memberToRemove.getMember(), "LEAVE");
         }
     }
 
@@ -174,9 +186,14 @@ public class GroupChatRoomService {
         Page<Long> friendIdPage = friendsByMemberId.map(Member::getId);
         Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
 
-        GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers, userId, friendIdSet, 0L);
+        GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers, userId, friendIdSet, 0L, null);
 
-        // 8. WebSocket으로 방의 모든 멤버에게 알림 (새 멤버 참가 알림)
+        // 8. 시스템 메시지 전송 (새 멤버 입장 알림)
+        systemMessageService.sendJoinMessage(roomId, member.getNickname(), ChatRoomType.GROUP);
+        // 멤버 업데이트 브로드캐스트
+        chatMemberService.broadcastMemberUpdate(roomId, ChatRoomType.GROUP, member, "JOIN");
+
+        // 9. WebSocket으로 방의 모든 멤버에게 알림 (방 정보 업데이트)
         allMembers.forEach(cm -> {
             messagingTemplate.convertAndSendToUser(
                     cm.getMember().getId().toString(),
@@ -186,6 +203,53 @@ public class GroupChatRoomService {
         });
 
         return roomDto;
+    }
+
+    @Transactional
+    public void inviteMember(Long roomId, Long inviterId, Long targetMemberId) {
+        // 1. 채팅방 조회
+        GroupChatRoom room = groupChatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다."));
+
+        // 2. 초대하는 사람이 채팅방 멤버인지 확인
+        boolean isInviterMember = chatRoomMemberRepository.existsByChatRoomIdAndChatRoomTypeAndMember_Id(
+                roomId, ChatRoomType.GROUP, inviterId);
+        if (!isInviterMember) {
+            throw new AccessDeniedException("초대 권한이 없습니다. 채팅방 멤버만 초대할 수 있습니다.");
+        }
+
+        // 3. 초대 대상이 이미 멤버인지 확인
+        boolean isTargetAlreadyMember = chatRoomMemberRepository.existsByChatRoomIdAndChatRoomTypeAndMember_Id(
+                roomId, ChatRoomType.GROUP, targetMemberId);
+        if (isTargetAlreadyMember) {
+            throw new IllegalStateException("이미 채팅방에 참여중인 멤버입니다.");
+        }
+
+        // 4. 대상 멤버 조회
+        Member targetMember = findMemberById(targetMemberId);
+
+        // 5. ChatMember 추가
+        ChatMember newMember = new ChatMember(targetMember, roomId, ChatRoomType.GROUP);
+        chatRoomMemberRepository.save(newMember);
+
+        // 6. 캐시 업데이트
+        chatAuthCacheService.addMember(roomId, targetMemberId);
+
+        // 7. 시스템 메시지 전송 (초대 메시지)
+        Member inviter = findMemberById(inviterId);
+        systemMessageService.sendInviteMessage(roomId, inviter.getNickname(), targetMember.getNickname(), ChatRoomType.GROUP);
+
+        // 8. 멤버 업데이트 브로드캐스트
+        chatMemberService.broadcastMemberUpdate(roomId, ChatRoomType.GROUP, targetMember, "JOIN");
+        
+        // 9. 초대된 멤버에게 방 정보 전송 (Optional but good UX)
+        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, ChatRoomType.GROUP);
+        Page<Member> friendsByMemberId = friendshipRepository.findFriendsByMemberId(targetMemberId, Pageable.ofSize(500));
+        Page<Long> friendIdPage = friendsByMemberId.map(Member::getId);
+        Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
+        
+        GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers, targetMemberId, friendIdSet, 0L, null);
+        messagingTemplate.convertAndSendToUser(targetMemberId.toString(), "/topic/rooms", roomDto);
     }
 
     // 사용자가 속해있는 그룹채팅방 조회(chat 페이지 용도)
@@ -229,15 +293,18 @@ public class GroupChatRoomService {
         // 6. 캐시에서 멤버 제거
         chatAuthCacheService.removeMember(roomId, targetMemberId);
 
-        // 7. 시스템 메시지 저장 및 전송
-        String systemMessageContent = String.format("'%s'님이 강퇴되었습니다.", targetNickname);
-        // 시스템 메시지는 senderId를 0L, senderNickname을 "System"으로 통일
-        MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP);
+        // Redis 구독자 캐시에서 세션 제거
+        Set<String> memberSessions = chatSubscriberCacheService.getSessionsByMemberId(roomId, targetMemberId);
+        if (memberSessions != null) {
+            for (String sessionId : memberSessions) {
+                chatSubscriberCacheService.removeSubscriber(roomId, targetMemberId, sessionId);
+            }
+        }
 
-        messagingTemplate.convertAndSend(
-                "/topic/chat/room/" + roomId,
-                systemMessage
-        );
+        // 7. 시스템 메시지 저장 및 전송
+        systemMessageService.sendKickMessage(roomId, targetNickname, ChatRoomType.GROUP);
+        // 멤버 업데이트 브로드캐스트
+        chatMemberService.broadcastMemberUpdate(roomId, ChatRoomType.GROUP, memberToKick.getMember(), "KICK");
     }
 
     @Transactional
@@ -264,13 +331,7 @@ public class GroupChatRoomService {
         room.transferOwner(newOwner);
 
         // 5. 시스템 메시지를 저장하고 채팅방 전체에 전송
-        String systemMessageContent = String.format("'%s'님이 '%s'님에게 방장을 위임했습니다.", oldOwnerNickname, newOwnerNickname);
-        MessageResp systemMessage = chatMessageService.saveMessage(roomId, 0L, "System", systemMessageContent, ChatMessage.MessageType.SYSTEM, ChatRoomType.GROUP);
-
-        messagingTemplate.convertAndSend(
-                "/topic/chat/room/" + roomId,
-                systemMessage
-        );
+        systemMessageService.sendOwnerChangedMessage(roomId, oldOwnerNickname, newOwnerNickname, ChatRoomType.GROUP);
     }
 
     //그룹 채팅방 목록을 DTO로 변환
@@ -310,12 +371,21 @@ public class GroupChatRoomService {
                     long unreadCount = (lastRead == null) ? room.getCurrentSequence() : room.getCurrentSequence() - lastRead;
                     if (unreadCount < 0) unreadCount = 0;
 
+                    // 마지막 메시지 조회 (번역된 메시지가 있으면 번역된 내용 사용)
+                    String lastMessageContent = chatMessageRepository
+                            .findTopByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(room.getId(), ChatRoomType.GROUP)
+                            .map(msg -> msg.isTranslateEnabled() && msg.getTranslatedContent() != null
+                                    ? msg.getTranslatedContent()
+                                    : msg.getContent())
+                            .orElse(null);
+
                     return GroupChatRoomResp.from(
                             room,
                             membersByRoom.getOrDefault(room.getId(), Collections.emptyList()),
                             currentUserId,
                             friendIdSet,
-                            unreadCount
+                            unreadCount,
+                            lastMessageContent
                     );
                 })
                 .collect(Collectors.toList());

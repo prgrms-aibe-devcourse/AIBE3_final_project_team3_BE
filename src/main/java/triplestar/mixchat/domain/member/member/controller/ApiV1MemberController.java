@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
+import triplestar.mixchat.domain.member.member.dto.MyProfileResp;
 import triplestar.mixchat.domain.member.member.service.MemberService;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
@@ -50,12 +51,11 @@ public class ApiV1MemberController implements ApiMemberController {
 
     @Override
     @GetMapping("/me")
-    public CustomResponse<MemberDetailResp> getMyProfile(
+    public CustomResponse<MyProfileResp> getMyProfile(
             @AuthenticationPrincipal CustomUserDetails customUserDetails
     ) {
-        MemberDetailResp memberProfile = memberService.getMemberDetails(customUserDetails.getId(),
-                customUserDetails.getId());
-        return CustomResponse.ok("내 정보를 성공적으로 조회했습니다.", memberProfile);
+        MyProfileResp myProfile = memberService.getMyProfile(customUserDetails.getId());
+        return CustomResponse.ok("내 정보를 성공적으로 조회했습니다.", myProfile);
     }
 
     @Override

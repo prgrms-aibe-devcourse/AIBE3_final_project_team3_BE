@@ -32,6 +32,8 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-function-context")
     implementation("org.springframework.ai:spring-ai-starter-model-openai")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
+    implementation("org.springframework.ai:spring-ai-starter-model-ollama")
+    //implementation("org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini")
 
     // Lombok
     compileOnly("org.projectlombok:lombok")
@@ -61,6 +63,8 @@ dependencies {
     // Testcontainers
     testImplementation("org.testcontainers:testcontainers")
     testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:mysql")
+    testImplementation("org.testcontainers:mongodb")
 
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -85,7 +89,24 @@ dependencies {
     // websocket
     implementation("org.springframework.boot:spring-boot-starter-websocket")
 
-    implementation ("org.springframework.boot:spring-boot-starter-actuator")
+    // RabbitMQ for STOMP Relay
+    implementation("org.springframework.boot:spring-boot-starter-amqp")
+    implementation("io.projectreactor.netty:reactor-netty")
+
+    // Actuator + Prometheus
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
+
+    // QueryDSL
+    implementation("com.querydsl:querydsl-jpa:5.1.0:jakarta")
+    annotationProcessor("com.querydsl:querydsl-apt:5.1.0:jakarta")
+    annotationProcessor("jakarta.persistence:jakarta.persistence-api")
+    annotationProcessor("jakarta.annotation:jakarta.annotation-api")
+
+    // Elasticsearch
+    implementation("org.springframework.boot:spring-boot-starter-data-elasticsearch") // Elasticsearch
+    implementation(kotlin("stdlib-jdk8"))
+    implementation("co.elastic.clients:elasticsearch-java:8.17.3")
 }
 
 dependencyManagement {
@@ -97,4 +118,5 @@ dependencyManagement {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    maxHeapSize = "2048m"
 }

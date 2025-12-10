@@ -56,7 +56,6 @@ public class ApiV1AdminController implements  ApiAdminController {
         return CustomResponse.ok("신고 목록 조회 성공", result);
     }
 
-
     @Override
     @PostMapping("/sentence-game")
     public CustomResponse<AdminSentenceGameCreateResp> createSentenceGame(

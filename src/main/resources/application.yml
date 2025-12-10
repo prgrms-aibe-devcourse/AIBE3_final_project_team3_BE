@@ -20,14 +20,33 @@ spring:
   flyway:
     enabled: false
 
+  # RabbitMQ Configuration
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    # Connection pool optimization
+    cache:
+      connection:
+        mode: connection
+        size: 10
+
   data:
     mongodb:
       uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/${MONGO_DB}?authSource=admin
 
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
     web:
       pageable:
-        one-indexed-parameters: true
         max-page-size: 100
+
+  elasticsearch:
+    uris: http://localhost:9200
 
   application:
     name: mixchat
@@ -39,16 +58,57 @@ spring:
       fail-on-empty-beans: false
   ai:
     openai:
-      base-url: https://ollama.yhcho.com/ollama
-      api-key: ${OPENAI_API_KEY} # 로컬은 키가 필요 없지만, 라이브러리 검증 통과용으로 입력
+      base-url: https://api.openai.com
+      api-key: ${OPENAI_API_KEY}
       chat:
         options:
-          model: ${OPENAI_CHAT_MODEL:exaone3.5:2.4b}
+          model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
+      embedding:
+        options:
+          model: text-embedding-3-small
+    ollama:
+      base-url: ${OLLAMA_API_URL:https://ollama.yhcho.com/ollama}
+      api-key: ${OLLAMA_API_KEY}
+      chat:
+        options:
+          model: ${OLLAMA_MODEL:exaone3.5:2.4b}
+
+#    vertex: #실행 자체만으로 계정이 필요해 일단 비활성화
+#      ai:
+#        gemini:
+#          project-id: ${VERTEX_AI_PROJECT_ID}
+#          location: ${VERTEX_AI_LOCATION:us-central1}
+#          chat:
+#            options:
+#              model: ${VERTEX_AI_MODEL:gemini-1.5-flash}
+
 
 swagger:
   redirect:
     # "/"로 들어왔을 때 최종적으로 리다이렉트될 Swagger UI 경로
     path: /swagger-ui/index.html
+
+# Actuator + Prometheus 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+
+  endpoint:
+    health:
+      show-details: always
+
+  metrics:
+    tags:
+      application: ${spring.application.name:mixchat}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
 server:
   port: 8080
@@ -62,28 +122,17 @@ logging:
     org.hibernate.orm.jdbc.extract: TRACE
     org.springframework.transaction.interceptor: TRACE
     com.back: DEBUG
-management:
-  endpoints:
-    web:
-      base-path: /actuator            # 기본값이지만 명시
-      exposure:
-        include: health,info          # 필요시 metrics 등 추가
-  endpoint:
-    health:
-      probes:
-        enabled: true                 # /actuator/health/{liveness,readiness} 활성화
-      show-details: never             # 프로브 용도면 never 권장(민감정보 차단)
 custom:
   dev:
     cookieDomain: localhost
     frontUrl: "http://${custom.dev.cookieDomain}:3000"
     backUrl: "http://${custom.dev.cookieDomain}:${server.port}"
   prod:
-    cookieDomain: mixchat.yhcho.com
+    cookieDomain: mixchat.site
     frontUrl: "https://www.${custom.prod.cookieDomain}"
     backUrl: "https://api.${custom.prod.cookieDomain}"
   staging:
-    cookieDomain: staging.mixchat.yhcho.com
+    cookieDomain: staging.mixchat.site
     frontUrl: "https://www.${custom.staging.cookieDomain}"
     backUrl: "https://api.${custom.staging.cookieDomain}"
   site:

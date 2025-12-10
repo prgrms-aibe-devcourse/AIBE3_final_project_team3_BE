@@ -5,8 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessageSendingOperations;
-import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import triplestar.mixchat.domain.chat.chat.dto.MessageReq;
@@ -22,34 +21,32 @@ public class ApiV1ChatSocketController {
 
     private final ChatMemberService chatMemberService;
     private final ChatMessageService chatMessageService;
-    private final SimpMessageSendingOperations messagingTemplate;
 
     @MessageMapping("/chats/sendMessage")
-    public void sendMessage(@Payload MessageReq messageReq, Principal principal) {
-        if (principal == null) {
-            throw new AccessDeniedException("Authentication principal not found.");
+    public void sendMessage(Principal principal, @Payload MessageReq messageReq) {
+        if (!(principal instanceof Authentication authentication)) {
+            log.warn("인증 정보가 없이 WebSocket 메시지 전송 요청이 들어왔습니다.");
+            throw new BadCredentialsException("인증 정보가 없습니다.");
         }
+        CustomUserDetails currentUser = (CustomUserDetails) authentication.getPrincipal();
 
-        Authentication authentication = (Authentication) principal;
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        Long senderId = userDetails.getId();
-        String senderNickname = userDetails.getNickname();
+        Long senderId = currentUser.getId();
+        String senderNickname = currentUser.getNickname();
 
         // 사용자가 해당 채팅방에 메시지를 보낼 권한이 있는지 확인
         chatMemberService.verifyUserIsMemberOfRoom(senderId, messageReq.roomId(), messageReq.chatRoomType());
 
-        // 2. 권한이 확인되면 메시지 저장 및 전송
+        // 2. 권한이 확인되면 메시지 저장 및 전송 (서비스 내부에서 알림 처리)
         MessageResp messageResp = chatMessageService.saveMessage(
                 messageReq.roomId(),
                 senderId,
                 senderNickname,
                 messageReq.content(),
                 messageReq.messageType(),
-                messageReq.chatRoomType()
+                messageReq.chatRoomType(),
+                messageReq.isTranslateEnabled()
         );
 
-        String destination = "/topic/" + messageReq.chatRoomType().name().toLowerCase() + "/rooms/" + messageReq.roomId();
-        messagingTemplate.convertAndSend(destination, messageResp);
         log.debug("채팅방 {}에 메시지 전송 완료: {}", messageReq.roomId(), messageResp.content());
     }
 }

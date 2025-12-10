@@ -3,6 +3,7 @@ package triplestar.mixchat.domain.ai.userprompt.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PathVariable;
 import triplestar.mixchat.global.response.CustomResponse;
@@ -13,12 +14,13 @@ import triplestar.mixchat.global.springdoc.SignInInRequireResponse;
 import triplestar.mixchat.global.springdoc.SuccessResponse;
 import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptReq;
 import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptDetailResp;
-import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptListResp;
+import triplestar.mixchat.domain.ai.userprompt.dto.UserPromptResp;
 import java.util.List;
 
 @Tag(name = "ApiPromptController", description = "프롬프트 관리 API")
 @CommonBadResponse
 @SuccessResponse
+@SecurityRequirement(name = "Authorization")
 public interface ApiPromptController {
 
     // --- 1. 프롬프트 생성 (POST /create) ---
@@ -59,7 +61,7 @@ public interface ApiPromptController {
             summary = "프롬프트 목록 조회", description = "사용 가능한 프롬프트 목록을 id와 제목만 조회합니다. (회원 등급별로 다름)"
     )
     @SignInInRequireResponse
-    CustomResponse<List<UserPromptListResp>> list(
+    CustomResponse<List<UserPromptResp>> list(
             @Parameter(hidden = true) CustomUserDetails userDetails
     );
 

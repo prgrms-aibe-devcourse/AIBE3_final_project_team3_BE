@@ -33,7 +33,7 @@ public record UserPromptDetailResp(
         this(
             userPrompt.getId(),
             userPrompt.getTitle(),
-            userPrompt.getType().name(),
+            userPrompt.getPromptType().name(),
             userPrompt.getContent(),
             userPrompt.getCreatedAt(),
             userPrompt.getModifiedAt(),

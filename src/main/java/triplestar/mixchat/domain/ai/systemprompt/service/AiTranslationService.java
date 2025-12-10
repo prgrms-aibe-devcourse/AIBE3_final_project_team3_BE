@@ -1,99 +1,103 @@
 package triplestar.mixchat.domain.ai.systemprompt.service;
 
-import jakarta.persistence.EntityNotFoundException;
+import jakarta.annotation.PostConstruct;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.ai.openai.OpenAiChatModel;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import triplestar.mixchat.domain.ai.systemprompt.constant.PromptKey;
-import triplestar.mixchat.domain.ai.systemprompt.dto.TempAiReq;
-import triplestar.mixchat.domain.ai.systemprompt.dto.TempAiResp;
-import triplestar.mixchat.domain.ai.systemprompt.entity.SystemPrompt;
-import triplestar.mixchat.domain.ai.systemprompt.repository.SystemPromptRepository;
+import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationReq;
+import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationResp;
+import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AiTranslationService {
 
-    private final OpenAiChatModel chatModel;
-    private final SystemPromptRepository systemPromptRepository;
+    private record TranslationUpdatePayload(
+            String type,
+            String messageId,
+            String originalContent,
+            String translatedContent
+    ) {}
 
-    private SystemPrompt getPromptByKey(PromptKey key) {
-        return systemPromptRepository.findByPromptKey(key)
-                .orElseThrow(() -> new EntityNotFoundException("해당 이름의 프롬프트가 존재하지 않습니다." + key));
+    private final List<TranslationProvider> translationProviders;
+    private final ChatMessageRepository chatMessageRepository;
+    private final SimpMessageSendingOperations messagingTemplate;
+
+    @PostConstruct
+    public void init() {
+        log.info("번역 프로바이더 로드 완료. 순서: {}", translationProviders.stream().map(p -> p.getClass().getSimpleName()).toList());
     }
 
-    public TempAiResp sendMessage(TempAiReq req) {
-        // getPromptByKey(PromptKey.AI_TRANSLATION_PROMPT);
-        // TODO : DB에 초기 프롬프트 데이터를 넣고 프롬프트 불러와 조합하는 로직으로 변경 필요
+    @Async
+    @EventListener
+    public void handleTranslation(TranslationReq req) {
+        log.debug("번역 요청 수신: messageId={}", req.chatMessageId());
 
-        String systemPrompt = """
-                당신은 Mixchat의 영어 튜터입니다.
-                사용자가 입력한 문장을 분석하여 번역과 태그, 교정, 설명을 포함하여 JSON 형식으로 응답합니다.:
-                
-                1) 한국어와 영어가 섞여있는 경우 자연스러운 영어 문장으로 다시 작성합니다.(TRANSLATION)
-                2) 잘못된 문법(I goed → I went)도 교정합니다.(GRAMMAR)
-                3) 문맥상 맞지만 부자연스러운 표현도 자연스럽게 바꿉니다.(VOCABULARY)
-                부자연스러운 표현의 뜻과 더 자연스러운 표현의 뜻을 비교 설명합니다.
-                4) 각 문제에 대해 태그, 문제 단어/구, 수정된 단어/구, 추가 설명을 포함한 피드백을 제공합니다.
-                5) 출력 형식은 반드시 JSON입니다
-                
-                예시 입력: "나 감기 걸려서 기분이 blue I received a flu"
-                
-                출력 형식(JSON):
-                original_content: 사용자가 입력한 원문
-                corrected_content: 교정된 자연스러운 영어 문장
-                feedback: [
-                    {
-                        tag: 문제 유형 (GRAMMAR, VOCABULARY, TRANSLATION 등)
-                        problem: 문제 단어/구
-                        correction: 수정된 단어/구
-                        extra: 추가 설명
-                    }, ... 
-                ]    
-                
-                출력 예시:
-                {
-                    "original_content": "나 감기 걸려서 기분이 blue I received flu",
-                    "corrected_content": "I feel a bit down because I caught the flu.",
-                    "feedback": [
-                        {
-                            "tag": "VOCABULARY",
-                            "problem": "received a flu",
-                            "correction": "caught the flu",
-                            "extra": "'감기에 걸리다'는 'catch the flu' 혹은 'get the flu'가 더 자연스러운 관용 표현입니다."
-                        },
-                        {
-                            "tag": "VOCABULARY",
-                            "problem": "feeling blue",
-                            "correction": "feel (a bit) down",
-                            "extra": "‘feeling blue’는 꽤 깊은 우울감을 나타내는 반면, 
-                                ‘feel down’은 일시적으로 기분이 좋지 않거나 몸이 불편해서 처지는 상태를 나타낼 때 더 적절합니다."
-                        },
-                        {
-                            "tag": "TRANSLATION",
-                            "problem": "감기 걸려서",
-                            "correction": "caught the flu",
-                            "extra": "한국어 접속 표현을 자연스러운 영어로 연결합니다."
-                        },
-                        {
-                            "tag": "GRAMMAR",
-                            "problem": "flu",
-                            "correction": "the(혹은 a) flu",
-                            "extra": "'flu'와 같은 셀 수 있는 명사나 질병 이름 앞에는 'a' 또는 'the'와 같은 관사를 붙여야 합니다. (예: I have the flu)."
-                        }
-                    ]
+        // 1. 메시지 조회
+        ChatMessage chatMessage = chatMessageRepository.findById(req.chatMessageId())
+                .orElse(null);
+
+        if (chatMessage == null) {
+            log.error("번역 요청 처리 실패: 메시지를 찾을 수 없습니다. messageId={}", req.chatMessageId());
+            return;
+        }
+
+        // 2. 등록된 프로바이더들을 순서대로 시도 (fallback 패턴)
+        for (TranslationProvider provider : translationProviders) {
+            String providerName = provider.getClass().getSimpleName();
+
+            try {
+                log.info("'{}'로 번역 시도...", providerName);
+
+                TranslationResp translationResp = provider.translate(req.originalContent());
+
+                if (translationResp == null) {
+                    log.warn("'{}' 응답 없음. 다음 프로바이더를 시도합니다.", providerName);
+                    continue;
                 }
-                이 규칙을 항상 지키세요.
-                {input}
-                """;
 
-        // TODO : 프롬프트 템플릿 엔진 도입 고려
-        String prompt = systemPrompt.replace("{input}", req.message());
-        String call = chatModel.call(prompt);
+                String translatedContent = translationResp.translatedContent();
 
-        // TODO : 응답 파싱 및 검증 로직 추가 필요
-        // TODO : Strict JSON Mode 설정, Function Calling 활용 등
+                if (translatedContent != null && !translatedContent.isBlank()) {
+                    log.info("번역 성공 (Provider: {}): messageId={}, original='{}', translated='{}'",
+                            providerName, req.chatMessageId(), req.originalContent(), translatedContent);
+                    chatMessage.setTranslatedContent(translatedContent);
+                    ChatMessage updatedMessage = chatMessageRepository.save(chatMessage);
+                    notifyClientOfUpdate(updatedMessage);
+                    return;
+                } else {
+                    log.info("번역이 필요하지 않음 (Provider: {}): messageId={}", providerName, req.chatMessageId());
+                    return;
+                }
 
-        return new TempAiResp(call);
+            } catch (Exception e) {
+                log.warn("'{}' 실패. 다음 프로바이더를 시도합니다. 에러: {}", providerName, e.getMessage());
+                // 다음 프로바이더로 계속
+            }
+        }
+
+        log.warn("모든 번역 프로바이더 실패: messageId={}", req.chatMessageId());
+    }
+
+    private void notifyClientOfUpdate(ChatMessage updatedMessage) {
+        String destination = String.format("/topic/%s/rooms/%d",
+                updatedMessage.getChatRoomType().name().toLowerCase(),
+                updatedMessage.getChatRoomId());
+
+        TranslationUpdatePayload payload = new TranslationUpdatePayload(
+                "TRANSLATION_UPDATE",
+                updatedMessage.getId(),
+                updatedMessage.getContent(),
+                updatedMessage.getTranslatedContent()
+        );
+
+        messagingTemplate.convertAndSend(destination, payload);
+        log.debug("클라이언트에 번역 완료 알림 전송: destination={}, messageId={}", destination, updatedMessage.getId());
     }
 }

@@ -17,6 +17,7 @@ public interface GroupChatRoomRepository extends JpaRepository<GroupChatRoom, Lo
         SELECT DISTINCT gcr FROM GroupChatRoom gcr
         JOIN ChatMember cm ON cm.chatRoomId = gcr.id
         WHERE cm.member.id = :memberId AND cm.chatRoomType = 'GROUP'
+        ORDER BY gcr.modifiedAt DESC
         """)
     List<GroupChatRoom> findAllByMemberId(@Param("memberId") Long memberId);
 
@@ -34,5 +35,12 @@ public interface GroupChatRoomRepository extends JpaRepository<GroupChatRoom, Lo
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT r FROM GroupChatRoom r WHERE r.id = :id")
     Optional<GroupChatRoom> findByIdWithLock(@Param("id") Long id);
+
+    // Load Test Cleanup: [LOAD_TEST] 태그가 있는 그룹 채팅방 조회
+    @Query("""
+        SELECT r FROM GroupChatRoom r
+        WHERE r.name LIKE '[LOAD_TEST]%' OR r.topic = 'LOAD_TEST'
+        """)
+    List<GroupChatRoom> findLoadTestRooms();
 }
 

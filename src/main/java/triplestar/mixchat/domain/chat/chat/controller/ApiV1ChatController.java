@@ -3,6 +3,7 @@ package triplestar.mixchat.domain.chat.chat.controller;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,29 +17,31 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackReq;
+import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackResp;
+import triplestar.mixchat.domain.ai.systemprompt.service.AiFeedbackService;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
-import triplestar.mixchat.domain.chat.chat.dto.ChatRoomDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.ChatRoomPageDataResp;
 import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.InviteGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.JoinGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
-import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
-import triplestar.mixchat.domain.chat.chat.dto.UnreadCountUpdateEvent;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
-import triplestar.mixchat.domain.chat.chat.dto.TextMessageReq;
 import triplestar.mixchat.domain.chat.chat.dto.TransferOwnerReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
-import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.service.AIChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
 import triplestar.mixchat.domain.chat.chat.service.DirectChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.GroupChatRoomService;
+import triplestar.mixchat.domain.chat.chat.service.LoadTestCleanupService;
 import triplestar.mixchat.global.response.CustomResponse;
+import java.util.Map;
 import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.global.security.CustomUserDetails;
 
@@ -52,8 +55,20 @@ public class ApiV1ChatController implements ApiChatController {
     private final AIChatRoomService aiChatRoomService;
     private final ChatMemberService chatMemberService;
     private final ChatMessageService chatMessageService;
+    private final LoadTestCleanupService loadTestCleanupService;
     private final S3Uploader s3Uploader;
     private final SimpMessagingTemplate messagingTemplate;
+    private final AiFeedbackService aiFeedbackService;
+
+    @Override
+    @PostMapping("/feedback")
+    public CustomResponse<AiFeedbackResp> analyzeFeedback(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody AiFeedbackReq req
+    ) {
+        AiFeedbackResp response = aiFeedbackService.analyze(req);
+        return CustomResponse.ok("AI 피드백 분석 성공", response);
+    }
 
     @Override
     @PostMapping("/rooms/direct")
@@ -62,7 +77,8 @@ public class ApiV1ChatController implements ApiChatController {
             @Valid @RequestBody CreateDirectChatReq request
     ) {
         DirectChatRoomResp roomResp =
-                directChatRoomService.findOrCreateDirectChatRoom(currentUser.getId(), request.partnerId(), currentUser.getNickname());
+                directChatRoomService.findOrCreateDirectChatRoom(currentUser.getId(), request.partnerId(),
+                        currentUser.getNickname());
         return CustomResponse.ok("1:1 채팅방 생성/조회에 성공하였습니다.", roomResp);
     }
 
@@ -77,20 +93,21 @@ public class ApiV1ChatController implements ApiChatController {
         return CustomResponse.ok("그룹 채팅방 생성에 성공하였습니다.", roomResp);
     }
 
+    @Override
     @PostMapping("/rooms/ai")
     public CustomResponse<AIChatRoomResp> createAiRoom(
-        @AuthenticationPrincipal CustomUserDetails currentUser,
-        @Valid @RequestBody CreateAIChatReq request
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody CreateAIChatReq request
     ) {
         AIChatRoomResp roomResp =
-            aiChatRoomService.createAIChatRoom(currentUser.getId(), request);
+                aiChatRoomService.createAIChatRoom(currentUser.getId(), request);
         return CustomResponse.ok("AI 채팅방 생성에 성공하였습니다.", roomResp);
     }
 
     @Override
     @GetMapping("/rooms/direct")
     public CustomResponse<List<DirectChatRoomResp>> getDirectChatRooms(
-        @AuthenticationPrincipal CustomUserDetails currentUser
+            @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         List<DirectChatRoomResp> rooms = directChatRoomService.getRoomsForUser(currentUser.getId());
         return CustomResponse.ok("1:1 채팅방 목록 조회에 성공하였습니다.", rooms);
@@ -99,7 +116,7 @@ public class ApiV1ChatController implements ApiChatController {
     @Override
     @GetMapping("/rooms/group")
     public CustomResponse<List<GroupChatRoomResp>> getGroupChatRooms(
-        @AuthenticationPrincipal CustomUserDetails currentUser
+            @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         List<GroupChatRoomResp> rooms = groupChatRoomService.getRoomsForUser(currentUser.getId());
         return CustomResponse.ok("사용자가 속한 그룹 채팅방 목록 조회에 성공하였습니다.", rooms);
@@ -125,27 +142,23 @@ public class ApiV1ChatController implements ApiChatController {
         return CustomResponse.ok("그룹 채팅방 참가에 성공하였습니다.", roomResp);
     }
 
+    @PostMapping("/rooms/group/{roomId}/invite")
+    public CustomResponse<Void> inviteMember(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody InviteGroupChatReq request
+    ) {
+        groupChatRoomService.inviteMember(roomId, currentUser.getId(), request.targetMemberId());
+        return CustomResponse.ok("멤버를 초대했습니다.", null);
+    }
+
     @Override
     @GetMapping("/rooms/ai")
     public CustomResponse<List<AIChatRoomResp>> getAiChatRooms(
-        @AuthenticationPrincipal CustomUserDetails currentUser
+            @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         List<AIChatRoomResp> rooms = aiChatRoomService.getRoomsForUser(currentUser.getId());
         return CustomResponse.ok("AI 채팅방 목록 조회에 성공하였습니다.", rooms);
-    }
-
-
-    @Override
-    @PostMapping("/rooms/{roomId}/message")
-    public CustomResponse<MessageResp> sendMessage(
-            @PathVariable("roomId") Long roomId,
-            @RequestParam ChatRoomType chatRoomType,
-            @AuthenticationPrincipal CustomUserDetails currentUser,
-            @Valid @RequestBody TextMessageReq request
-    ) {
-        MessageResp messageResp =
-                chatMessageService.saveMessage(roomId, currentUser.getId(), currentUser.getNickname(), request.content(), ChatMessage.MessageType.TEXT, chatRoomType);
-        return CustomResponse.ok("메시지 전송에 성공하였습니다.", messageResp);
     }
 
     @Override
@@ -160,7 +173,8 @@ public class ApiV1ChatController implements ApiChatController {
         // 메시지 조회 전에 읽음 처리 (채팅방 입장 시 자동 읽음)
         chatMemberService.markAsReadOnEnter(currentUser.getId(), roomId, chatRoomType);
 
-        MessagePageResp messagePageResp = chatMessageService.getMessagesWithSenderInfo(roomId, chatRoomType, currentUser.getId(), cursor, size);
+        MessagePageResp messagePageResp = chatMessageService.getMessagesWithSenderInfo(roomId, chatRoomType,
+                currentUser.getId(), cursor, size);
         ChatRoomPageDataResp responseData = ChatRoomPageDataResp.of(chatRoomType, messagePageResp);
         return CustomResponse.ok("메시지 목록과 대화 타입 조회에 성공하였습니다.", responseData);
     }
@@ -176,12 +190,11 @@ public class ApiV1ChatController implements ApiChatController {
     ) {
         String fileUrl = s3Uploader.uploadFile(file, "chat-files");
         MessageResp messageResp =
-                chatMessageService.saveFileMessage(roomId, currentUser.getId(), currentUser.getNickname(), fileUrl, messageType, chatRoomType);
+                chatMessageService.saveFileMessage(roomId, currentUser.getId(), currentUser.getNickname(), fileUrl,
+                        messageType, chatRoomType);
 
-        messagingTemplate.convertAndSend(
-                "/topic/chat/room/" + roomId,
-                messageResp
-        );
+        String destination = "/topic/" + chatRoomType.name().toLowerCase() + "/rooms/" + roomId;
+        messagingTemplate.convertAndSend(destination, messageResp);
 
         return CustomResponse.ok("파일 업로드 및 메시지 전송에 성공하였습니다.", messageResp);
     }
@@ -242,5 +255,15 @@ public class ApiV1ChatController implements ApiChatController {
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         // chatMemberService.reportUser(currentUser.getId(), null, roomId, chatRoomType, null);
+    }
+
+    @Override
+    @PostMapping("/loadtest/cleanup")
+    @Profile({"dev", "local", "test"})  // 개발/로컬/테스트 환경에서만 활성화
+    public CustomResponse<?> cleanupLoadTestData(
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        long deletedCount = loadTestCleanupService.cleanupLoadTestData();
+        return CustomResponse.ok("부하테스트 데이터 정리 완료", Map.of("deletedCount", deletedCount));
     }
 }

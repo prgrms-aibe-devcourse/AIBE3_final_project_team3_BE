@@ -33,6 +33,10 @@ public record FriendDetailResp(
         String profileImageUrl,
 
         @Schema(description = "친구관계 생성 날짜", example = "2024-07-25T10:30:00", requiredMode = REQUIRED)
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+
+        @Schema(description = "마지막으로 온라인 상태였던 시간 (ISO 8601 형식)",
+                example = "2024-10-01T14:30:00", requiredMode = REQUIRED)
+        LocalDateTime lastSeenAt
 ) {
 }
