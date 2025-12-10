@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
@@ -22,7 +24,10 @@ import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.GroupChatRoom;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
+import triplestar.mixchat.domain.member.member.constant.Country;
+import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.entity.Member;
+import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import java.util.stream.LongStream;
 import triplestar.mixchat.performance.chat.config.PerformanceTestConfig;
@@ -64,13 +69,28 @@ class BulkUpdatePerformanceTest {
     @Autowired
     private Statistics statistics;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     private GroupChatRoom testRoom;
 
     @BeforeEach
     void setUp() {
-        // Flyway로 생성된 기존 테스트 유저 활용 (test1@test.com)
+        // 테스트용 owner 생성 (Flyway 데이터가 없을 경우 대비)
         Member owner = memberRepository.findById(1L)
-                .orElseThrow(() -> new IllegalStateException("Test user 1 not found"));
+                .orElseGet(() -> {
+                    Member newOwner = Member.createMember(
+                        "test-owner@test.com",
+                        Password.encrypt("test1234", passwordEncoder),
+                        "TestOwner",
+                        "Owner",
+                        Country.KR,
+                        EnglishLevel.BEGINNER,
+                        Arrays.asList("🧪 testing"),
+                        "Test owner"
+                    );
+                    return memberRepository.save(newOwner);
+                });
 
         testRoom = GroupChatRoom.create(
                 "Performance Test Room",
@@ -258,18 +278,51 @@ class BulkUpdatePerformanceTest {
     }
 
     /**
-     * 테스트용 멤버 조회 (Flyway로 생성된 test1~test100 유저 활용)
+     * 테스트용 멤버 조회 및 생성
+     * - Flyway 유저가 있으면 재사용 (최대 100명)
+     * - 부족한 경우 동적 생성
      */
     private List<Member> createMembers(int count) {
-        if (count > 100) {
-            throw new IllegalArgumentException(
-                "Test requires max 100 members. Flyway provides test users 1-100. Requested: " + count
-            );
+        List<Member> members = new ArrayList<>();
+
+        // 1. Flyway로 생성된 유저 재사용 시도 (최대 100명)
+        int flywayUserCount = Math.min(count, 100);
+        List<Member> flywayMembers = memberRepository.findAllById(
+            LongStream.rangeClosed(2, flywayUserCount + 1).boxed().toList()  // ID 2부터 (1은 owner)
+        );
+
+        int foundFlywayUsers = flywayMembers.size();
+        members.addAll(flywayMembers);
+
+        // 2. 부족한 멤버 동적 생성
+        int neededCount = count - foundFlywayUsers;
+        if (neededCount > 0) {
+            System.out.printf("⚠️  Flyway users found: %d, Creating %d additional members%n",
+                foundFlywayUsers, neededCount);
+
+            for (int i = 0; i < neededCount; i++) {
+                String email = String.format("perf-test-%d@test.com", i + 1);
+                Password password = Password.encrypt("test1234", passwordEncoder);
+                String name = "PerfTest" + (i + 1);
+                String nickname = "PT" + (i + 1);
+                Country country = Country.KR;
+                EnglishLevel englishLevel = EnglishLevel.BEGINNER;
+                List<String> interests = Arrays.asList("🧪 testing", "⚡ performance");
+                String description = "Performance test user " + (i + 1);
+
+                Member dynamicMember = Member.createMember(
+                    email, password, name, nickname, country,
+                    englishLevel, interests, description
+                );
+
+                Member saved = memberRepository.save(dynamicMember);
+                members.add(saved);
+            }
+
+            entityManager.flush();
+            System.out.printf("✅ Dynamic member creation completed (Total: %d members)%n%n", members.size());
         }
 
-        // Flyway로 생성된 유저 재사용 (Member 생성 오버헤드 제거)
-        return memberRepository.findAllById(
-            LongStream.rangeClosed(2, count + 1).boxed().toList()  // ID 2부터 (1은 owner)
-        );
+        return members;
     }
 }
