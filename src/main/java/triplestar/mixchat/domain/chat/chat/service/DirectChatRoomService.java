@@ -68,8 +68,8 @@ public class DirectChatRoomService {
 
             // DTO 변환 및 알림
             DirectChatRoomResp roomDto = DirectChatRoomResp.from(room, 0L, null);
-            messagingTemplate.convertAndSendToUser(member1.getId().toString(), "/topic/rooms", roomDto);
-            messagingTemplate.convertAndSendToUser(member2.getId().toString(), "/topic/rooms", roomDto);
+            messagingTemplate.convertAndSendToUser(member1.getId().toString(), "/queue/rooms", roomDto);
+            messagingTemplate.convertAndSendToUser(member2.getId().toString(), "/queue/rooms", roomDto);
 
             // 채팅 시작 첫 메시지 전송
             systemMessageService.sendDirectChatStartedMessage(room.getId(), ChatRoomType.DIRECT);

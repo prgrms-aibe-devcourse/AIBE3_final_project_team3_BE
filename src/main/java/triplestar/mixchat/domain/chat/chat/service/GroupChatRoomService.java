@@ -27,6 +27,7 @@ import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.cache.ChatAuthCacheService;
 import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +46,7 @@ public class GroupChatRoomService {
     private final FriendshipRepository friendshipRepository;
     private final SystemMessageService systemMessageService;
     private final triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository chatMessageRepository;
+    private final PasswordEncoder passwordEncoder;
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
@@ -54,8 +56,14 @@ public class GroupChatRoomService {
     @Transactional
     public GroupChatRoomResp createGroupRoom(CreateGroupChatReq request, Long creatorId) {
         Member creator = findMemberById(creatorId);
+
+        String encryptedPassword = request.password();
+        if (request.password() != null && !request.password().trim().isEmpty()) {
+            encryptedPassword = passwordEncoder.encode(request.password());
+        }
+
         // 방장(owner)을 creator로 설정하여 방 생성
-        GroupChatRoom newRoom = GroupChatRoom.create(request.roomName(), request.description(), request.topic(), request.password(), creator);
+        GroupChatRoom newRoom = GroupChatRoom.create(request.roomName(), request.description(), request.topic(), encryptedPassword, creator);
 
         List<Member> members = memberRepository.findAllById(request.memberIds());
         if (!members.contains(creator)) {
@@ -82,7 +90,7 @@ public class GroupChatRoomService {
 
         GroupChatRoomResp roomDto = GroupChatRoomResp.from(savedRoom, chatMembers, creatorId, friendIdSet, 0L, null);
         members.forEach(member -> {
-            messagingTemplate.convertAndSendToUser(member.getId().toString(), "/topic/rooms", roomDto);
+            messagingTemplate.convertAndSendToUser(member.getId().toString(), "/queue/rooms", roomDto);
         });
 
         return roomDto;
@@ -165,7 +173,7 @@ public class GroupChatRoomService {
         }
 
         // 3. 비밀번호 검증
-        room.verifyPassword(password);
+        room.verifyPassword(password, passwordEncoder);
 
         // 4. 회원 조회
         Member member = findMemberById(userId);
@@ -197,7 +205,7 @@ public class GroupChatRoomService {
         allMembers.forEach(cm -> {
             messagingTemplate.convertAndSendToUser(
                     cm.getMember().getId().toString(),
-                    "/topic/rooms/update",
+                    "/queue/rooms/update",
                     roomDto
             );
         });
@@ -249,7 +257,7 @@ public class GroupChatRoomService {
         Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
         
         GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers, targetMemberId, friendIdSet, 0L, null);
-        messagingTemplate.convertAndSendToUser(targetMemberId.toString(), "/topic/rooms", roomDto);
+        messagingTemplate.convertAndSendToUser(targetMemberId.toString(), "/queue/rooms", roomDto);
     }
 
     // 사용자가 속해있는 그룹채팅방 조회(chat 페이지 용도)

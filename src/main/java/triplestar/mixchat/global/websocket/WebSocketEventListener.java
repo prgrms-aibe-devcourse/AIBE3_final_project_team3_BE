@@ -42,7 +42,7 @@ public class WebSocketEventListener {
     private final ConcurrentHashMap<String, RoomSubscriptionInfo> subscriptionIdToRoomInfo = new ConcurrentHashMap<>();
 
     private static final Pattern ROOM_DESTINATION_PATTERN =
-            Pattern.compile("^/topic/(direct|group|ai)/rooms/(\\d+)");
+            Pattern.compile("^/topic/(direct|group|ai)\\.rooms\\.(\\d+)");
 
     // 세션별 구독 정보 저장용 내부 클래스(redis keys 사용 방지)
     private static class SessionSubscription {
@@ -165,7 +165,7 @@ public class WebSocketEventListener {
 
                 if (!updates.isEmpty()) {
                     UnreadCountUpdateEvent updateEvent = UnreadCountUpdateEvent.from(updates);
-                    String broadcastDestination = "/topic/" + typeString.toLowerCase() + "/rooms/" + roomId;
+                    String broadcastDestination = "/topic/" + typeString.toLowerCase() + ".rooms." + roomId;
                     messagingTemplate.convertAndSend(broadcastDestination, updateEvent);
                 }
             }

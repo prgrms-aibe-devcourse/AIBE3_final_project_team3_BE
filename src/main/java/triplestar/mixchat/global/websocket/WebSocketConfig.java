@@ -53,7 +53,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         // RabbitMQ STOMP Relay 설정 (수평 확장 지원)
-        registry.enableStompBrokerRelay("/topic", "/queue")
+        registry.enableStompBrokerRelay("/topic", "/queue", "/exchange")
                 .setRelayHost(relayHost)    // RabbitMQ 호스트 주소
                 .setRelayPort(relayPort)    // STOMP 포트
                 .setClientLogin(clientLogin)    // 클라이언트 로그인

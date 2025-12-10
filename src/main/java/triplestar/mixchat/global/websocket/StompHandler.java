@@ -40,7 +40,7 @@ public class StompHandler implements ExecutorChannelInterceptor {
     private final ChatMemberService chatMemberService;
 
     private static final Pattern ROOM_DESTINATION_PATTERN =
-            Pattern.compile("^/topic/(direct|group|ai)/rooms/(\\d+)");
+            Pattern.compile("^/topic/(direct|group|ai)\\.rooms\\.(\\d+)");
 
     // 생성자를 직접 작성하고 @Lazy 어노테이션으로 순환 참조 해결
     public StompHandler(

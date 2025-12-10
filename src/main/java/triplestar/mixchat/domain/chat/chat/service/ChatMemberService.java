@@ -181,7 +181,9 @@ public class ChatMemberService {
         int totalMemberCount = getTotalMemberCount(roomId, chatRoomType);
 
         SubscriberCountUpdateResp resp = SubscriberCountUpdateResp.of(subscriberCount, totalMemberCount);
-        String destination = "/topic/" + chatRoomType.name().toLowerCase() + "/rooms/" + roomId;
+        String destination = "/topic/" + chatRoomType.name().toLowerCase() + ".rooms." + roomId;
+        log.info("📢 Broadcasting subscriber count - destination: {}, subscriberCount: {}, totalMemberCount: {}",
+                destination, subscriberCount, totalMemberCount);
         messagingTemplate.convertAndSend(destination, resp);
     }
 
@@ -194,7 +196,7 @@ public class ChatMemberService {
         MemberSummaryResp memberSummary = MemberSummaryResp.from(member);
 
         RoomMemberUpdateResp resp = new RoomMemberUpdateResp(roomId, type, memberSummary, totalMemberCount, subscriberCount);
-        String destination = "/topic/" + chatRoomType.name().toLowerCase() + "/rooms/" + roomId;
+        String destination = "/topic/" + chatRoomType.name().toLowerCase() + ".rooms." + roomId;
         messagingTemplate.convertAndSend(destination, resp);
     }
 }

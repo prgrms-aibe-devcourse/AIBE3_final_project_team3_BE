@@ -15,21 +15,21 @@ public class ChatNotificationService {
 
     private final SimpMessageSendingOperations messagingTemplate;
 
-    // 채팅방 구독자들에게 메시지 전송(/topic/{type}/rooms/{roomId})
+    // 채팅방 구독자들에게 메시지 전송
     public void sendChatMessage(Long roomId, ChatRoomType type, MessageResp messageResp) {
-        String destination = String.format("/topic/%s/rooms/%d", type.name().toLowerCase(), roomId);
+        String destination = String.format("/topic/%s.rooms.%d", type.name().toLowerCase(), roomId);
         messagingTemplate.convertAndSend(destination, messageResp);
-        log.debug("Notification sent to {}: {}", destination, messageResp.id());
+        log.debug("Message sent to destination={}: {}", destination, messageResp.id());
     }
 
     /**
      * 특정 사용자에게 채팅방 목록 갱신 정보 전송 (읽지 않은 메시지 수 등)
-     * Destination: /user/{userId}/topic/rooms/update
+     * Destination: /user/{userId}/queue/rooms/update
      */
     public void sendRoomListUpdate(String memberId, RoomLastMessageUpdateResp updateResp) {
         messagingTemplate.convertAndSendToUser(
                 memberId,
-                "/topic/rooms/update",
+                "/queue/rooms/update",
                 updateResp
         );
     }
