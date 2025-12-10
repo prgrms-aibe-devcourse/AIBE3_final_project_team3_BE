@@ -40,7 +40,7 @@ public class LearningNoteRagService {
             return;
         }
 
-        List<LearningNote> recentNotes = learningNoteRepository.findTopNByMemberId(memberId, 10);
+        List<LearningNote> recentNotes = learningNoteRepository.findTopNByMemberId(memberId, PageRequest.of(0, 10));
 
         if (recentNotes.isEmpty()){
             return;
