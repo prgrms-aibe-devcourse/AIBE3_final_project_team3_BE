@@ -31,8 +31,6 @@ public class AuthService {
 
     // 로그아웃시 즉시 오프라인 상태 전환을 위한 PresenceService 주입
     private final PresenceService presenceService;
-
-    @Qualifier("defaultProfileImageUrl")
     private final String defaultProfileBaseURL;
 
     /**

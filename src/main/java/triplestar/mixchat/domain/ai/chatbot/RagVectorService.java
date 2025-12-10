@@ -4,6 +4,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.ai.rag.promptbuilder.RagPromptBuilder;
 import triplestar.mixchat.domain.ai.rag.context.chathistory.ChatHistoryProvider;
@@ -18,22 +19,24 @@ public class  RagVectorService {
     private final RagContextRetriever ragContextRetriever;      // 컨텍스트 검색기(Sql, 벡터 DB 등)
     private final ChatHistoryProvider chatHistoryProvider;      // 대화 로그 제공자
     private final RagPromptBuilder ragPromptBuilder;            // RAG 프롬프트 빌더
-    private final ChatClient ollamaChatClient;                  // LLM 채팅 클라이언트 -> 답변 품질을 보니 openAi 사용해야할 듯
+    private final ChatClient openAiRagChatClient;
 
     public String chat(Long userId, AIChatRoom chatRoom, String userMessage, String persona) {
         // 1) 장기 기억: 유저 학습 컨텍스트
         List<UserContextChunk> chunks = ragContextRetriever.retrieve(chatRoom.getId(), userId);
+        List<Message> assistantMessages = ragPromptBuilder.convertChunksToMessages(chunks);
 
         // 2) 단기 기억: 현재 AI와의 채팅 대화 로그
         List<Message> recentHistory = chatHistoryProvider.getRecentHistory(chatRoom.getId(), 10);
 
         //3) 프롬프트 생성
-        String prompt = ragPromptBuilder.buildPrompt(chunks, persona);
+        String prompt = ragPromptBuilder.buildPrompt(persona, chatRoom.getRoomType());
 
         // 4) LLM 호출
-        return ollamaChatClient
+        return openAiRagChatClient
                 .prompt()
                 .system(prompt)
+                .messages(assistantMessages)
                 .messages(recentHistory)
                 .user(userMessage)
                 .call()

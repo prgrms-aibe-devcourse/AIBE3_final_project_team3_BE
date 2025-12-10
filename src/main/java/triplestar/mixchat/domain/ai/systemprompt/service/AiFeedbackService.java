@@ -16,7 +16,7 @@ public class AiFeedbackService {
     private final ObjectMapper objectMapper;
 
     // OpenAI 사용 (성능 및 JSON 포맷 준수 우수)
-    public AiFeedbackService(@Qualifier("openai") ChatClient chatClient, ObjectMapper objectMapper) {
+    public AiFeedbackService(@Qualifier("openAi") ChatClient chatClient, ObjectMapper objectMapper) {
         this.chatClient = chatClient;
         this.objectMapper = objectMapper;
     }

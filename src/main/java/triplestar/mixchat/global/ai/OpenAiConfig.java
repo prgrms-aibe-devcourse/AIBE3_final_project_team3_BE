@@ -21,6 +21,9 @@ public class OpenAiConfig {
     @Value("${spring.ai.openai.chat.options.model}")
     private String model;
 
+    @Value("${ai.rag-openai-model}")
+    private String ragModel;
+
 
     @Bean
     public OpenAiApi openAiApi() {
@@ -31,9 +34,9 @@ public class OpenAiConfig {
     }
 
     @Bean
-    public OpenAiChatModel openAiChatModel() {
+    public OpenAiChatModel openAiChatModel(OpenAiApi openAiApi) {
         return OpenAiChatModel.builder()
-                .openAiApi(openAiApi())
+                .openAiApi(openAiApi)
                 .defaultOptions(
                         OpenAiChatOptions.builder()
                                 .model(model)
@@ -43,8 +46,23 @@ public class OpenAiConfig {
     }
 
     @Bean
-    @Qualifier("openai")
+    @Qualifier("openAi")
     public ChatClient openAiChatClient(OpenAiChatModel openAiChatModel) {
         return ChatClient.builder(openAiChatModel).build();
+    }
+
+    @Bean
+    @Qualifier("openAiRagChatClient")
+    public ChatClient openAiRagChatClient(OpenAiApi openAiApi) {
+        OpenAiChatModel model = OpenAiChatModel.builder()
+                .openAiApi(openAiApi)
+                .defaultOptions(
+                        OpenAiChatOptions.builder()
+                                .model(ragModel)
+                                .build()
+                )
+                .build();
+
+        return ChatClient.builder(model).build();
     }
 }

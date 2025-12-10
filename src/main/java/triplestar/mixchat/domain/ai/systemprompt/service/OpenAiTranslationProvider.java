@@ -15,7 +15,7 @@ public class OpenAiTranslationProvider implements TranslationProvider {
     private final ChatClient chatClient;
 
     // 1. AiConfig에서 정의한 openai 빈
-    public OpenAiTranslationProvider(@Qualifier("openai") ChatClient chatClient) {
+    public OpenAiTranslationProvider(@Qualifier("openAi") ChatClient chatClient) {
         this.chatClient = chatClient;
     }
 

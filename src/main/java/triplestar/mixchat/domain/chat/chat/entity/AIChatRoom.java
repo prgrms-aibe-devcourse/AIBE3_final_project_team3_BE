@@ -38,6 +38,9 @@ public class AIChatRoom extends BaseEntity {
     @Column(nullable = false)
     private AiChatRoomType roomType;
 
+    @Column(nullable = false)
+    private Long currentSequence = 0L; // 채팅방 메시지 순서 번호
+
     private AIChatRoom(Member member, String name, UserPrompt persona, AiChatRoomType roomType) {
         if (member == null) {
             throw new IllegalArgumentException("채팅방 생성자(member)는 null일 수 없습니다.");
@@ -61,5 +64,9 @@ public class AIChatRoom extends BaseEntity {
 
     public static AIChatRoom create(Member member, String name, UserPrompt persona, AiChatRoomType roomType) {
         return new AIChatRoom(member, name, persona, roomType);
+    }
+
+    public Long generateNextSequence() {
+        return ++this.currentSequence;
     }
 }
