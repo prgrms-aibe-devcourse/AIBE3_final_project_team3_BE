@@ -34,9 +34,7 @@ public class ChatSequenceGenerator {
     private static final String SEQUENCE_KEY_PREFIX = "chat:sequence:";
     private static final Duration SEQUENCE_TTL = Duration.ofDays(30);
 
-    /**
-     * 채팅방의 다음 sequence 생성 (Redis INCR 사용)
-     */
+    // 채팅방의 다음 sequence 생성 (Redis INCR 사용)
     public Long generateSequence(Long roomId, ChatRoomType chatRoomType) {
         if (chatRoomType == ChatRoomType.AI) {
             return -1L;  // AI 채팅방은 sequence 미사용
@@ -61,9 +59,7 @@ public class ChatSequenceGenerator {
         return sequence;
     }
 
-    /**
-     * 서버 시작 시 DB의 currentSequence를 Redis로 동기화
-     */
+    // 서버 시작 시 DB의 currentSequence를 Redis로 동기화
     @PostConstruct
     public void syncSequencesFromDB() {
         log.info("=== 채팅방 Sequence 동기화 시작 ===");
@@ -97,18 +93,14 @@ public class ChatSequenceGenerator {
         }
     }
 
-    /**
-     * 특정 채팅방의 현재 sequence 조회 (디버깅/모니터링용)
-     */
+    // 특정 채팅방의 현재 sequence 조회 (디버깅/모니터링용)
     public Long getCurrentSequence(Long roomId, ChatRoomType chatRoomType) {
         String key = getSequenceKey(roomId, chatRoomType);
         String value = redisTemplate.opsForValue().get(key);
         return value != null ? Long.parseLong(value) : 0L;
     }
 
-    /**
-     * Redis key 생성: chat:sequence:{type}:{roomId}
-     */
+    // Redis key 생성: chat:sequence:{type}:{roomId}
     private String getSequenceKey(Long roomId, ChatRoomType chatRoomType) {
         return SEQUENCE_KEY_PREFIX + chatRoomType.name().toLowerCase() + ":" + roomId;
     }
