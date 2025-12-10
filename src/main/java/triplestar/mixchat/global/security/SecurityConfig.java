@@ -2,6 +2,7 @@ package triplestar.mixchat.global.security;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -24,6 +25,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    @Value("${cors.allowed-origins}")
+    private List<String> allowedOrigins;
+
     private final JwtAuthorizationFilter JwtAuthorizationFilter;
 
     @Bean
@@ -41,12 +45,16 @@ public class SecurityConfig {
                                 // 회원 조회는 인증 불필요
                                 .requestMatchers(HttpMethod.GET, "/api/v1/members").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/members/*").permitAll()
+                                // 게시글 조회는 인증 불필요
+                                .requestMatchers(HttpMethod.GET, "/api/v1/posts", "/api/v1/posts/**").permitAll()
                                 // NOTE : 테스트용 AI Chat API 임시 허용
                                 .requestMatchers("/api/v1/ai/temp/**").permitAll()
                                 // ADMIN 권한 필요
                                 .requestMatchers("/api/*/admin/**").hasRole("ADMIN")
                                 // WEBSOCKET 요청 허용
                                 .requestMatchers("/ws-stomp/**").permitAll()
+                                // actuator 요청 허용
+                                .requestMatchers("/actuator/**").permitAll()
                                 // 나머지 모든 요청은 인증 필요
                                 .requestMatchers("/**").authenticated()
                 )
@@ -72,7 +80,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

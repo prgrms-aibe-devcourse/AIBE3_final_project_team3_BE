@@ -43,3 +43,10 @@ out/
 # jwt 비밀키 파일
 src/main/resources/application-secret.yml
 .secret
+
+*.log
+test_output*.log
+
+# QueryDSL QClass
+/src/main/generated/
+/src/main/generated/**/*
