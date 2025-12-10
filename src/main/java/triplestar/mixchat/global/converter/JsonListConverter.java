@@ -9,13 +9,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Converter
-public class JsonListConverter implements AttributeConverter<List<String>, String> {
+public class JsonListConverter<T> implements AttributeConverter<List<T>, String> {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    private final TypeReference<List<T>> typeRef;
+
+    protected JsonListConverter(TypeReference<List<T>> typeRef) {
+        this.typeRef = typeRef;
+    }
+
     @Override
     // Java List -> JSON 문자열로 변환하여 DB에 저장
-    public String convertToDatabaseColumn(List<String> attribute) {
+    public String convertToDatabaseColumn(List<T> attribute) {
         if (attribute == null) {
             return null;
         }
@@ -28,12 +34,12 @@ public class JsonListConverter implements AttributeConverter<List<String>, Strin
 
     @Override
     // DB JSON 문자열 -> Java List로 변환
-    public List<String> convertToEntityAttribute(String dbData) {
+    public List<T> convertToEntityAttribute(String dbData) {
         if (dbData == null) {
             return new ArrayList<>();
         }
         try {
-            return objectMapper.readValue(dbData, new TypeReference<>() {});
+            return objectMapper.readValue(dbData, typeRef);
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("JSON 문자열 List<String> 변환 실패", e);
         }
