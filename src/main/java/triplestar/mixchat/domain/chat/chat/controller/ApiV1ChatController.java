@@ -31,6 +31,7 @@ import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.InviteGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.JoinGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
+import triplestar.mixchat.domain.chat.chat.dto.MessageReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.TransferOwnerReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
@@ -255,6 +256,26 @@ public class ApiV1ChatController implements ApiChatController {
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         // chatMemberService.reportUser(currentUser.getId(), null, roomId, chatRoomType, null);
+    }
+
+    @Override
+    @PostMapping("/rooms/messages")
+    @Profile({"dev", "local", "test"})  // 개발/로컬/테스트 환경에서만 활성화
+    public CustomResponse<MessageResp> sendMessageForLoadTest(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody MessageReq request
+    ) {
+        // 멤버 검증은 saveMessage 내부에서 수행됨
+        MessageResp resp = chatMessageService.saveMessage(
+                request.roomId(),
+                currentUser.getId(),
+                currentUser.getNickname(),
+                request.content(),
+                request.messageType(),
+                request.chatRoomType(),
+                request.isTranslateEnabled()
+        );
+        return CustomResponse.ok("메시지 전송 완료", resp);
     }
 
     @Override

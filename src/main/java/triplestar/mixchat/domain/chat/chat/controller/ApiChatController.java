@@ -21,6 +21,7 @@ import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.MessageReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.global.response.CustomResponse;
@@ -132,6 +133,13 @@ public interface ApiChatController {
             @Parameter(description = "신고할 채팅방의 ID") @PathVariable Long roomId,
             @Parameter(description = "대화방 타입 (DIRECT, GROUP)") @RequestParam ChatRoomType chatRoomType,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
+    );
+
+    @Operation(summary = "텍스트 메시지 전송 (부하 테스트용)", description = "REST API를 통해 텍스트 메시지를 전송합니다. WebSocket 대신 HTTP로 메시지를 전송하여 부하 테스트 도구(k6)에서 사용할 수 있습니다. 개발/로컬/테스트 환경에서만 활성화됩니다.")
+    @SignInInRequireResponse
+    CustomResponse<MessageResp> sendMessageForLoadTest(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody MessageReq request
     );
 
     @Operation(summary = "부하테스트 데이터 정리", description = "부하테스트로 생성된 모든 데이터를 일괄 삭제합니다. [LOAD_TEST] 태그가 있는 Group/AI 채팅방과 테스트 계정(1~100) 간의 Direct 채팅방을 삭제합니다.")

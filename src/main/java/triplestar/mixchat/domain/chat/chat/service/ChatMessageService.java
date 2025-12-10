@@ -26,8 +26,6 @@ import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage.MessageType;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
-import triplestar.mixchat.domain.chat.chat.repository.DirectChatRoomRepository;
-import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.notification.constant.NotificationType;
@@ -46,12 +44,10 @@ public class ChatMessageService {
     private final ChatMemberService chatMemberService;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final DirectChatRoomRepository directChatRoomRepository;
-    private final GroupChatRoomRepository groupChatRoomRepository;
     private final ChatSubscriberCacheService subscriberCacheService;
     private final ChatNotificationService chatNotificationService;
-    private final jakarta.persistence.EntityManager entityManager;
     private final AiChatBotService aiChatBotService;
+    private final ChatSequenceGenerator sequenceGenerator;
 
     @Transactional
     public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatRoomType chatRoomType, boolean isTranslateEnabled) {
@@ -68,8 +64,8 @@ public class ChatMessageService {
             }
         }
 
-        // Sequence 생성 (비관적 락으로 동시성 제어)
-        Long sequence = generateSequence(roomId, chatRoomType);
+        // Sequence 생성 (Redis INCR 기반 - 고성능)
+        Long sequence = sequenceGenerator.generateSequence(roomId, chatRoomType);
 
         // 메시지 생성 및 저장
         ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType, isTranslateEnabled);
@@ -282,25 +278,5 @@ public class ChatMessageService {
                     return new MessageUnreadCountResp(message.getId(), unreadCount);
                 })
                 .collect(Collectors.toList());
-    }
-
-    // Sequence 생성 (비관적 락으로 동시성 제어)
-    private Long generateSequence(Long roomId, ChatRoomType chatRoomType) {
-        // 1) room 개별 조회 및 시퀀스 생성
-        Long newSeq = switch (chatRoomType) {
-            case DIRECT -> directChatRoomRepository.findByIdWithLock(roomId)
-                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
-                    .generateNextSequence();
-
-            case GROUP -> groupChatRoomRepository.findByIdWithLock(roomId)
-                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
-                    .generateNextSequence();
-
-            case AI -> -1L;
-        };
-
-        // 2) 즉시 DB 반영
-        entityManager.flush();
-        return newSeq;
     }
 }
