@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 
 @Configuration
 public class OpenAiConfig {
@@ -46,12 +47,14 @@ public class OpenAiConfig {
     }
 
     @Bean
+    @Order(2)
     @Qualifier("openAi")
     public ChatClient openAiChatClient(OpenAiChatModel openAiChatModel) {
         return ChatClient.builder(openAiChatModel).build();
     }
 
     @Bean
+    @Order(3)
     @Qualifier("openAiRagChatClient")
     public ChatClient openAiRagChatClient(OpenAiApi openAiApi) {
         OpenAiChatModel model = OpenAiChatModel.builder()

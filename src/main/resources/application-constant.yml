@@ -30,4 +30,4 @@ ai:
     sql:
       min: 1
       max: 100
-  rag-openai-model: gpt-4.1
+  rag-openai-model: ${RAG_OPENAI_MODEL:gpt-4o-mini}

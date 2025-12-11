@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 
 // Ollama WebUI 설정 - openAI 호환 API 사용
 @Configuration
@@ -43,6 +44,7 @@ public class OllamaConfig {
     }
 
     @Bean
+    @Order(1)
     @Qualifier("ollama")
     public ChatClient ollamaChatClient(@Qualifier("ollamaOpenAiChatModel") OpenAiChatModel openAiChatModel) {
         return ChatClient.builder(openAiChatModel).build();
