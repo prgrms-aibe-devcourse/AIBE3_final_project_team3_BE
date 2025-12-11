@@ -14,4 +14,11 @@ public interface LearningNoteRepository extends JpaRepository<LearningNote, Long
                     LIMIT :itemSize
     """)
     List<LearningNote> findTopNByMemberId(Long memberId, int itemSize);
+
+    @Query("""
+        select distinct ln
+        from LearningNote ln
+        join fetch ln.feedbacks
+    """)
+    List<LearningNote> findAllWithFeedbacks();
 }

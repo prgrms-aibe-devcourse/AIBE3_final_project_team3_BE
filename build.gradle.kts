@@ -106,7 +106,6 @@ dependencies {
     // Elasticsearch
     implementation("org.springframework.boot:spring-boot-starter-data-elasticsearch") // Elasticsearch
     implementation(kotlin("stdlib-jdk8"))
-    implementation("co.elastic.clients:elasticsearch-java:8.17.3")
 }
 
 dependencyManagement {
