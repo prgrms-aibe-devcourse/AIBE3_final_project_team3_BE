@@ -249,6 +249,30 @@ public class GroupChatRoomService {
         return convertToRoomSummaries(rooms, currentUserId);
     }
 
+    // 단일 그룹채팅방 상세 조회 (모달용)
+    public GroupChatRoomResp getRoomDetail(Long roomId, Long currentUserId) {
+        // 1. 채팅방 조회
+        GroupChatRoom room = groupChatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 그룹 채팅방입니다."));
+
+        // 2. 멤버 권한 확인
+        boolean isMember = chatRoomMemberRepository.existsByChatRoomIdAndChatRoomTypeAndMember_Id(
+                roomId, ChatRoomType.GROUP, currentUserId);
+        if (!isMember) {
+            throw new AccessDeniedException("채팅방 멤버만 조회할 수 있습니다.");
+        }
+
+        // 3. 채팅방 멤버 목록 조회
+        List<ChatMember> members = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, ChatRoomType.GROUP);
+
+        // 4. 친구 목록 조회 (isFriend 필드 표시용)
+        Page<Member> friendsByMemberId = friendshipRepository.findFriendsByMemberId(currentUserId, Pageable.ofSize(500));
+        Set<Long> friendIdSet = friendsByMemberId.map(Member::getId).toSet();
+
+        // 5. DTO 변환 (unreadCount와 lastMessage는 모달에서 불필요하므로 null/0 처리)
+        return GroupChatRoomResp.from(room, members, currentUserId, friendIdSet, 0L, null);
+    }
+
     // 공개 그룹 채팅방 목록 조회 (Find 페이지용)
     public List<GroupChatRoomPublicResp> getGroupPublicRooms(Long currentUserId) {
         List<GroupChatRoom> rooms = groupChatRoomRepository.findPublicRoomsExcludingMemberId(currentUserId);

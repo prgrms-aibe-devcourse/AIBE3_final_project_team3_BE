@@ -141,6 +141,15 @@ public class ApiV1ChatController implements ApiChatController {
         return CustomResponse.ok("사용자가 속한 그룹 채팅방 목록 조회에 성공하였습니다.", rooms);
     }
 
+    @GetMapping("/rooms/group/{roomId}")
+    public CustomResponse<GroupChatRoomResp> getGroupChatRoomDetail(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        GroupChatRoomResp room = groupChatRoomService.getRoomDetail(roomId, currentUser.getId());
+        return CustomResponse.ok("그룹 채팅방 상세 조회에 성공하였습니다.", room);
+    }
+
     // todo: 비밀번호 걸린 방도 public 조회는 혼동 여지 존재. 위를 me로 바꾸고 아래를 group으로 고려
     @GetMapping("/rooms/group/public")
     public CustomResponse<List<GroupChatRoomPublicResp>> getPublicGroupChatRooms(
@@ -235,7 +244,7 @@ public class ApiV1ChatController implements ApiChatController {
                 chatMessageService.saveFileMessage(roomId, currentUser.getId(), currentUser.getNickname(), fileUrl,
                         messageType, chatRoomType);
 
-        String destination = "/topic/" + chatRoomType.name().toLowerCase() + "/rooms/" + roomId;
+        String destination = "/topic/" + chatRoomType.name().toLowerCase() + ".rooms." + roomId;
         messagingTemplate.convertAndSend(destination, messageResp);
 
         return CustomResponse.ok("파일 업로드 및 메시지 전송에 성공하였습니다.", messageResp);

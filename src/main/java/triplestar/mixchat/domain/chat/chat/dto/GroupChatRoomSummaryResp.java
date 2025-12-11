@@ -15,6 +15,9 @@ public record GroupChatRoomSummaryResp(
         @Schema(description = "채팅방 이름", example = "영어 스터디", requiredMode = REQUIRED)
         String name,
 
+        @Schema(description = "방 주제", example = "언어 교환")
+        String topic,
+
         @Schema(description = "안 읽은 메시지 수", example = "3", requiredMode = REQUIRED)
         Long unreadCount,
 
@@ -36,6 +39,7 @@ public record GroupChatRoomSummaryResp(
         return new GroupChatRoomSummaryResp(
                 room.getId(),
                 room.getName(),
+                room.getTopic(),
                 unreadCount,
                 lastReadSequence,
                 room.getModifiedAt(),

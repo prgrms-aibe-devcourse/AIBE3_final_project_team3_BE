@@ -1,8 +1,7 @@
 package triplestar.mixchat.domain.chat.chat.service;
 
-import static java.time.LocalDateTime.now;
-
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -15,16 +14,15 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.ai.chatbot.AiChatBotService;
-import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationReq;
-import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.constant.ChatNotificationSetting;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
-import triplestar.mixchat.domain.chat.chat.dto.RoomLastMessageUpdateResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage.MessageType;
+import triplestar.mixchat.domain.chat.chat.event.ChatMessageCreatedEvent;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.search.service.ChatMessageSearchService;
@@ -46,11 +44,11 @@ public class ChatMessageService {
     private final ChatMemberService chatMemberService;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final ChatSubscriberCacheService subscriberCacheService;
     private final ChatNotificationService chatNotificationService;
     private final AiChatBotService aiChatBotService;
     private final ChatSequenceGenerator sequenceGenerator;
     private final ChatMessageSearchService chatMessageSearchService;
+    private final ChatSubscriberCacheService subscriberCacheService;
 
     @Transactional
     public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatRoomType chatRoomType, boolean isTranslateEnabled) {
@@ -74,57 +72,40 @@ public class ChatMessageService {
         ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType, isTranslateEnabled);
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
-        // Elasticsearch 인덱싱은 비동기로 (트랜잭션 커밋 후 실행)
-        if (messageType == ChatMessage.MessageType.TEXT) {
-            eventPublisher.publishEvent(new triplestar.mixchat.domain.chat.search.event.MessageIndexEvent(
-                    savedMessage.getId(),
-                    savedMessage.getChatRoomId(),
-                    savedMessage.getChatRoomType(),
-                    savedMessage.getSenderId(),
-                    senderNickname,
-                    savedMessage.getContent(),
-                    savedMessage.getSequence(),
-                    savedMessage.getCreatedAt()
-            ));
-        }
-
-        // AI 채팅방인 경우 메시지 생성 및 저장 후 별도로직 수행
+        // AI 채팅방인 경우 메시지 생성 및 저장 후 별도 로직 수행
         if (chatRoomType == ChatRoomType.AI) {
             return saveAiRoomMessage(roomId, senderId, senderNickname, content, chatRoomType, savedMessage);
         }
 
-        // TEXT 타입만 번역
-        if (isTranslateEnabled && messageType == ChatMessage.MessageType.TEXT) {
-            eventPublisher.publishEvent(new TranslationReq(savedMessage.getId(), savedMessage.getContent()));
-        }
+        // === 트랜잭션 내에서 모든 DB 연산 처리 (방향 A 패턴) ===
 
-        // 1. 발신자 + 구독자 모두를 하나의 Set으로 수집 (읽음 처리 대상)
+        // 1. 읽음 상태 업데이트 (발신자 + 구독자)
         Set<Long> memberIdsToMarkRead = new HashSet<>();
-        memberIdsToMarkRead.add(senderId); // 발신자도 포함(방어적 코드)
+        memberIdsToMarkRead.add(senderId);
 
-        // 2. Redis에서 구독자 목록 조회 (한 번만 조회해서 읽음 처리 + 알림 전송 여부 확인에 재사용)
-        Set<Long> subscriberIds = new HashSet<>();
+        // 현재 구독 중인 사용자 조회 (Redis)
         Set<String> subscribers = subscriberCacheService.getSubscribers(roomId);
+        Set<Long> subscriberIds = new HashSet<>();
         if (subscribers != null && !subscribers.isEmpty()) {
             for (String subscriberIdStr : subscribers) {
                 try {
                     Long subscriberId = Long.parseLong(subscriberIdStr);
                     subscriberIds.add(subscriberId);
-                    memberIdsToMarkRead.add(subscriberId); // Set이므로 중복 자동 제거
+                    memberIdsToMarkRead.add(subscriberId);
                 } catch (NumberFormatException e) {
                     log.error("구독자 ID 파싱 실패 - roomId: {}, 잘못된 ID: {}", roomId, subscriberIdStr);
                 }
             }
         }
 
-        // 3. Bulk Update: 발신자 + 구독자 모두 한 번에 처리 (쿼리 통합)
         if (!memberIdsToMarkRead.isEmpty()) {
             chatRoomMemberRepository.bulkUpdateLastReadSequence(
-                    roomId, chatRoomType, memberIdsToMarkRead, sequence, now()
+                    roomId, chatRoomType, memberIdsToMarkRead, sequence, LocalDateTime.now()
             );
         }
 
-        List<ChatRoomMemberRepository.MemberSummary> memberSummaries =
+        // 2. unreadCount 계산
+       List<ChatRoomMemberRepository.MemberSummary> memberSummaries =
                 chatRoomMemberRepository.findMemberSummariesByRoomIdAndChatRoomType(roomId, chatRoomType);
 
         int unreadCount = (int) memberSummaries.stream()
@@ -134,50 +115,46 @@ public class ChatMessageService {
                 })
                 .count();
 
-        // 알림 이벤트 (구독 중이지 않은 사람들에게만, 발신자 제외)
+        // 3. 알림 이벤트 생성 (DB 저장 또는 발행용 데이터 준비)
+        List<NotificationEvent> notificationEvents = new ArrayList<>();
         for (ChatRoomMemberRepository.MemberSummary receiver : memberSummaries) {
             Long receiverId = receiver.getMemberId();
-            if (receiverId.equals(senderId)) {
-                continue;
-            }
-            if (subscriberIds.contains(receiverId)) {
+            if (receiverId.equals(senderId) || subscriberIds.contains(receiverId)) {
                 continue;
             }
             if (receiver.getChatNotificationSetting() == ChatNotificationSetting.ALWAYS) {
-                eventPublisher.publishEvent(
+                notificationEvents.add(
                         new NotificationEvent(
                                 receiverId,
                                 senderId,
                                 NotificationType.CHAT_MESSAGE,
-                                savedMessage.getContent()
+                                content
                         )
                 );
             }
         }
 
-        // 6. Topic Broadcast로 채팅방 리스트 업데이트 알림 전송 (모든 구독자에게 1회만 전송)
-        String lastMessageAt = savedMessage.getCreatedAt().toString();
-        String lastMessageContent = savedMessage.isTranslateEnabled() && savedMessage.getTranslatedContent() != null
-                ? savedMessage.getTranslatedContent()
-                : savedMessage.getContent();
-
-        RoomLastMessageUpdateResp updateResp = new RoomLastMessageUpdateResp(
-                roomId,
-                chatRoomType,
-                lastMessageAt,
-                sequence,  // latestSequence - 클라이언트가 unreadCount 계산에 사용
-                lastMessageContent
+        // 4. 이벤트 발행 (AFTER_COMMIT에서 외부 I/O만 처리)
+        ChatMessageCreatedEvent createdEvent = new ChatMessageCreatedEvent(
+                savedMessage.getId(),
+                savedMessage.getChatRoomId(),
+                savedMessage.getSenderId(),
+                senderNickname,
+                savedMessage.getContent(),
+                savedMessage.getMessageType(),
+                savedMessage.getChatRoomType(),
+                savedMessage.getSequence(),
+                savedMessage.isTranslateEnabled(),
+                savedMessage.getCreatedAt(),
+                unreadCount
         );
+        eventPublisher.publishEvent(createdEvent);
 
-        // Topic으로 Broadcast (모든 멤버가 구독 중)
-        chatNotificationService.sendRoomListUpdateBroadcast(updateResp);
+        // 알림 이벤트 발행 (개별 발행)
+        notificationEvents.forEach(eventPublisher::publishEvent);
 
-        MessageResp response = MessageResp.withUnreadCount(savedMessage, senderNickname, unreadCount);
-
-        // 7. 현재 채팅방(Topic)에 메시지 전송
-        chatNotificationService.sendChatMessage(roomId, chatRoomType, response);
-
-        return response;
+        // 최소 정보 + unreadCount 반환
+        return MessageResp.withUnreadCount(savedMessage, senderNickname, unreadCount);
     }
 
     private MessageResp saveAiRoomMessage(Long roomId, Long senderId, String senderNickname, String content,

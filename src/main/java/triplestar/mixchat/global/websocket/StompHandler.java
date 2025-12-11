@@ -130,6 +130,11 @@ public class StompHandler implements ExecutorChannelInterceptor {
             throw new IllegalArgumentException("구독 목적지가 없습니다.");
         }
 
+        // 방 목록 브로드캐스트 구독 허용
+        if ("/topic/room-list-updates".equals(destination)) {
+            return;
+        }
+
         // 채팅방 구독 시 멤버십 검증
         Matcher matcher = ROOM_DESTINATION_PATTERN.matcher(destination);
         if (matcher.matches()) {

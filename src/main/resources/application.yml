@@ -14,13 +14,13 @@ spring:
     password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      maximum-pool-size: 30        # 최대 커넥션 수
-      minimum-idle: 10              # 최소 idle 커넥션 수
+      maximum-pool-size: 30
+      minimum-idle: 10
       connection-timeout: 30000     # 커넥션 획득 대기 시간 (30초)
-      idle-timeout: 600000          # Idle 커넥션 유지 시간 (10분)
-      max-lifetime: 1800000         # 커넥션 최대 수명 (30분)
-      validation-timeout: 5000      # 5초, DB가 응답하지 않으면 테스트 자체가 무한 대기하는 것 방지
-      connection-test-query: SELECT 1  # 커넥션 유효성 검사
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      validation-timeout: 5000      # 타임아웃 5초. DB가 응답하지 않으면 테스트 자체가 무한 대기하는 것 방지
+      connection-test-query: SELECT 1
   jpa:
     hibernate:
       ddl-auto: none
@@ -60,9 +60,9 @@ spring:
       password: ${REDIS_PASSWORD:}
       lettuce:
         pool:
-          max-active: 50    # 최대 활성 커넥션
-          max-idle: 20      # 최대 idle 커넥션
-          min-idle: 10      # 최소 idle 커넥션
+          max-active: 50
+          max-idle: 20
+          min-idle: 10
           max-wait: 3000    # 커넥션 대기 시간 (ms)
 
     web:
