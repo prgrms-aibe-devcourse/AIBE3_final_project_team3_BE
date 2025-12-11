@@ -25,6 +25,10 @@ public class AdminReportService {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new IllegalArgumentException("신고를 찾을 수 없습니다. id=" + reportId));
 
+        if (report.getStatus() != ReportStatus.WAITING) {
+            throw new IllegalStateException("승인 또는 거절된 신고는 상태를 변경할 수 없습니다.");
+        }
+
         report.updateStatus(newStatus);
 
         if (newStatus == ReportStatus.APPROVED) {

@@ -54,8 +54,9 @@ public class LearningNoteService {
             case UNLEARNED -> false;
             case ALL -> null;
         };
+        TranslationTagCode tagCode = (tag == null || tag.name().equals("ALL")) ? null : tag;
 
-        Page<Feedback> feedbacks = feedbackRepository.findFeedbacksByMember(memberId,tag,isMarked,pageable);
+        Page<Feedback> feedbacks = feedbackRepository.findFeedbacksByMember(memberId, tagCode, isMarked, pageable);
 
         return feedbacks.map(fb ->
                 LearningNoteFeedbackResp.create(fb.getLearningNote(), fb)
