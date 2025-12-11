@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
@@ -30,7 +31,7 @@ import triplestar.mixchat.domain.translation.translation.constant.TranslationTag
 @SpringBootTest
 @Transactional
 @DisplayName("학습노트 임베딩 ES 저장 통합 테스트")
-@TestInstance(TestInstance.Lifecycle.PER_CLASS) // ✅ BeforeAll에서 DB 초기화 보장
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class LearningNoteEmbeddingTest {
 
@@ -44,6 +45,7 @@ class LearningNoteEmbeddingTest {
     private LearningNoteDocumentRepository documentRepository;
 
     @Autowired
+    @Qualifier("openAiEmbeddingModel")
     private EmbeddingModel embeddingModel;
 
     @Autowired
