@@ -28,7 +28,7 @@ public class ChatHistoryProvider {
 
     public List<Message> getRecentHistory(Long roomId, int maxTurns) {
         List<ChatMessage> messages = chatMessageRepository.
-                findByChatRoomIdAndChatRoomTypeOrderByCreatedAtDescIdDesc(
+                findByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(
                         roomId, ChatRoomType.AI, Pageable.ofSize(maxTurns)
                 );
 

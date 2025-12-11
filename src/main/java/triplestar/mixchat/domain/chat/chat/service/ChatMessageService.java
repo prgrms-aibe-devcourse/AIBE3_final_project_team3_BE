@@ -51,7 +51,9 @@ public class ChatMessageService {
     private final ChatSubscriberCacheService subscriberCacheService;
 
     @Transactional
-    public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatRoomType chatRoomType, boolean isTranslateEnabled) {
+    public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content,
+                                   ChatMessage.MessageType messageType, ChatRoomType chatRoomType,
+                                   boolean isTranslateEnabled) {
         // 시스템 메시지가 아닐 경우에만 멤버 검증을 수행
         if (messageType != ChatMessage.MessageType.SYSTEM) {
             chatMemberService.verifyUserIsMemberOfRoom(senderId, roomId, chatRoomType);
@@ -69,7 +71,8 @@ public class ChatMessageService {
         Long sequence = sequenceGenerator.generateSequence(roomId, chatRoomType);
 
         // 메시지 생성 및 저장
-        ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType, isTranslateEnabled);
+        ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType,
+                isTranslateEnabled);
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
         // AI 채팅방인 경우 메시지 생성 및 저장 후 별도 로직 수행
@@ -158,7 +161,7 @@ public class ChatMessageService {
     }
 
     private MessageResp saveAiRoomMessage(Long roomId, Long senderId, String senderNickname, String content,
-                                       ChatRoomType chatRoomType, ChatMessage savedMessage) {
+                                          ChatRoomType chatRoomType, ChatMessage savedMessage) {
         // 웹소켓 알림 전송
         MessageResp resp = MessageResp.from(savedMessage, senderNickname);
         chatNotificationService.sendChatMessage(roomId, chatRoomType, resp);
@@ -175,7 +178,8 @@ public class ChatMessageService {
     }
 
     @Transactional
-    public MessageResp saveFileMessage(Long roomId, Long senderId, String senderNickname, String fileUrl, ChatMessage.MessageType messageType, ChatRoomType chatRoomType) {
+    public MessageResp saveFileMessage(Long roomId, Long senderId, String senderNickname, String fileUrl,
+                                       ChatMessage.MessageType messageType, ChatRoomType chatRoomType) {
         if (messageType != ChatMessage.MessageType.IMAGE && messageType != ChatMessage.MessageType.FILE) {
             throw new IllegalArgumentException("파일 메시지는 IMAGE 또는 FILE 타입이어야 합니다.");
         }
@@ -184,12 +188,18 @@ public class ChatMessageService {
     }
 
     // 메시지 목록 조회 (페이징), 발신자 이름 및 unreadCount 포함
-    public MessagePageResp getMessagesWithSenderInfo(Long roomId, ChatRoomType chatRoomType, Long requesterId, Long cursor, Integer size) {
+    public MessagePageResp getMessagesWithSenderInfo(Long roomId, ChatRoomType chatRoomType, Long requesterId,
+                                                     Long cursor, Integer size) {
         // 보안 검증: 요청자가 해당 채팅방의 멤버인지 확인
         chatMemberService.verifyUserIsMemberOfRoom(requesterId, roomId, chatRoomType);
 
         // 기본값: size = 25, 최대 100
         int pageSize = (size != null && size > 0 && size <= 100) ? size : 25;
+
+        // AI 채팅방은 별도처리
+        if (chatRoomType.equals(ChatRoomType.AI)) {
+            return getMessagePageResp(roomId, chatRoomType, pageSize);
+        }
 
         // 1. 채팅방의 모든 멤버 조회 (읽음 상태 확인 및 입장 시간 확인용)
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
@@ -252,8 +262,32 @@ public class ChatMessageService {
         return MessagePageResp.of(messageResps, nextCursor, hasMore);
     }
 
+    // AI 채팅방 전용 메시지 조회 (입장 시간 필터 없음)
+    private MessagePageResp getMessagePageResp(Long roomId, ChatRoomType chatRoomType, int pageSize) {
+        List<ChatMessage> messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeAndCreatedAtGreaterThanEqualOrderBySequenceDesc(
+                roomId, chatRoomType, LocalDateTime.of(2000, 1, 1, 0, 0), PageRequest.of(0, pageSize)
+        );
+
+        List<MessageResp> messageResps = messages.stream()
+                .map(message -> MessageResp.from(message, "user"))
+                .collect(Collectors.toList());
+
+        // 다음 페이지 정보 계산
+        Long nextCursor = null;
+        boolean hasMore = false;
+
+        if (!messages.isEmpty()) {
+            // nextCursor는 가장 오래된 메시지의 sequence (역순 정렬 후 첫 번째)
+            nextCursor = messages.get(0).getSequence();
+            // hasMore는 조회된 메시지 수가 pageSize와 같으면 true
+            hasMore = messages.size() == pageSize;
+        }
+        return MessagePageResp.of(messageResps, nextCursor, hasMore);
+    }
+
     // 누군가 채팅방 구독시 읽지 않은 사람 수 업데이트
-    public List<MessageUnreadCountResp> getUnreadCountUpdates(Long roomId, ChatRoomType chatRoomType, Long readUpToSequence) {
+    public List<MessageUnreadCountResp> getUnreadCountUpdates(Long roomId, ChatRoomType chatRoomType,
+                                                              Long readUpToSequence) {
         // 1. 채팅방의 모든 멤버 조회 (읽음 상태 확인용)
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
 

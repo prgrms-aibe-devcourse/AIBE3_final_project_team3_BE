@@ -17,10 +17,12 @@ import triplestar.mixchat.global.cache.LearningNoteCacheRepository;
 
 @Service
 public class LearningNoteRagService {
+
     private final LearningNoteDocumentRepository noteDocumentRepository;
     private final LearningNoteRepository learningNoteRepository;
     private final EmbeddingModel embeddingModel;
     private final LearningNoteCacheRepository learningNoteCacheRepository;
+
     public LearningNoteRagService(
             LearningNoteDocumentRepository noteDocumentRepository,
             LearningNoteRepository learningNoteRepository,
@@ -45,8 +47,6 @@ public class LearningNoteRagService {
         if (recentNotes.isEmpty()){
             return;
         }
-
-
 
         Map<Long, Double> scoreMap = new HashMap<>();
 
