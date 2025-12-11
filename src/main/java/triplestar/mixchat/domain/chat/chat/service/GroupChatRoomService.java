@@ -412,6 +412,7 @@ public class GroupChatRoomService {
                             currentUserId,
                             friendIdSet,
                             unreadCount,
+                            lastRead,
                             lastMessageContent
                     );
                 })

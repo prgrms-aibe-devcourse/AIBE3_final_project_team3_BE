@@ -17,7 +17,7 @@ import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
  * - Before: ~50 TPS per room (DB lock contention)
  * - After: ~10,000 TPS per room (Redis atomic operation)
  *
- * 특징:
+ * 주요 기능:
  * - Atomic increment로 동시성 제어
  * - TTL 설정으로 메모리 자동 관리
  * - 서버 재시작 시 DB와 동기화

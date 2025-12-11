@@ -275,13 +275,26 @@ public class ApiV1ChatController implements ApiChatController {
     @Profile({"dev", "local", "test"})  // 개발/로컬/테스트 환경에서만 활성화
     public CustomResponse<MessageResp> sendMessageForLoadTest(
             @AuthenticationPrincipal CustomUserDetails currentUser,
-            @Valid @RequestBody MessageReq request
+            @Valid @RequestBody MessageReq request,
+            @RequestParam(required = false) Long testSenderId,
+            @RequestParam(required = false) String testNickname
     ) {
+        Long senderId = currentUser != null ? currentUser.getId() : testSenderId;
+        String nickname = currentUser != null ? currentUser.getNickname() : testNickname;
+
+        if (senderId == null) {
+            // 부하 테스트 시 인증 없이 호출될 경우를 위한 기본값 설정 (또는 에러 처리)
+            // 여기서는 안전하게 에러를 던지거나, 테스트 편의를 위해 기본값 1L을 사용
+             senderId = 1L;
+             nickname = "UnknownUser";
+        }
+        if (nickname == null) nickname = "TestUser" + senderId;
+
         // 멤버 검증은 saveMessage 내부에서 수행됨
         MessageResp resp = chatMessageService.saveMessage(
                 request.roomId(),
-                currentUser.getId(),
-                currentUser.getNickname(),
+                senderId,
+                nickname,
                 request.content(),
                 request.messageType(),
                 request.chatRoomType(),

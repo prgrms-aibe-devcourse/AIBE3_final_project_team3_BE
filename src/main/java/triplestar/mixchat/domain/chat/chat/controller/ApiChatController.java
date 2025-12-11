@@ -139,7 +139,9 @@ public interface ApiChatController {
     @SignInInRequireResponse
     CustomResponse<MessageResp> sendMessageForLoadTest(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
-            @Valid @RequestBody MessageReq request
+            @Valid @RequestBody MessageReq request,
+            @RequestParam(required = false) Long testSenderId,
+            @RequestParam(required = false) String testNickname
     );
 
     @Operation(summary = "부하테스트 데이터 정리", description = "부하테스트로 생성된 모든 데이터를 일괄 삭제합니다. [LOAD_TEST] 태그가 있는 Group/AI 채팅방과 테스트 계정(1~100) 간의 Direct 채팅방을 삭제합니다.")

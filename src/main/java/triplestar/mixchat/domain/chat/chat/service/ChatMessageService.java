@@ -64,7 +64,7 @@ public class ChatMessageService {
             }
         }
 
-        // Sequence 생성 (Redis INCR 기반 - 고성능)
+        // Sequence 생성 (Redis INCR 기반)
         Long sequence = sequenceGenerator.generateSequence(roomId, chatRoomType);
 
         // 메시지 생성 및 저장
@@ -130,31 +130,22 @@ public class ChatMessageService {
             }
         }
 
-        // 6. 모든 멤버에게 채팅방 리스트 업데이트 알림 전송 (실시간 정렬용)
+        // 6. Topic Broadcast로 채팅방 리스트 업데이트 알림 전송 (모든 구독자에게 1회만 전송)
         String lastMessageAt = savedMessage.getCreatedAt().toString();
         String lastMessageContent = savedMessage.isTranslateEnabled() && savedMessage.getTranslatedContent() != null
                 ? savedMessage.getTranslatedContent()
                 : savedMessage.getContent();
 
-        // 각 멤버별로 unreadCount를 계산해서 개별 전송
-        allMembers.forEach(member -> {
-            // 해당 멤버의 안읽은 메시지 수 계산 (현재 sequence - 마지막 읽은 sequence)
-            long memberLastRead = member.getLastReadSequence();
-            int unreadCountForMember = (int) Math.max(0, sequence - memberLastRead);
+        RoomLastMessageUpdateResp updateResp = new RoomLastMessageUpdateResp(
+                roomId,
+                chatRoomType,
+                lastMessageAt,
+                sequence,  // latestSequence - 클라이언트가 unreadCount 계산에 사용
+                lastMessageContent
+        );
 
-            RoomLastMessageUpdateResp updateResp = new RoomLastMessageUpdateResp(
-                    roomId,
-                    chatRoomType,
-                    lastMessageAt,
-                    unreadCountForMember,
-                    lastMessageContent
-            );
-
-            chatNotificationService.sendRoomListUpdate(
-                    member.getMember().getId().toString(),
-                    updateResp
-            );
-        });
+        // Topic으로 Broadcast (모든 멤버가 구독 중)
+        chatNotificationService.sendRoomListUpdateBroadcast(updateResp);
 
         MessageResp response = MessageResp.withUnreadCount(savedMessage, senderNickname, unreadCount);
 

@@ -7,6 +7,8 @@ import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -40,6 +42,8 @@ import triplestar.mixchat.testutils.TestMemberFactory;
 @Import(PerformanceTestConfig.class)
 @Transactional
 class NPlusOneDetectionTest {
+
+    private static final Logger log = LoggerFactory.getLogger(NPlusOneDetectionTest.class);
 
     @Autowired
     private ChatMessageService chatMessageService;
@@ -102,9 +106,9 @@ class NPlusOneDetectionTest {
     @Test
     @DisplayName("N+1 문제 탐지 - 메시지 조회")
     void detectNPlusOneProblem_MessageRetrieval() {
-        System.out.println("\n" + "=".repeat(80));
-        System.out.println("🔍 N+1 Problem Detection - Message Retrieval (50 messages)");
-        System.out.println("=".repeat(80) + "\n");
+        log.info("\n" + "=".repeat(80));
+        log.info("🔍 N+1 Problem Detection - Message Retrieval (50 messages)");
+        log.info("=".repeat(80) + "\n");
 
         PerformanceMeasurement result = PerformanceMeasurement.measure(
             "Get Messages (50 records)",
@@ -128,15 +132,15 @@ class NPlusOneDetectionTest {
         result.printResult();
         
         // MongoDB 조회이므로 JPA N+1과는 다르게 쿼리 수가 적게 나와야 함 (1개)
-        System.out.println("Queries: " + result.getQueryCount());
+        log.info("Queries: " + result.getQueryCount());
     }
 
     @Test
     @DisplayName("N+1 문제 탐지 - 그룹 채팅방 참여 (멤버 목록 조회)")
     void detectNPlusOneProblem_JoinGroupRoom() {
-        System.out.println("\n" + "=".repeat(80));
-        System.out.println("🔍 N+1 Problem Detection - Join Group Room (20 members)");
-        System.out.println("=".repeat(80) + "\n");
+        log.info("\n" + "=".repeat(80));
+        log.info("🔍 N+1 Problem Detection - Join Group Room (20 members)");
+        log.info("=".repeat(80) + "\n");
 
         // 1. 테스트용 멤버 20명 추가 생성 및 저장
         List<Member> members = new ArrayList<>();
@@ -179,7 +183,7 @@ class NPlusOneDetectionTest {
         result.printResult();
 
         // 5. 분석
-        System.out.println("\n🔬 Analysis");
+        log.info("\n🔬 Analysis");
         // 최적화 된 경우: 
         // 1. 방 조회 
         // 2. 멤버 여부 확인
@@ -189,15 +193,15 @@ class NPlusOneDetectionTest {
         // 6. 전체 멤버 조회 (Fetch Join 사용시 1쿼리, 미사용시 1 + 20쿼리)
         // => 총 6~7개 내외여야 함.
         
-        System.out.printf("Expected queries (Optimized): < 10 queries%n");
-        System.out.printf("Actual queries: %d queries%n", result.getQueryCount());
+        log.info(String.format("Expected queries (Optimized): < 10 queries%n"));
+        log.info(String.format("Actual queries: %d queries%n", result.getQueryCount()));
 
         if (result.getQueryCount() > 15) {
-            System.out.println("❌ N+1 PROBLEM DETECTED! (Member list fetch without Join)");
-            System.out.println("   Solution: Use joinGroupRoom -> chatRoomMemberRepository.findAllByRoomIdsWithMember()");
+            log.info("❌ N+1 PROBLEM DETECTED! (Member list fetch without Join)");
+            log.info("   Solution: Use joinGroupRoom -> chatRoomMemberRepository.findAllByRoomIdsWithMember()");
         } else {
-            System.out.println("✅ OPTIMIZED or Low impact");
+            log.info("✅ OPTIMIZED or Low impact");
         }
-        System.out.println("=".repeat(80) + "\n");
+        log.info("=".repeat(80) + "\n");
     }
 }

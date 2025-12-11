@@ -83,11 +83,6 @@ public class GroupChatRoom extends BaseEntity {
         }
     }
 
-    // 다음 sequence 번호 생성, 락 추가로 synchronized는 필요 없을듯해 제거
-    public Long generateNextSequence() {
-        return ++this.currentSequence;
-    }
-
     // 비밀번호 변경
     public void updatePassword(String newPassword) {
         if (newPassword == null || newPassword.trim().isEmpty()) {

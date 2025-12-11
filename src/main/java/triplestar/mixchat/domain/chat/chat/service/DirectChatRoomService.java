@@ -133,7 +133,7 @@ public class DirectChatRoomService {
                                     : msg.getContent())
                             .orElse(null);
 
-                    return DirectChatRoomResp.from(room, unreadCount, lastMessageContent);
+                    return DirectChatRoomResp.from(room, unreadCount, lastRead, lastMessageContent);
                 })
                 .collect(Collectors.toList());
     }

@@ -13,6 +13,8 @@ import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -53,6 +55,8 @@ import triplestar.mixchat.performance.chat.util.PerformanceMeasurement;
 @Import(PerformanceTestConfig.class)
 @Transactional
 class BulkUpdatePerformanceTest {
+
+    private static final Logger log = LoggerFactory.getLogger(BulkUpdatePerformanceTest.class);
 
     @Autowired
     private ChatRoomMemberRepository chatRoomMemberRepository;
@@ -130,9 +134,9 @@ class BulkUpdatePerformanceTest {
      * Bulk Update 성능 측정 헬퍼 메서드
      */
     private void testBulkUpdatePerformance(String testName, int memberCount) {
-        System.out.println("\n" + "=".repeat(80));
-        System.out.printf("🔧 Bulk Update Performance Test - %s%n", testName);
-        System.out.println("=".repeat(80) + "\n");
+        log.info("\n" + "=".repeat(80));
+        log.info(String.format("🔧 Bulk Update Performance Test - %s", testName));
+        log.info("=".repeat(80) + "\n");
 
         // 1. 멤버 생성 및 채팅방 참가
         List<Member> members = createMembers(memberCount);
@@ -151,7 +155,7 @@ class BulkUpdatePerformanceTest {
         entityManager.flush();
         entityManager.clear();
 
-        System.out.printf("✅ Created %d members and added to chat room%n%n", memberCount);
+        log.info(String.format("✅ Created %d members and added to chat room%n", memberCount));
 
         // 2. Bulk Update 성능 측정
         Long targetSequence = 1000L;
@@ -169,35 +173,35 @@ class BulkUpdatePerformanceTest {
                     now
                 );
 
-                System.out.printf("📝 Updated %d records%n", updated);
+                log.info(String.format("📝 Updated %d records", updated));
             }
         );
 
         result.printResult();
 
         // 3. 성능 분석
-        System.out.println("\n📊 Performance Analysis");
-        System.out.println("=".repeat(80));
-        System.out.printf("Members updated   : %d%n", memberCount);
-        System.out.printf("Time per member   : %.2f ms%n",
-            (double) result.getExecutionTimeMs() / memberCount);
-        System.out.printf("Throughput        : %.2f updates/sec%n",
-            (double) memberCount / result.getExecutionTimeMs() * 1000);
+        log.info("\n📊 Performance Analysis");
+        log.info("=".repeat(80));
+        log.info(String.format("Members updated   : %d", memberCount));
+        log.info(String.format("Time per member   : %.2f ms",
+            (double) result.getExecutionTimeMs() / memberCount));
+        log.info(String.format("Throughput        : %.2f updates/sec",
+            (double) memberCount / result.getExecutionTimeMs() * 1000));
 
         // 성능 기준
         long acceptableTime = memberCount < 100 ? 100 : memberCount;
         if (result.getExecutionTimeMs() < acceptableTime) {
-            System.out.println("\n✅ EXCELLENT - Bulk update is efficient");
+            log.info("\n✅ EXCELLENT - Bulk update is efficient");
         } else if (result.getExecutionTimeMs() < acceptableTime * 2) {
-            System.out.println("\n⚠️  ACCEPTABLE - Consider optimization for larger scale");
+            log.info("\n⚠️  ACCEPTABLE - Consider optimization for larger scale");
         } else {
-            System.out.println("\n❌ POOR - Optimization required");
-            System.out.println("   Suggestions:");
-            System.out.println("   - Check index on (chat_room_id, chat_room_type, member_id)");
-            System.out.println("   - Consider batch size optimization");
+            log.info("\n❌ POOR - Optimization required");
+            log.info("   Suggestions:");
+            log.info("   - Check index on (chat_room_id, chat_room_type, member_id)");
+            log.info("   - Consider batch size optimization");
         }
 
-        System.out.println("=".repeat(80) + "\n");
+        log.info("=".repeat(80) + "\n");
 
         // 검증
         assertThat(result.getQueryCount())
@@ -208,9 +212,9 @@ class BulkUpdatePerformanceTest {
     @Test
     @DisplayName("개별 UPDATE vs Bulk UPDATE 비교")
     void compareSingleUpdateVsBulkUpdate() {
-        System.out.println("\n" + "=".repeat(80));
-        System.out.println("⚖️  Single UPDATE vs Bulk UPDATE Comparison (100 members)");
-        System.out.println("=".repeat(80) + "\n");
+        log.info("\n" + "=".repeat(80));
+        log.info("⚖️  Single UPDATE vs Bulk UPDATE Comparison (100 members)");
+        log.info("=".repeat(80) + "\n");
 
         int memberCount = 100;
         List<Member> members = createMembers(memberCount);
@@ -297,8 +301,8 @@ class BulkUpdatePerformanceTest {
         // 2. 부족한 멤버 동적 생성
         int neededCount = count - foundFlywayUsers;
         if (neededCount > 0) {
-            System.out.printf("⚠️  Flyway users found: %d, Creating %d additional members%n",
-                foundFlywayUsers, neededCount);
+            log.info(String.format("⚠️  Flyway users found: %d, Creating %d additional members",
+                foundFlywayUsers, neededCount));
 
             for (int i = 0; i < neededCount; i++) {
                 String email = String.format("perf-test-%d@test.com", i + 1);
@@ -320,7 +324,7 @@ class BulkUpdatePerformanceTest {
             }
 
             entityManager.flush();
-            System.out.printf("✅ Dynamic member creation completed (Total: %d members)%n%n", members.size());
+            log.info(String.format("✅ Dynamic member creation completed (Total: %d members)%n", members.size()));
         }
 
         return members;

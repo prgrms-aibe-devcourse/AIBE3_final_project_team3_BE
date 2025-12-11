@@ -86,7 +86,7 @@ public class AiTranslationService {
     }
 
     private void notifyClientOfUpdate(ChatMessage updatedMessage) {
-        String destination = String.format("/topic/%s/rooms/%d",
+        String destination = String.format("/topic/%s.rooms.%d",
                 updatedMessage.getChatRoomType().name().toLowerCase(),
                 updatedMessage.getChatRoomId());
 

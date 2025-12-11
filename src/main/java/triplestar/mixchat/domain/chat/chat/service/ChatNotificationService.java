@@ -22,12 +22,11 @@ public class ChatNotificationService {
         log.debug("Message sent to destination={}: {}", destination, messageResp.id());
     }
 
-    // 특정 사용자에게 채팅방 목록 갱신 정보 전송 (읽지 않은 메시지 수 등)
-    public void sendRoomListUpdate(String memberId, RoomLastMessageUpdateResp updateResp) {
-        messagingTemplate.convertAndSendToUser(
-                memberId,
-                "/queue/rooms/update",
-                updateResp
-        );
+    // 모든 구독자에게 채팅방 목록 갱신 정보 Broadcast
+    public void sendRoomListUpdateBroadcast(RoomLastMessageUpdateResp updateResp) {
+        String destination = "/topic/room-list-updates";
+        messagingTemplate.convertAndSend(destination, updateResp);
+        log.debug("Room list update broadcast to destination={}: roomId={}, sequence={}",
+                destination, updateResp.roomId(), updateResp.latestSequence());
     }
 }

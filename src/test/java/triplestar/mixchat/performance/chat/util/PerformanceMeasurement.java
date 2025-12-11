@@ -1,12 +1,16 @@
 package triplestar.mixchat.performance.chat.util;
 
 import org.hibernate.stat.Statistics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StopWatch;
 
 /**
  * 성능 측정 결과를 담는 클래스
  */
 public class PerformanceMeasurement {
+
+    private static final Logger log = LoggerFactory.getLogger(PerformanceMeasurement.class);
 
     private final String testName;
     private final long executionTimeMs;
@@ -55,14 +59,14 @@ public class PerformanceMeasurement {
      * 측정 결과 출력 (콘솔)
      */
     public void printResult() {
-        System.out.println("=".repeat(80));
-        System.out.println("Performance Test: " + testName);
-        System.out.println("=".repeat(80));
-        System.out.printf("⏱️  Total Execution Time : %,d ms%n", executionTimeMs);
-        System.out.printf("🔍 Total Query Count    : %,d queries%n", queryCount);
-        System.out.printf("⚡ Max Query Time       : %,d ms%n", queryExecutionMaxTime);
-        System.out.printf("🔌 DB Connection Count  : %,d connections%n", connectionCount);
-        System.out.println("=".repeat(80));
+        log.info("=".repeat(80));
+        log.info("Performance Test: {}", testName);
+        log.info("=".repeat(80));
+        log.info(String.format("⏱️  Total Execution Time : %,d ms", executionTimeMs));
+        log.info(String.format("🔍 Total Query Count    : %,d queries", queryCount));
+        log.info(String.format("⚡ Max Query Time       : %,d ms", queryExecutionMaxTime));
+        log.info(String.format("🔌 DB Connection Count  : %,d connections", connectionCount));
+        log.info("=".repeat(80));
     }
 
     /**
@@ -70,54 +74,57 @@ public class PerformanceMeasurement {
      */
     public static void compareResults(PerformanceMeasurement before,
                                       PerformanceMeasurement after) {
-        System.out.println("=".repeat(80));
-        System.out.println("Performance Comparison: " + before.testName + " vs " + after.testName);
-        System.out.println("=".repeat(80));
+        log.info("=".repeat(80));
+        log.info("Performance Comparison: {} vs {}", before.testName, after.testName);
+        log.info("=".repeat(80));
 
         // 실행 시간 비교
         long timeDiff = before.executionTimeMs - after.executionTimeMs;
         double timeImprovement = ((double) timeDiff / before.executionTimeMs) * 100;
-        System.out.printf("⏱️  Execution Time%n");
-        System.out.printf("   Before: %,d ms%n", before.executionTimeMs);
-        System.out.printf("   After : %,d ms%n", after.executionTimeMs);
-        System.out.printf("   Diff  : %,d ms (%.1f%% %s)%n%n",
+        log.info("⏱️  Execution Time");
+        log.info(String.format("   Before: %,d ms", before.executionTimeMs));
+        log.info(String.format("   After : %,d ms", after.executionTimeMs));
+        log.info(String.format("   Diff  : %,d ms (%.1f%% %s)",
             Math.abs(timeDiff),
             Math.abs(timeImprovement),
-            timeImprovement > 0 ? "FASTER ⚡" : "SLOWER ⚠️");
+            timeImprovement > 0 ? "FASTER ⚡" : "SLOWER ⚠️"));
+        log.info(""); // Empty line for spacing
 
         // 쿼리 수 비교
         long queryDiff = before.queryCount - after.queryCount;
         double queryImprovement = before.queryCount > 0
             ? ((double) queryDiff / before.queryCount) * 100
             : 0;
-        System.out.printf("🔍 Query Count%n");
-        System.out.printf("   Before: %,d queries%n", before.queryCount);
-        System.out.printf("   After : %,d queries%n", after.queryCount);
-        System.out.printf("   Diff  : %,d queries (%.1f%% %s)%n%n",
+        log.info("🔍 Query Count");
+        log.info(String.format("   Before: %,d queries", before.queryCount));
+        log.info(String.format("   After : %,d queries", after.queryCount));
+        log.info(String.format("   Diff  : %,d queries (%.1f%% %s)",
             Math.abs(queryDiff),
             Math.abs(queryImprovement),
-            queryImprovement > 0 ? "REDUCED ✅" : "INCREASED ⚠️");
+            queryImprovement > 0 ? "REDUCED ✅" : "INCREASED ⚠️"));
+        log.info(""); // Empty line for spacing
 
         // 최대 쿼리 시간 비교
         long maxQueryDiff = before.queryExecutionMaxTime - after.queryExecutionMaxTime;
-        System.out.printf("⚡ Max Query Time%n");
-        System.out.printf("   Before: %,d ms%n", before.queryExecutionMaxTime);
-        System.out.printf("   After : %,d ms%n", after.queryExecutionMaxTime);
-        System.out.printf("   Diff  : %,d ms%n%n", Math.abs(maxQueryDiff));
+        log.info("⚡ Max Query Time");
+        log.info(String.format("   Before: %,d ms", before.queryExecutionMaxTime));
+        log.info(String.format("   After : %,d ms", after.queryExecutionMaxTime));
+        log.info(String.format("   Diff  : %,d ms", Math.abs(maxQueryDiff)));
+        log.info(""); // Empty line for spacing
 
         // 종합 평가
-        System.out.println("📊 Overall Assessment");
+        log.info("📊 Overall Assessment");
         if (timeImprovement > 0 && queryImprovement >= 0) {
-            System.out.println("   ✅ PERFORMANCE IMPROVED!");
-            System.out.printf("   💡 %.1fx faster execution%n",
-                (double) before.executionTimeMs / after.executionTimeMs);
+            log.info("   ✅ PERFORMANCE IMPROVED!");
+            log.info(String.format("   💡 %.1fx faster execution",
+                (double) before.executionTimeMs / after.executionTimeMs));
         } else if (timeImprovement < -50) {
-            System.out.println("   ⚠️  PERFORMANCE DEGRADED SIGNIFICANTLY");
+            log.info("   ⚠️  PERFORMANCE DEGRADED SIGNIFICANTLY");
         } else {
-            System.out.println("   ⚖️  PERFORMANCE SIMILAR");
+            log.info("   ⚖️  PERFORMANCE SIMILAR");
         }
 
-        System.out.println("=".repeat(80));
+        log.info("=".repeat(80));
     }
 
     // Getters
