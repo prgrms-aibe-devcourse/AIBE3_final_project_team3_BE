@@ -108,10 +108,7 @@ management:
         http.server.requests: true
 
 cors:
-  allowed-origins:
-    - "http://localhost:3000"      # 로컬 개발용 (React/Vue 등)
-    - "https://mixchat.site"       # 실제 프론트엔드 배포 주소
-    - "https://www.mixchat.site"   # (필요시) www 포함 주소
+  allowed-origins: "http://localhost:3000,https://mixchat.site,https://www.mixchat.site"
 
 server:
   port: 8080
