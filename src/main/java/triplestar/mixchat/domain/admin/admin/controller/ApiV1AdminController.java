@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import triplestar.mixchat.domain.admin.admin.dto.AdminPostDeleteRequest;
-import triplestar.mixchat.domain.admin.admin.dto.AdminPostDeleteResponse;
+import triplestar.mixchat.domain.admin.admin.dto.AdminPostDeleteReq;
+import triplestar.mixchat.domain.admin.admin.dto.AdminPostDeleteResp;
 import triplestar.mixchat.domain.admin.admin.dto.AdminReportListResp;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateReq;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateResp;
@@ -111,10 +111,10 @@ public class ApiV1AdminController implements  ApiAdminController {
 
     @Override
     @DeleteMapping("/posts/{postId}")
-    public CustomResponse<AdminPostDeleteResponse> deletePost(
+    public CustomResponse<AdminPostDeleteResp> deletePost(
             @AuthenticationPrincipal CustomUserDetails admin,
             @PathVariable Long postId,
-            @RequestBody AdminPostDeleteRequest request
+            @RequestBody AdminPostDeleteReq request
     ) {
         adminPostService.deletePostByAdmin(admin.getId(), postId, request.reasonCode());
         return CustomResponse.ok("게시글 삭제 완료", null);

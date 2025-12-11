@@ -11,8 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
-import triplestar.mixchat.domain.admin.admin.dto.AdminPostDeleteRequest;
-import triplestar.mixchat.domain.admin.admin.dto.AdminPostDeleteResponse;
+import triplestar.mixchat.domain.admin.admin.dto.AdminPostDeleteReq;
+import triplestar.mixchat.domain.admin.admin.dto.AdminPostDeleteResp;
 import triplestar.mixchat.domain.admin.admin.dto.AdminReportListResp;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateReq;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateResp;
@@ -94,9 +94,9 @@ public interface ApiAdminController {
     // --- 8. 게시글 삭제 (DELETE / posts/{roomId}) ---
     @Operation(summary = "관리자 게시글 삭제", description = "관리자가 게시글을 삭제합니다.")
     @SecurityRequireResponse
-    CustomResponse<AdminPostDeleteResponse> deletePost(
+    CustomResponse<AdminPostDeleteResp> deletePost(
             @AuthenticationPrincipal CustomUserDetails admin,
             @PathVariable Long postId,
-            @Valid AdminPostDeleteRequest request
+            @Valid AdminPostDeleteReq request
     );
 }
