@@ -13,7 +13,7 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
         FROM Feedback f
         JOIN FETCH f.learningNote n
         WHERE n.member.id = :memberId
-        AND (:tag = 'ALL' OR f.tag = :tag)
+        AND (:tag IS NULL OR f.tag = :tag)
         AND (:isMarked IS NULL OR f.marked = :isMarked)
     """)
     Page<Feedback> findFeedbacksByMember(
