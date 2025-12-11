@@ -1,8 +1,8 @@
 package triplestar.mixchat.domain.ai.systemprompt.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackReq;
@@ -13,46 +13,85 @@ import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackResp;
 public class AiFeedbackService {
 
     private final ChatClient chatClient;
-    private final BeanOutputConverter<AiFeedbackResp> converter;
+    private final ObjectMapper objectMapper;
 
-    public AiFeedbackService(@Qualifier("openai") ChatClient chatClient) {
+    // OpenAI 사용 (성능 및 JSON 포맷 준수 우수)
+    public AiFeedbackService(@Qualifier("openai") ChatClient chatClient, ObjectMapper objectMapper) {
         this.chatClient = chatClient;
-        this.converter = new BeanOutputConverter<>(AiFeedbackResp.class);
+        this.objectMapper = objectMapper;
     }
 
-    private static final String SYSTEM_PROMPT_TEMPLATE = """
-        You are an expert English language tutor.
-        Your task is to correct the user's English sentence to be more natural and grammatically correct, considering the intended meaning (Context).
-
-        INPUT:
-        - Original: The sentence written by the user (may contain errors).
-        - Context: The intended meaning (usually in the user's native language, e.g., Korean) or a translation.
-
-        INSTRUCTIONS:
-        1. Analyze the 'Original' sentence against the 'Context'.
-        2. Generate a 'correctedContent' version of the sentence that is natural and accurate English.
-        3. Provide a list of specific feedback items explaining the errors or improvements.
-        4. For the 'tag' field in feedback, use one of: GRAMMAR, VOCABULARY, TRANSLATION, EXPRESSION.
-        5. The 'extra' explanation MUST be written in KOREAN.
-
-        {format}
+    private static final String SYSTEM_PROMPT = """
+            You are an expert English tutor.
+              Given Original (user sentence, may include Korean) and Translated (intended meaning),
+              return ONLY valid JSON matching:
+              {
+                "correctedContent": "Corrected English sentence",
+                "feedback": [
+                  {
+                    "tag": "GRAMMAR" | "VOCABULARY" | "TRANSLATION",
+                    "problem": "...",
+                    "correction": "...",
+                    "extra": "Korean explanation"
+                  }
+                ]
+              }
+              Do not add Markdown fences or extra text. 
+              Example output:
+              {
+                "correctedContent": "I will eat bread tomorrow, and it has to be delicious!",
+                "feedback": [
+                  {
+                    "tag": "GRAMMAR",
+                    "problem": "I eat",
+                    "correction": "I will eat",
+                    "extra": "미래 시제는 will을 사용해 주세요."
+                  },
+                  {
+                    "tag": "VOCABULARY",
+                    "problem": "tommorow",
+                    "correction": "tomorrow",
+                    "extra": "철자가 잘못되었습니다."
+                  },
+                  {
+                    "tag": "TRANSLATION",
+                    "problem": "빵",
+                    "correction": "bread",
+                    "extra": "빵은 영어로 bread입니다."
+                  }
+                ]
+              }
         """;
 
     public AiFeedbackResp analyze(AiFeedbackReq req) {
-        String userMessage = String.format("Original: %s\nContext: %s", req.originalContent(), req.translatedContent());
+        String userMessage = String.format("Original: %s\nTranslated: %s", req.originalContent(), req.translatedContent());
+        int maxRetries = 3;
 
-        try {
-            return chatClient.prompt()
-                    .system(sp -> sp.text(SYSTEM_PROMPT_TEMPLATE)
-                            .param("format", converter.getFormat())) // JSON 포맷 강제
-                    .user(userMessage)
-                    .call()
-                    .entity(AiFeedbackResp.class); // 자동 변환
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                String response = chatClient.prompt()
+                        .system(SYSTEM_PROMPT)
+                        .user(userMessage)
+                        .call()
+                        .content();
 
-        } catch (Exception e) {
-            log.error("AI 피드백 생성 중 오류 발생: {}", e.getMessage(), e);
-            throw new IllegalStateException("AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.", e);
+                if (response == null || response.isBlank()) {
+                    throw new IllegalStateException("AI 응답이 비어있습니다.");
+                }
+
+                // JSON 파싱 (Markdown 코드 블록 제거 처리)
+                String json = response.replaceAll("```json", "").replaceAll("```", "").trim();
+
+                return objectMapper.readValue(json, AiFeedbackResp.class);
+
+            } catch (Exception e) {
+                log.error("AI 분석 실패 (시도 {}/{}): {}", attempt, maxRetries, e.getMessage());
+                if (attempt == maxRetries) {
+                    throw new IllegalStateException("AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.", e);
+                }
+            }
         }
+
+        throw new IllegalStateException("AI 분석에 실패했습니다.");
     }
 }
-

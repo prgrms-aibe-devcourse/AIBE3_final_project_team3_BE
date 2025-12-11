@@ -79,4 +79,16 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long
 
     // 방 ID와 대화방 타입으로 해당 방 정보 삭제
     void deleteByChatRoomIdAndChatRoomType(Long roomId, ChatRoomType roomType);
+
+    // 특정 멤버의 특정 타입 채팅방들에 대한 lastReadSequence를 한번에 조회 (Batch Query)
+    @Query("""
+        SELECT cm.chatRoomId, cm.lastReadSequence
+        FROM ChatMember cm
+        WHERE cm.member.id = :memberId
+        AND cm.chatRoomType = :chatRoomType
+        """)
+    List<Object[]> findLastReadSequencesByMemberAndRoomType(
+        @Param("memberId") Long memberId,
+        @Param("chatRoomType") ChatRoomType chatRoomType
+    );
 }

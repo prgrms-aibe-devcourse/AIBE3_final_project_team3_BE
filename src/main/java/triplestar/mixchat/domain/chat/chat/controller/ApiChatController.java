@@ -21,6 +21,7 @@ import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomSummaryResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
@@ -79,7 +80,7 @@ public interface ApiChatController {
 
     @Operation(summary = "자신의 그룹 채팅방 목록 조회", description = "현재 로그인한 사용자가 참여하고 있는 모든 그룹 채팅방의 목록을 반환합니다.")
     @SignInInRequireResponse
-    CustomResponse<List<GroupChatRoomResp>> getGroupChatRooms(
+    CustomResponse<List<GroupChatRoomSummaryResp>> getGroupChatRooms(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 

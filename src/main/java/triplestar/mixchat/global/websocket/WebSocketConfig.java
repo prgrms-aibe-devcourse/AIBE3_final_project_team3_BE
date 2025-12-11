@@ -2,6 +2,8 @@ package triplestar.mixchat.global.websocket;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -12,35 +14,13 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
+@EnableConfigurationProperties(WebSocketConfig.StompProperties.class)
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Value("${cors.allowed-origins}")
     private String[] allowedOrigins;
 
-    @Value("${spring.rabbitmq.stomp.relay-host}")
-    private String relayHost;
-
-    @Value("${spring.rabbitmq.stomp.relay-port}")
-    private int relayPort;
-
-    @Value("${spring.rabbitmq.stomp.client-login}")
-    private String clientLogin;
-
-    @Value("${spring.rabbitmq.stomp.client-passcode}")
-    private String clientPasscode;
-
-    @Value("${spring.rabbitmq.stomp.system-login}")
-    private String systemLogin;
-
-    @Value("${spring.rabbitmq.stomp.system-passcode}")
-    private String systemPasscode;
-
-    @Value("${spring.rabbitmq.stomp.system-heartbeat-send-interval}")
-    private long systemHeartbeatSendInterval;
-
-    @Value("${spring.rabbitmq.stomp.system-heartbeat-receive-interval}")
-    private long systemHeartbeatReceiveInterval;
-
+    private final StompProperties stompProperties;
     private final StompHandler stompHandler;
 
     @Override
@@ -54,14 +34,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         // RabbitMQ STOMP Relay 설정 (수평 확장 지원)
         registry.enableStompBrokerRelay("/topic", "/queue", "/exchange")
-                .setRelayHost(relayHost)    // RabbitMQ 호스트 주소
-                .setRelayPort(relayPort)    // STOMP 포트
-                .setClientLogin(clientLogin)    // 클라이언트 로그인
-                .setClientPasscode(clientPasscode)
-                .setSystemLogin(systemLogin)    // 시스템 관리자 로그인
-                .setSystemPasscode(systemPasscode)
-                .setSystemHeartbeatSendInterval(systemHeartbeatSendInterval)    //일정 시간마다 heartbeat 전송
-                .setSystemHeartbeatReceiveInterval(systemHeartbeatReceiveInterval); // 일정 시간마다 heartbeat 수신 확인
+                .setRelayHost(stompProperties.relayHost())    // RabbitMQ 호스트 주소
+                .setRelayPort(stompProperties.relayPort())    // STOMP 포트
+                .setClientLogin(stompProperties.clientLogin())    // 클라이언트 로그인
+                .setClientPasscode(stompProperties.clientPasscode())
+                .setSystemLogin(stompProperties.systemLogin())    // 시스템 관리자 로그인
+                .setSystemPasscode(stompProperties.systemPasscode())
+                .setSystemHeartbeatSendInterval(stompProperties.systemHeartbeatSendInterval())    //일정 시간마다 heartbeat 전송
+                .setSystemHeartbeatReceiveInterval(stompProperties.systemHeartbeatReceiveInterval()); // 일정 시간마다 heartbeat 수신 확인
 
         // 클라이언트에서 서버로 메시지를 보낼 때 사용하는 프리픽스를 설정
         // 예를 들어, 클라이언트는 /app/chat.sendMessage 와 같은 경로로 메시지를 전송
@@ -76,4 +56,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // StompHandler(인증/인가 처리)
         registration.interceptors(stompHandler);
     }
+
+    @ConfigurationProperties(prefix = "spring.rabbitmq.stomp")
+    public record StompProperties(
+            String relayHost,
+            int relayPort,
+            String clientLogin,
+            String clientPasscode,
+            String systemLogin,
+            String systemPasscode,
+            long systemHeartbeatSendInterval,
+            long systemHeartbeatReceiveInterval
+    ) {}
 }

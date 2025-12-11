@@ -112,9 +112,11 @@ public class ChatMessageService {
                 .filter(member -> member.hasNotRead(sequence))
                 .count();
 
-        // 5. 알림 이벤트 (구독 중이지 않은 사람들에게만)
-        List<ChatMember> roomMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_IdNot(roomId, chatRoomType, senderId);
-        for (ChatMember receiver : roomMembers) {
+        // 알림 이벤트 (구독 중이지 않은 사람들에게만, 발신자 제외)
+        for (ChatMember receiver : allMembers) {
+            if (receiver.getMember().getId().equals(senderId)) {
+                continue;
+            }
             if (subscriberCacheService.isSubscribed(roomId, receiver.getMember().getId())) {
                 continue;
             }

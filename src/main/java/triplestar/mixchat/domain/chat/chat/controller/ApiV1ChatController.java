@@ -2,6 +2,7 @@ package triplestar.mixchat.domain.chat.chat.controller;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
@@ -27,13 +28,17 @@ import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomPublicResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomSummaryResp;
 import triplestar.mixchat.domain.chat.chat.dto.InviteGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.JoinGroupChatReq;
+import triplestar.mixchat.domain.chat.chat.dto.JoinRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.TransferOwnerReq;
+import triplestar.mixchat.domain.chat.chat.dto.UpdateGroupChatPasswordReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.service.AIChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
@@ -42,11 +47,8 @@ import triplestar.mixchat.domain.chat.chat.service.DirectChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.GroupChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.LoadTestCleanupService;
 import triplestar.mixchat.global.response.CustomResponse;
-import java.util.Map;
 import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.global.security.CustomUserDetails;
-
-import triplestar.mixchat.domain.chat.chat.dto.UpdateGroupChatPasswordReq;
 
 @RestController
 @RequiredArgsConstructor
@@ -128,30 +130,30 @@ public class ApiV1ChatController implements ApiChatController {
 
     @Override
     @GetMapping("/rooms/group")
-    public CustomResponse<List<GroupChatRoomResp>> getGroupChatRooms(
+    public CustomResponse<List<GroupChatRoomSummaryResp>> getGroupChatRooms(
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        List<GroupChatRoomResp> rooms = groupChatRoomService.getRoomsForUser(currentUser.getId());
+        List<GroupChatRoomSummaryResp> rooms = groupChatRoomService.getRoomsForUser(currentUser.getId());
         return CustomResponse.ok("사용자가 속한 그룹 채팅방 목록 조회에 성공하였습니다.", rooms);
     }
 
     // todo: 비밀번호 걸린 방도 public 조회는 혼동 여지 존재. 위를 me로 바꾸고 아래를 group으로 고려
     @GetMapping("/rooms/group/public")
-    public CustomResponse<List<GroupChatRoomResp>> getPublicGroupChatRooms(
+    public CustomResponse<List<GroupChatRoomPublicResp>> getPublicGroupChatRooms(
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        List<GroupChatRoomResp> rooms = groupChatRoomService.getGroupPublicRooms(currentUser.getId());
+        List<GroupChatRoomPublicResp> rooms = groupChatRoomService.getGroupPublicRooms(currentUser.getId());
         return CustomResponse.ok("공개 그룹 채팅방 목록 조회에 성공하였습니다.", rooms);
     }
 
     @PostMapping("/rooms/group/{roomId}/join")
-    public CustomResponse<GroupChatRoomResp> joinGroupRoom(
+    public CustomResponse<JoinRoomResp> joinGroupRoom(
             @PathVariable("roomId") Long roomId,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody(required = false) JoinGroupChatReq request
     ) {
         String password = request != null ? request.password() : null;
-        GroupChatRoomResp roomResp = groupChatRoomService.joinGroupRoom(roomId, currentUser.getId(), password);
+        JoinRoomResp roomResp = groupChatRoomService.joinGroupRoom(roomId, currentUser.getId(), password);
         return CustomResponse.ok("그룹 채팅방 참가에 성공하였습니다.", roomResp);
     }
 

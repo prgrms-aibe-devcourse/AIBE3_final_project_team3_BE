@@ -13,11 +13,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
+import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomPublicResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomSummaryResp;
+import triplestar.mixchat.domain.chat.chat.dto.JoinRoomResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.GroupChatRoom;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
@@ -27,7 +31,6 @@ import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.global.cache.ChatAuthCacheService;
 import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 @RequiredArgsConstructor
@@ -160,57 +163,36 @@ public class GroupChatRoomService {
 
 
     @Transactional
-    public GroupChatRoomResp joinGroupRoom(Long roomId, Long userId, String password) {
-        // 1. 채팅방 존재 여부 확인
+    public JoinRoomResp joinGroupRoom(Long roomId, Long userId, String password) {
+        // 채팅방 존재 여부 확인
         GroupChatRoom room = groupChatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다. ID: " + roomId));
 
-        // 2. 이미 참가한 회원인지 확인
+        // 이미 참가한 회원인지 확인
         boolean alreadyMember = chatRoomMemberRepository.existsByChatRoomIdAndChatRoomTypeAndMember_Id(
                 roomId, ChatRoomType.GROUP, userId);
         if (alreadyMember) {
             throw new IllegalStateException("이미 참가한 채팅방입니다.");
         }
 
-        // 3. 비밀번호 검증
+        // 비밀번호 검증
         room.verifyPassword(password, passwordEncoder);
 
-        // 4. 회원 조회
+        // 회원 조회
         Member member = findMemberById(userId);
 
-        // 5. ChatMember 추가
+        // ChatMember 추가
         ChatMember newMember = new ChatMember(member, roomId, ChatRoomType.GROUP);
         chatRoomMemberRepository.save(newMember);
 
-        // 6. 캐시에 추가
+        // 캐시에 추가
         chatAuthCacheService.addMember(roomId, userId);
 
-        // 7. 응답 생성 (해당 방의 모든 멤버 정보 포함)
-        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, ChatRoomType.GROUP);
-        
-        // 친구 목록 조회
-        // NOTE : 메소드 type 변환으로 인한 임시 처리
-        Page<Member> friendsByMemberId = friendshipRepository.findFriendsByMemberId(userId, Pageable.ofSize(500));
-        Page<Long> friendIdPage = friendsByMemberId.map(Member::getId);
-        Set<Long> friendIdSet = new HashSet<>(friendIdPage.getContent());
-
-        GroupChatRoomResp roomDto = GroupChatRoomResp.from(room, allMembers, userId, friendIdSet, 0L, null);
-
-        // 8. 시스템 메시지 전송 (새 멤버 입장 알림)
+        // 시스템 메시지 전송 및 멤버 업데이트 브로드캐스트
         systemMessageService.sendJoinMessage(roomId, member.getNickname(), ChatRoomType.GROUP);
-        // 멤버 업데이트 브로드캐스트
         chatMemberService.broadcastMemberUpdate(roomId, ChatRoomType.GROUP, member, "JOIN");
 
-        // 9. WebSocket으로 방의 모든 멤버에게 알림 (방 정보 업데이트)
-        allMembers.forEach(cm -> {
-            messagingTemplate.convertAndSendToUser(
-                    cm.getMember().getId().toString(),
-                    "/queue/rooms/update",
-                    roomDto
-            );
-        });
-
-        return roomDto;
+        return JoinRoomResp.of(roomId);
     }
 
     @Transactional
@@ -261,15 +243,16 @@ public class GroupChatRoomService {
     }
 
     // 사용자가 속해있는 그룹채팅방 조회(chat 페이지 용도)
-    public List<GroupChatRoomResp> getRoomsForUser(Long currentUserId) {
+    // Summary DTO 사용 (친구 조회 제거, Batch Query 사용)
+    public List<GroupChatRoomSummaryResp> getRoomsForUser(Long currentUserId) {
         List<GroupChatRoom> rooms = groupChatRoomRepository.findAllByMemberId(currentUserId);
-        return convertToRoomResponses(rooms, currentUserId);
+        return convertToRoomSummaries(rooms, currentUserId);
     }
 
-    // 기존에 만들어진 그룹채팅방 조회(find 페이지의 Groups 탭 용도)
-    public List<GroupChatRoomResp> getGroupPublicRooms(Long currentUserId) {
+    // 공개 그룹 채팅방 목록 조회 (Find 페이지용)
+    public List<GroupChatRoomPublicResp> getGroupPublicRooms(Long currentUserId) {
         List<GroupChatRoom> rooms = groupChatRoomRepository.findPublicRoomsExcludingMemberId(currentUserId);
-        return convertToRoomResponses(rooms, currentUserId);
+        return convertToPublicRoomSummaries(rooms);
     }
 
     @Transactional
@@ -415,6 +398,73 @@ public class GroupChatRoomService {
                             lastRead,
                             lastMessageContent
                     );
+                })
+                .collect(Collectors.toList());
+    }
+
+    // 그룹채팅방 리스트에 최적화된 목록 변환 (Summary DTO 사용 - 친구 조회 제거, Batch Query 사용)
+    private List<GroupChatRoomSummaryResp> convertToRoomSummaries(List<GroupChatRoom> rooms, Long currentUserId) {
+        if (rooms.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 1. 모든 방의 ID 수집
+        List<Long> roomIds = rooms.stream()
+                .map(GroupChatRoom::getId)
+                .collect(Collectors.toList());
+
+        // 2. Batch Query: 현재 사용자의 모든 그룹 채팅방 lastReadSequence를 한번에 조회
+        List<Object[]> lastReadSequenceResults = chatRoomMemberRepository
+                .findLastReadSequencesByMemberAndRoomType(currentUserId, ChatRoomType.GROUP);
+
+        Map<Long, Long> lastReadSequenceMap = lastReadSequenceResults.stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],  // chatRoomId
+                        row -> row[1] != null ? (Long) row[1] : 0L  // lastReadSequence (null-safe)
+                ));
+
+        // 3. Batch Query: 모든 방의 최신 메시지 내용을 한번에 조회 (MongoDB Aggregation)
+        List<triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent> latestMessages
+                = chatMessageRepository.findLatestMessageContentByRoomIds(roomIds, ChatRoomType.GROUP);
+
+        Map<Long, String> lastMessageContentMap = latestMessages.stream()
+                .collect(Collectors.toMap(
+                        triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent::getChatRoomId,
+                        triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent::getContent
+                ));
+
+        // 4. DTO 변환 (친구 조회 제거, 멤버 목록 제거)
+        return rooms.stream()
+                .map(room -> {
+                    Long lastReadSequence = lastReadSequenceMap.getOrDefault(room.getId(), 0L);
+                    long currentSequence = room.getCurrentSequence();
+                    long unreadCount = Math.max(0, currentSequence - lastReadSequence);
+
+                    String lastMessageContent = lastMessageContentMap.get(room.getId());
+
+                    return GroupChatRoomSummaryResp.from(
+                            room,
+                            unreadCount,
+                            lastReadSequence,
+                            lastMessageContent
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+    // 공개 그룹 채팅방 목록을 Public DTO로 변환 (Find 페이지용)
+    private List<GroupChatRoomPublicResp> convertToPublicRoomSummaries(List<GroupChatRoom> rooms) {
+        if (rooms.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return rooms.stream()
+                .map(room -> {
+                    long memberCount = chatRoomMemberRepository.countByChatRoomIdAndChatRoomType(
+                            room.getId(),
+                            ChatRoomType.GROUP
+                    );
+                    return GroupChatRoomPublicResp.from(room, memberCount);
                 })
                 .collect(Collectors.toList());
     }
