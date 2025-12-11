@@ -15,4 +15,11 @@ public interface LearningNoteRepository extends JpaRepository<LearningNote, Long
     ORDER BY ln.createdAt DESC
     """)
     List<LearningNote> findTopNByMemberId(Long memberId, Pageable pageable);
+
+    @Query("""
+        select distinct ln
+        from LearningNote ln
+        join fetch ln.feedbacks
+    """)
+    List<LearningNote> findAllWithFeedbacks();
 }
