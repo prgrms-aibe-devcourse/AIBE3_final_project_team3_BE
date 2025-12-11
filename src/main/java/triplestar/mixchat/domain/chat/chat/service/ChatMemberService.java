@@ -79,18 +79,20 @@ public class ChatMemberService {
         ).orElseThrow(() -> new AccessDeniedException("해당 대화방에 접근할 권한이 없습니다."));
 
         Long currentSequence = getCurrentSequence(roomId, chatRoomType);
-        if (currentSequence != null && currentSequence > 0) {
-            Long lastReadSequence = member.getLastReadSequence();
-
-            // 이미 모든 메시지를 읽은 상태면 null 반환 (READ 이벤트 브로드캐스트 하지 않음)
-            if (lastReadSequence != null && lastReadSequence >= currentSequence) {
-                return null;
-            }
-
-            member.updateLastReadSequence(currentSequence);
-            return currentSequence;
+        if (currentSequence == null || currentSequence <= 0) {
+            return null;
         }
-        return null;
+
+        Long lastReadSequence = member.getLastReadSequence();
+
+        // 이미 읽은 값보다 최신 메시지가 있으면 업데이트
+        if (lastReadSequence == null || lastReadSequence < currentSequence) {
+            member.updateLastReadSequence(currentSequence);
+            lastReadSequence = currentSequence;
+        }
+
+        // 읽음 처리 결과를 반환하여 구독 시 unreadCount 브로드캐스트가 누락되지 않도록 함
+        return lastReadSequence;
     }
 
     // 현재 채팅방의 최신 sequence 조회 (DIRECT, GROUP만 사용)

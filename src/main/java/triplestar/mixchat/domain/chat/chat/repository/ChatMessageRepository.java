@@ -74,9 +74,11 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
                 "{ $and: [ { $eq: ['$isTranslateEnabled', true] }, { $ne: ['$translatedContent', null] } ] }, " +
                 "'$translatedContent', " +
                 "'$content' " +
-            "] } }" +
+            "] } }, " +
+            "createdAt: { $first: '$created_at' }, " +
+            "sequence: { $first: '$sequence' } " +
         "} }",
-        "{ $project: { chatRoomId: '$_id', content: 1, _id: 0 } }"
+        "{ $project: { chatRoomId: '$_id', content: 1, createdAt: 1, sequence: 1, _id: 0 } }"
     })
     List<LatestMessageContent> findLatestMessageContentByRoomIds(List<Long> roomIds, ChatRoomType chatRoomType);
 
@@ -84,5 +86,7 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
     interface LatestMessageContent {
         Long getChatRoomId();
         String getContent();
+        LocalDateTime getCreatedAt();
+        Long getSequence();
     }
 }
