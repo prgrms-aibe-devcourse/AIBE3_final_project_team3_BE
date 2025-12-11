@@ -205,7 +205,7 @@ public class ChatSubscriberCacheService {
      *        // 3. WebSocket으로 강제 퇴장 이벤트 브로드캐스트
      *        //    (removeAllSubscribers 호출 전에 브로드캐스트해야 구독자가 메시지 수신 가능)
      *        ForceCloseEvent event = ForceCloseEvent.of(roomId, reason);
-     *        messagingTemplate.convertAndSend("/topic/group/rooms/" + roomId, event);
+     *        messagingTemplate.convertAndSend("/topic/group.rooms." + roomId, event);
      *
      *        // 4. 시스템 메시지 저장 (선택 사항)
      *        chatMessageService.createSystemMessage(roomId, "방이 관리자에 의해 폐쇄되었습니다: " + reason);

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
 import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
@@ -39,12 +40,7 @@ public class SqlContextRetriever {
             );
         }
 
-        List<LearningNote> notes = learningNoteRepository.findTopNByMemberId(userId, itemSize);
-        for (int i = 0; i < notes.size(); i++) {
-            LearningNote note = notes.get(i);
-            log.trace("Retrieved LearningNote {}: id={}, originalContent='{}', correctedContent='{}'",
-                    i + 1, note.getId(), note.getOriginalContent(), note.getCorrectedContent());
-        }
+        List<LearningNote> notes = learningNoteRepository.findTopNByMemberId(userId, PageRequest.of(0, 10));
 
         // text 맵에 originalContent와 correctedContent를 모두 포함
         return notes.stream()

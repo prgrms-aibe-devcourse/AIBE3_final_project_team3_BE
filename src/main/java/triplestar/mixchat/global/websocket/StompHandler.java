@@ -40,7 +40,7 @@ public class StompHandler implements ExecutorChannelInterceptor {
     private final ChatMemberService chatMemberService;
 
     private static final Pattern ROOM_DESTINATION_PATTERN =
-            Pattern.compile("^/topic/(direct|group|ai)/rooms/(\\d+)");
+            Pattern.compile("^/topic/(direct|group|ai)\\.rooms\\.(\\d+)");
 
     // 생성자를 직접 작성하고 @Lazy 어노테이션으로 순환 참조 해결
     public StompHandler(
@@ -89,12 +89,16 @@ public class StompHandler implements ExecutorChannelInterceptor {
 
         Principal principal = accessor.getUser();
 
-        // beforeHandle에서 principal 객체 확인
-        if (principal != null) {
-            SecurityContextHolder.getContext().setAuthentication((Authentication) principal);
+        if (principal instanceof Authentication authentication) {
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
         return message;
+    }
+
+    @Override
+    public void afterMessageHandled(Message<?> message, MessageChannel channel, MessageHandler handler, Exception ex) {
+        SecurityContextHolder.clearContext();
     }
 
     private void handleConnect(StompHeaderAccessor accessor) {
@@ -124,6 +128,11 @@ public class StompHandler implements ExecutorChannelInterceptor {
         String destination = accessor.getDestination();
         if (destination == null || destination.isBlank()) {
             throw new IllegalArgumentException("구독 목적지가 없습니다.");
+        }
+
+        // 방 목록 브로드캐스트 구독 허용
+        if ("/topic/room-list-updates".equals(destination)) {
+            return;
         }
 
         // 채팅방 구독 시 멤버십 검증

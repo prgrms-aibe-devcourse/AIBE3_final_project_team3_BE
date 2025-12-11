@@ -21,7 +21,7 @@ public interface GroupChatRoomRepository extends JpaRepository<GroupChatRoom, Lo
         """)
     List<GroupChatRoom> findAllByMemberId(@Param("memberId") Long memberId);
 
-    // 특정 멤버가 속하지 않은 공개 그룹 채팅방 목록 조회
+    // 특정 멤버가 속하지 않은 그룹 채팅방 목록 조회 (비밀번호 있는 방 포함)
     @Query("""
         SELECT gcr FROM GroupChatRoom gcr
         WHERE NOT EXISTS (

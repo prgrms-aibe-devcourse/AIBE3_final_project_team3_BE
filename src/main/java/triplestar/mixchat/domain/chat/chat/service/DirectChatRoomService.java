@@ -2,6 +2,7 @@ package triplestar.mixchat.domain.chat.chat.service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -68,8 +69,8 @@ public class DirectChatRoomService {
 
             // DTO 변환 및 알림
             DirectChatRoomResp roomDto = DirectChatRoomResp.from(room, 0L, null);
-            messagingTemplate.convertAndSendToUser(member1.getId().toString(), "/topic/rooms", roomDto);
-            messagingTemplate.convertAndSendToUser(member2.getId().toString(), "/topic/rooms", roomDto);
+            messagingTemplate.convertAndSendToUser(member1.getId().toString(), "/queue/rooms", roomDto);
+            messagingTemplate.convertAndSendToUser(member2.getId().toString(), "/queue/rooms", roomDto);
 
             // 채팅 시작 첫 메시지 전송
             systemMessageService.sendDirectChatStartedMessage(room.getId(), ChatRoomType.DIRECT);
@@ -109,31 +110,39 @@ public class DirectChatRoomService {
 
     // 사용자가 참여하고 있는 1:1 채팅방 목록 조회
     public List<DirectChatRoomResp> getRoomsForUser(Long currentUserId) {
-        // 한 번의 쿼리로 채팅방 정보(유저 포함)와 lastReadSequence 조회
         List<Object[]> results = directChatRoomRepository.findRoomsAndLastReadByMemberId(currentUserId);
 
         if (results.isEmpty()) {
             return Collections.emptyList();
         }
 
-        // DTO로 변환하여 반환
+        // 모든 방 ID 수집
+        List<Long> roomIds = results.stream()
+                .map(result -> ((DirectChatRoom) result[0]).getId())
+                .collect(Collectors.toList());
+
+        // Batch Query: 모든 방의 최신 메시지를 한 번에 조회
+        List<triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent> latestMessages
+                = chatMessageRepository.findLatestMessageContentByRoomIds(roomIds, ChatRoomType.DIRECT);
+
+        Map<Long, String> lastMessageContentMap = latestMessages.stream()
+                .collect(Collectors.toMap(
+                        triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent::getChatRoomId,
+                        triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent::getContent
+                ));
+
+        // DTO 변환
         return results.stream()
                 .map(result -> {
                     DirectChatRoom room = (DirectChatRoom) result[0];
                     Long lastRead = (Long) result[1];
 
                     long unreadCount = (lastRead == null) ? room.getCurrentSequence() : room.getCurrentSequence() - lastRead;
-                    if (unreadCount < 0) unreadCount = 0; // 예외 상황에 대비
+                    if (unreadCount < 0) unreadCount = 0;
 
-                    // 마지막 메시지 조회 (번역된 메시지가 있으면 번역된 내용 사용)
-                    String lastMessageContent = chatMessageRepository
-                            .findTopByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(room.getId(), ChatRoomType.DIRECT)
-                            .map(msg -> msg.isTranslateEnabled() && msg.getTranslatedContent() != null
-                                    ? msg.getTranslatedContent()
-                                    : msg.getContent())
-                            .orElse(null);
+                    String lastMessageContent = lastMessageContentMap.get(room.getId());
 
-                    return DirectChatRoomResp.from(room, unreadCount, lastMessageContent);
+                    return DirectChatRoomResp.from(room, unreadCount, lastRead, lastMessageContent);
                 })
                 .collect(Collectors.toList());
     }

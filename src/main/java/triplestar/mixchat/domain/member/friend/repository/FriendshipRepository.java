@@ -1,5 +1,6 @@
 package triplestar.mixchat.domain.member.friend.repository;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -52,4 +53,15 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
                 )
             """)
     FriendDetailResp findFriendDetail(Long smallerId, Long largerId, Long friendId);
+
+    // 친구 ID만 조회 (성능 최적화 - Member 엔티티 로딩 제거)
+    @Query("""
+                SELECT CASE
+                    WHEN f.smallerMember.id = :memberId THEN f.largerMember.id
+                    ELSE f.smallerMember.id
+                END
+                FROM Friendship f
+                WHERE :memberId IN (f.smallerMember.id, f.largerMember.id)
+            """)
+    List<Long> findFriendIdsByMemberId(Long memberId);
 }

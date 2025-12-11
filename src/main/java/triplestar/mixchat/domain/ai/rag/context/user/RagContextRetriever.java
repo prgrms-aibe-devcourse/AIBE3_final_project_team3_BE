@@ -18,6 +18,10 @@ public class RagContextRetriever {
     public List<UserContextChunk> retrieve(Long roomId, Long userId) {
         List<LearningNote> notes = learningNoteRagService.loadNotesFromCache(roomId, userId);
 
+        if(notes == null || notes.isEmpty()) {
+            return List.of();
+        }
+
         return notes.stream()
                 .map(note -> new UserContextChunk(
                         Map.of(LEARNING_NOTE_ORIGINAL_CONTENT.getKey(), note.getOriginalContent(),

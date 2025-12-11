@@ -16,8 +16,8 @@ public record RoomLastMessageUpdateResp(
         @Schema(description = "최근 메시지 발신 시간", example = "2025-12-04T10:30:00", requiredMode = REQUIRED)
         String lastMessageAt,
 
-        @Schema(description = "해당 사용자의 안읽은 메시지 수", example = "3", requiredMode = REQUIRED)
-        int unreadCount,
+        @Schema(description = "최신 메시지 Sequence (클라이언트가 unreadCount 계산에 사용)", example = "100", requiredMode = REQUIRED)
+        Long latestSequence,
 
         @Schema(description = "최근 메시지 내용", example = "안녕하세요!")
         String lastMessageContent

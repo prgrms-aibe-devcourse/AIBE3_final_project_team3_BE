@@ -13,6 +13,14 @@ spring:
     username: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+      connection-timeout: 30000     # 커넥션 획득 대기 시간 (30초)
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      validation-timeout: 5000      # 타임아웃 5초. DB가 응답하지 않으면 테스트 자체가 무한 대기하는 것 방지
+      connection-test-query: SELECT 1
   jpa:
     hibernate:
       ddl-auto: none
@@ -31,15 +39,31 @@ spring:
       connection:
         mode: connection
         size: 10
+    # STOMP Relay Configuration (for WebSocket multi-server support)
+    stomp:
+      relay-host: ${RABBITMQ_STOMP_HOST:localhost}
+      relay-port: ${RABBITMQ_STOMP_PORT:61613}
+      client-login: ${RABBITMQ_STOMP_CLIENT_LOGIN:guest}
+      client-passcode: ${RABBITMQ_STOMP_CLIENT_PASSCODE:guest}
+      system-login: ${RABBITMQ_STOMP_SYSTEM_LOGIN:guest}
+      system-passcode: ${RABBITMQ_STOMP_SYSTEM_PASSCODE:guest}
+      system-heartbeat-send-interval: 10000
+      system-heartbeat-receive-interval: 10000
 
   data:
     mongodb:
-      uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/${MONGO_DB}?authSource=admin
+      uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/${MONGO_DB}?authSource=admin&minPoolSize=10&maxPoolSize=100&maxIdleTimeMS=60000
 
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+      lettuce:
+        pool:
+          max-active: 50
+          max-idle: 20
+          min-idle: 10
+          max-wait: 3000    # 커넥션 대기 시간 (ms)
 
     web:
       pageable:

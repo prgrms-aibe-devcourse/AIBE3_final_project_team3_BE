@@ -12,6 +12,7 @@ import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationReq;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
+import triplestar.mixchat.domain.chat.search.service.ChatMessageSearchService;
 
 @Slf4j
 @Service
@@ -28,6 +29,7 @@ public class AiTranslationService {
     private final List<TranslationProvider> translationProviders;
     private final ChatMessageRepository chatMessageRepository;
     private final SimpMessageSendingOperations messagingTemplate;
+    private final ChatMessageSearchService chatMessageSearchService;
 
     @PostConstruct
     public void init() {
@@ -69,6 +71,7 @@ public class AiTranslationService {
                             providerName, req.chatMessageId(), req.originalContent(), translatedContent);
                     chatMessage.setTranslatedContent(translatedContent);
                     ChatMessage updatedMessage = chatMessageRepository.save(chatMessage);
+                    chatMessageSearchService.updateTranslation(updatedMessage.getId(), translatedContent);
                     notifyClientOfUpdate(updatedMessage);
                     return;
                 } else {
@@ -86,7 +89,7 @@ public class AiTranslationService {
     }
 
     private void notifyClientOfUpdate(ChatMessage updatedMessage) {
-        String destination = String.format("/topic/%s/rooms/%d",
+        String destination = String.format("/topic/%s.rooms.%d",
                 updatedMessage.getChatRoomType().name().toLowerCase(),
                 updatedMessage.getChatRoomId());
 

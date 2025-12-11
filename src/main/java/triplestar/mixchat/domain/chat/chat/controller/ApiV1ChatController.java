@@ -2,8 +2,10 @@ package triplestar.mixchat.domain.chat.chat.controller;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,12 +29,17 @@ import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomPublicResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomSummaryResp;
 import triplestar.mixchat.domain.chat.chat.dto.InviteGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.JoinGroupChatReq;
+import triplestar.mixchat.domain.chat.chat.dto.JoinRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
+import triplestar.mixchat.domain.chat.chat.dto.MessageReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.TransferOwnerReq;
+import triplestar.mixchat.domain.chat.chat.dto.UpdateGroupChatPasswordReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.service.AIChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.ChatMemberService;
@@ -40,8 +47,9 @@ import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
 import triplestar.mixchat.domain.chat.chat.service.DirectChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.GroupChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.LoadTestCleanupService;
+import triplestar.mixchat.domain.chat.search.dto.ChatSearchResultResp;
+import triplestar.mixchat.domain.chat.search.service.ChatMessageSearchService;
 import triplestar.mixchat.global.response.CustomResponse;
-import java.util.Map;
 import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.global.security.CustomUserDetails;
 
@@ -59,6 +67,17 @@ public class ApiV1ChatController implements ApiChatController {
     private final S3Uploader s3Uploader;
     private final SimpMessagingTemplate messagingTemplate;
     private final AiFeedbackService aiFeedbackService;
+    private final ChatMessageSearchService chatMessageSearchService;
+
+    @PatchMapping("/rooms/group/{roomId}/password")
+    public CustomResponse<Void> updateGroupChatPassword(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody UpdateGroupChatPasswordReq request
+    ) {
+        groupChatRoomService.updatePassword(roomId, currentUser.getId(), request.newPassword());
+        return CustomResponse.ok("비밀번호가 변경되었습니다.", null);
+    }
 
     @Override
     @PostMapping("/feedback")
@@ -115,30 +134,39 @@ public class ApiV1ChatController implements ApiChatController {
 
     @Override
     @GetMapping("/rooms/group")
-    public CustomResponse<List<GroupChatRoomResp>> getGroupChatRooms(
+    public CustomResponse<List<GroupChatRoomSummaryResp>> getGroupChatRooms(
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        List<GroupChatRoomResp> rooms = groupChatRoomService.getRoomsForUser(currentUser.getId());
+        List<GroupChatRoomSummaryResp> rooms = groupChatRoomService.getRoomsForUser(currentUser.getId());
         return CustomResponse.ok("사용자가 속한 그룹 채팅방 목록 조회에 성공하였습니다.", rooms);
+    }
+
+    @GetMapping("/rooms/group/{roomId}")
+    public CustomResponse<GroupChatRoomResp> getGroupChatRoomDetail(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        GroupChatRoomResp room = groupChatRoomService.getRoomDetail(roomId, currentUser.getId());
+        return CustomResponse.ok("그룹 채팅방 상세 조회에 성공하였습니다.", room);
     }
 
     // todo: 비밀번호 걸린 방도 public 조회는 혼동 여지 존재. 위를 me로 바꾸고 아래를 group으로 고려
     @GetMapping("/rooms/group/public")
-    public CustomResponse<List<GroupChatRoomResp>> getPublicGroupChatRooms(
+    public CustomResponse<List<GroupChatRoomPublicResp>> getPublicGroupChatRooms(
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        List<GroupChatRoomResp> rooms = groupChatRoomService.getGroupPublicRooms(currentUser.getId());
+        List<GroupChatRoomPublicResp> rooms = groupChatRoomService.getGroupPublicRooms(currentUser.getId());
         return CustomResponse.ok("공개 그룹 채팅방 목록 조회에 성공하였습니다.", rooms);
     }
 
     @PostMapping("/rooms/group/{roomId}/join")
-    public CustomResponse<GroupChatRoomResp> joinGroupRoom(
+    public CustomResponse<JoinRoomResp> joinGroupRoom(
             @PathVariable("roomId") Long roomId,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody(required = false) JoinGroupChatReq request
     ) {
         String password = request != null ? request.password() : null;
-        GroupChatRoomResp roomResp = groupChatRoomService.joinGroupRoom(roomId, currentUser.getId(), password);
+        JoinRoomResp roomResp = groupChatRoomService.joinGroupRoom(roomId, currentUser.getId(), password);
         return CustomResponse.ok("그룹 채팅방 참가에 성공하였습니다.", roomResp);
     }
 
@@ -159,6 +187,29 @@ public class ApiV1ChatController implements ApiChatController {
     ) {
         List<AIChatRoomResp> rooms = aiChatRoomService.getRoomsForUser(currentUser.getId());
         return CustomResponse.ok("AI 채팅방 목록 조회에 성공하였습니다.", rooms);
+    }
+
+    @Override
+    @GetMapping("/search")
+    public CustomResponse<?> searchMessages(
+            @RequestParam ChatRoomType chatRoomType,
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new IllegalArgumentException("검색어를 입력해 주세요.");
+        }
+
+        int safePage = Math.max(page, 0);
+        int safeSize = size > 0 ? Math.min(size, 100) : 20;
+
+        var resultPage = chatMessageSearchService
+                .search(currentUser.getId(), chatRoomType, keyword.trim(), PageRequest.of(safePage, safeSize))
+                .map(ChatSearchResultResp::fromDocument);
+
+        return CustomResponse.ok("채팅 메시지 검색 결과", resultPage);
     }
 
     @Override
@@ -193,7 +244,7 @@ public class ApiV1ChatController implements ApiChatController {
                 chatMessageService.saveFileMessage(roomId, currentUser.getId(), currentUser.getNickname(), fileUrl,
                         messageType, chatRoomType);
 
-        String destination = "/topic/" + chatRoomType.name().toLowerCase() + "/rooms/" + roomId;
+        String destination = "/topic/" + chatRoomType.name().toLowerCase() + ".rooms." + roomId;
         messagingTemplate.convertAndSend(destination, messageResp);
 
         return CustomResponse.ok("파일 업로드 및 메시지 전송에 성공하였습니다.", messageResp);
@@ -255,6 +306,39 @@ public class ApiV1ChatController implements ApiChatController {
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         // chatMemberService.reportUser(currentUser.getId(), null, roomId, chatRoomType, null);
+    }
+
+    @Override
+    @PostMapping("/rooms/messages")
+    @Profile({"dev", "local", "test"})  // 개발/로컬/테스트 환경에서만 활성화
+    public CustomResponse<MessageResp> sendMessageForLoadTest(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody MessageReq request,
+            @RequestParam(required = false) Long testSenderId,
+            @RequestParam(required = false) String testNickname
+    ) {
+        Long senderId = currentUser != null ? currentUser.getId() : testSenderId;
+        String nickname = currentUser != null ? currentUser.getNickname() : testNickname;
+
+        if (senderId == null) {
+            // 부하 테스트 시 인증 없이 호출될 경우를 위한 기본값 설정 (또는 에러 처리)
+            // 여기서는 안전하게 에러를 던지거나, 테스트 편의를 위해 기본값 1L을 사용
+             senderId = 1L;
+             nickname = "UnknownUser";
+        }
+        if (nickname == null) nickname = "TestUser" + senderId;
+
+        // 멤버 검증은 saveMessage 내부에서 수행됨
+        MessageResp resp = chatMessageService.saveMessage(
+                request.roomId(),
+                senderId,
+                nickname,
+                request.content(),
+                request.messageType(),
+                request.chatRoomType(),
+                request.isTranslateEnabled()
+        );
+        return CustomResponse.ok("메시지 전송 완료", resp);
     }
 
     @Override

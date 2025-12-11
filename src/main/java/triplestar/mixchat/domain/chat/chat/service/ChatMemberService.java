@@ -35,6 +35,7 @@ public class ChatMemberService {
     private final GroupChatRoomRepository groupChatRoomRepository;
     private final AIChatRoomRepository aiChatRoomRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatSequenceGenerator chatSequenceGenerator;
 
     //사용자가 특정 대화방의 멤버인지 확인 (캐시 적용)
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId, ChatRoomType chatRoomType) {
@@ -78,31 +79,28 @@ public class ChatMemberService {
         ).orElseThrow(() -> new AccessDeniedException("해당 대화방에 접근할 권한이 없습니다."));
 
         Long currentSequence = getCurrentSequence(roomId, chatRoomType);
-        if (currentSequence != null && currentSequence > 0) {
-            Long lastReadSequence = member.getLastReadSequence();
-
-            // 이미 모든 메시지를 읽은 상태면 null 반환 (READ 이벤트 브로드캐스트 하지 않음)
-            if (lastReadSequence != null && lastReadSequence >= currentSequence) {
-                return null;
-            }
-
-            member.updateLastReadSequence(currentSequence);
-            return currentSequence;
+        if (currentSequence == null || currentSequence <= 0) {
+            return null;
         }
-        return null;
+
+        Long lastReadSequence = member.getLastReadSequence();
+
+        // 이미 읽은 값보다 최신 메시지가 있으면 업데이트
+        if (lastReadSequence == null || lastReadSequence < currentSequence) {
+            member.updateLastReadSequence(currentSequence);
+            lastReadSequence = currentSequence;
+        }
+
+        // 읽음 처리 결과를 반환하여 구독 시 unreadCount 브로드캐스트가 누락되지 않도록 함
+        return lastReadSequence;
     }
 
     // 현재 채팅방의 최신 sequence 조회 (DIRECT, GROUP만 사용)
     private Long getCurrentSequence(Long roomId, ChatRoomType chatRoomType) {
-        return switch (chatRoomType) {
-            case DIRECT -> directChatRoomRepository.findById(roomId)
-                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
-                    .getCurrentSequence();
-            case GROUP -> groupChatRoomRepository.findById(roomId)
-                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
-                    .getCurrentSequence();
-            default -> throw new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId);
-        };
+        if (chatRoomType == ChatRoomType.AI) {
+            throw new IllegalArgumentException("AI 채팅방은 sequence를 조회하지 않습니다. ID: " + roomId);
+        }
+        return chatSequenceGenerator.getCurrentSequence(roomId, chatRoomType);
     }
 
     // 대화방 나가기
@@ -181,7 +179,9 @@ public class ChatMemberService {
         int totalMemberCount = getTotalMemberCount(roomId, chatRoomType);
 
         SubscriberCountUpdateResp resp = SubscriberCountUpdateResp.of(subscriberCount, totalMemberCount);
-        String destination = "/topic/" + chatRoomType.name().toLowerCase() + "/rooms/" + roomId;
+        String destination = "/topic/" + chatRoomType.name().toLowerCase() + ".rooms." + roomId;
+        log.info("📢 Broadcasting subscriber count - destination: {}, subscriberCount: {}, totalMemberCount: {}",
+                destination, subscriberCount, totalMemberCount);
         messagingTemplate.convertAndSend(destination, resp);
     }
 
@@ -194,8 +194,7 @@ public class ChatMemberService {
         MemberSummaryResp memberSummary = MemberSummaryResp.from(member);
 
         RoomMemberUpdateResp resp = new RoomMemberUpdateResp(roomId, type, memberSummary, totalMemberCount, subscriberCount);
-        String destination = "/topic/" + chatRoomType.name().toLowerCase() + "/rooms/" + roomId;
+        String destination = "/topic/" + chatRoomType.name().toLowerCase() + ".rooms." + roomId;
         messagingTemplate.convertAndSend(destination, resp);
     }
 }
-

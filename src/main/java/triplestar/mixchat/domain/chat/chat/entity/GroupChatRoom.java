@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Entity
 @Getter
@@ -16,7 +17,6 @@ public class GroupChatRoom extends BaseEntity {
     @Column(nullable = false)
     private String name; // 채팅방 이름
 
-    // todo: 암호화
     private String password; // 채팅방 비밀번호 (선택)
 
     @Column(length = 500)
@@ -69,7 +69,7 @@ public class GroupChatRoom extends BaseEntity {
     }
 
     // 비밀번호 검증
-    public void verifyPassword(String inputPassword) {
+    public void verifyPassword(String inputPassword, PasswordEncoder passwordEncoder) {
         if (!hasPassword()) {
             return; // 비밀번호가 설정되지 않은 방은 검증 생략
         }
@@ -78,13 +78,17 @@ public class GroupChatRoom extends BaseEntity {
             throw new IllegalArgumentException("채팅방 비밀번호가 필요합니다.");
         }
 
-        if (!this.password.equals(inputPassword.trim())) {
+        if (!passwordEncoder.matches(inputPassword.trim(), this.password)) {
             throw new IllegalArgumentException("채팅방 비밀번호가 올바르지 않습니다.");
         }
     }
 
-    // 다음 sequence 번호 생성, 락 추가로 synchronized는 필요 없을듯해 제거
-    public Long generateNextSequence() {
-        return ++this.currentSequence;
+    // 비밀번호 변경
+    public void updatePassword(String newPassword) {
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            this.password = null; // 비밀번호 제거 (공개방 전환)
+        } else {
+            this.password = newPassword;
+        }
     }
 }

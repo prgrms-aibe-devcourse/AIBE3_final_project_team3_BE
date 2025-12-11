@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
@@ -61,4 +62,31 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
 
     // Load Test Cleanup: 삭제 전 카운트 확인용
     long countByChatRoomIdAndChatRoomType(Long chatRoomId, ChatRoomType chatRoomType);
+
+    // 여러 채팅방의 최신 메시지 내용을 한번에 조회 (Batch Query)
+    // MongoDB Aggregation: 각 roomId별로 최신 메시지의 content를 반환
+    @Aggregation(pipeline = {
+        "{ $match: { chatRoomId: { $in: ?0 }, chatRoomType: ?1 } }",
+        "{ $sort: { sequence: -1 } }",
+        "{ $group: { " +
+            "_id: '$chatRoomId', " +
+            "content: { $first: { $cond: [ " +
+                "{ $and: [ { $eq: ['$isTranslateEnabled', true] }, { $ne: ['$translatedContent', null] } ] }, " +
+                "'$translatedContent', " +
+                "'$content' " +
+            "] } }, " +
+            "createdAt: { $first: '$created_at' }, " +
+            "sequence: { $first: '$sequence' } " +
+        "} }",
+        "{ $project: { chatRoomId: '$_id', content: 1, createdAt: 1, sequence: 1, _id: 0 } }"
+    })
+    List<LatestMessageContent> findLatestMessageContentByRoomIds(List<Long> roomIds, ChatRoomType chatRoomType);
+
+    // Projection interface for the aggregation result
+    interface LatestMessageContent {
+        Long getChatRoomId();
+        String getContent();
+        LocalDateTime getCreatedAt();
+        Long getSequence();
+    }
 }
