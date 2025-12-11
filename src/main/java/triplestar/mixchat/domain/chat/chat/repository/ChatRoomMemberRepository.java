@@ -8,11 +8,18 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import triplestar.mixchat.domain.chat.chat.constant.ChatNotificationSetting;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
 public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long> {
+
+    interface MemberSummary {
+        Long getMemberId();
+        Long getLastReadSequence();
+        ChatNotificationSetting getChatNotificationSetting();
+    }
 
     // 특정 사용자가 특정 대화방의 멤버인지 존재 여부만 빠르게 확인
     boolean existsByChatRoomIdAndChatRoomTypeAndMember_Id(Long chatRoomId, ChatRoomType chatRoomType, Long memberId);
@@ -90,5 +97,20 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long
     List<Object[]> findLastReadSequencesByMemberAndRoomType(
         @Param("memberId") Long memberId,
         @Param("chatRoomType") ChatRoomType chatRoomType
+    );
+    // 특정 채팅방 ID 목록에 해당하는 각 방의 멤버 수를 조회 (N+1 문제 해결)
+    @Query("SELECT cm.chatRoomId, COUNT(cm) FROM ChatMember cm WHERE cm.chatRoomId IN :roomIds AND cm.chatRoomType = :chatRoomType GROUP BY cm.chatRoomId")
+    List<Object[]> countMembersByChatRoomIdInAndChatRoomType(@Param("roomIds") List<Long> roomIds, @Param("chatRoomType") ChatRoomType chatRoomType);
+
+    @Query("""
+        SELECT cm.member.id AS memberId,
+               cm.lastReadSequence AS lastReadSequence,
+               cm.chatNotificationSetting AS chatNotificationSetting
+        FROM ChatMember cm
+        WHERE cm.chatRoomId = :chatRoomId AND cm.chatRoomType = :chatRoomType
+        """)
+    List<MemberSummary> findMemberSummariesByRoomIdAndChatRoomType(
+            @Param("chatRoomId") Long chatRoomId,
+            @Param("chatRoomType") ChatRoomType chatRoomType
     );
 }

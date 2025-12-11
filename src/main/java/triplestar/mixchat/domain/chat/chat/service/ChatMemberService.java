@@ -35,6 +35,7 @@ public class ChatMemberService {
     private final GroupChatRoomRepository groupChatRoomRepository;
     private final AIChatRoomRepository aiChatRoomRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatSequenceGenerator chatSequenceGenerator;
 
     //사용자가 특정 대화방의 멤버인지 확인 (캐시 적용)
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId, ChatRoomType chatRoomType) {
@@ -94,15 +95,10 @@ public class ChatMemberService {
 
     // 현재 채팅방의 최신 sequence 조회 (DIRECT, GROUP만 사용)
     private Long getCurrentSequence(Long roomId, ChatRoomType chatRoomType) {
-        return switch (chatRoomType) {
-            case DIRECT -> directChatRoomRepository.findById(roomId)
-                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
-                    .getCurrentSequence();
-            case GROUP -> groupChatRoomRepository.findById(roomId)
-                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
-                    .getCurrentSequence();
-            default -> throw new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId);
-        };
+        if (chatRoomType == ChatRoomType.AI) {
+            throw new IllegalArgumentException("AI 채팅방은 sequence를 조회하지 않습니다. ID: " + roomId);
+        }
+        return chatSequenceGenerator.getCurrentSequence(roomId, chatRoomType);
     }
 
     // 대화방 나가기
@@ -200,4 +196,3 @@ public class ChatMemberService {
         messagingTemplate.convertAndSend(destination, resp);
     }
 }
-

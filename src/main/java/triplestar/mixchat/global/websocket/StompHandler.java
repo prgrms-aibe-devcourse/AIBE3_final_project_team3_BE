@@ -89,12 +89,16 @@ public class StompHandler implements ExecutorChannelInterceptor {
 
         Principal principal = accessor.getUser();
 
-        // beforeHandle에서 principal 객체 확인
-        if (principal != null) {
-            SecurityContextHolder.getContext().setAuthentication((Authentication) principal);
+        if (principal instanceof Authentication authentication) {
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
         return message;
+    }
+
+    @Override
+    public void afterMessageHandled(Message<?> message, MessageChannel channel, MessageHandler handler, Exception ex) {
+        SecurityContextHolder.clearContext();
     }
 
     private void handleConnect(StompHeaderAccessor accessor) {

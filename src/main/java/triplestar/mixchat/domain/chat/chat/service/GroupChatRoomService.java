@@ -458,12 +458,29 @@ public class GroupChatRoomService {
             return Collections.emptyList();
         }
 
+        // 1. 모든 방의 ID 수집
+        List<Long> roomIds = rooms.stream()
+                .map(GroupChatRoom::getId)
+                .collect(Collectors.toList());
+
+        // 2. 모든 방의 멤버 수를 한 번의 쿼리로 조회
+        // roomIds가 비어있지 않은 경우에만 쿼리하여 빈 IN 절 회피
+        Map<Long, Long> memberCountMap;
+        if (roomIds.isEmpty()) {
+            memberCountMap = Collections.emptyMap();
+        } else {
+            List<Object[]> memberCounts = chatRoomMemberRepository.countMembersByChatRoomIdInAndChatRoomType(roomIds, ChatRoomType.GROUP);
+            memberCountMap = memberCounts.stream()
+                    .collect(Collectors.toMap(
+                            row -> (Long) row[0], // chatRoomId
+                            row -> (Long) row[1]  // count
+                    ));
+        }
+
+        // 3. DTO 변환
         return rooms.stream()
                 .map(room -> {
-                    long memberCount = chatRoomMemberRepository.countByChatRoomIdAndChatRoomType(
-                            room.getId(),
-                            ChatRoomType.GROUP
-                    );
+                    long memberCount = memberCountMap.getOrDefault(room.getId(), 0L);
                     return GroupChatRoomPublicResp.from(room, memberCount);
                 })
                 .collect(Collectors.toList());

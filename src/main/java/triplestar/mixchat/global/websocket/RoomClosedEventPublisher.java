@@ -18,6 +18,6 @@ public class RoomClosedEventPublisher {
                 "reasonLabel", reasonLabel
         );
 
-        messagingTemplate.convertAndSend("/topic/group/rooms/" + roomId, payload);
+        messagingTemplate.convertAndSend("/topic/group.rooms." + roomId, payload);
     }
 }

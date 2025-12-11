@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.ai.chatbot.AiChatBotService;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationReq;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
+import triplestar.mixchat.domain.chat.chat.constant.ChatNotificationSetting;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
@@ -123,26 +124,29 @@ public class ChatMessageService {
             );
         }
 
-        // N+1 방지: Member를 fetch join으로 한 번에 조회
-        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeWithMembers(roomId, chatRoomType);
+        List<ChatRoomMemberRepository.MemberSummary> memberSummaries =
+                chatRoomMemberRepository.findMemberSummariesByRoomIdAndChatRoomType(roomId, chatRoomType);
 
-        // 읽지 않은 사람 수
-        int unreadCount = (int) allMembers.stream()
-                .filter(member -> member.hasNotRead(sequence))
+        int unreadCount = (int) memberSummaries.stream()
+                .filter(summary -> {
+                    Long lastRead = summary.getLastReadSequence();
+                    return lastRead == null || lastRead < sequence;
+                })
                 .count();
 
         // 알림 이벤트 (구독 중이지 않은 사람들에게만, 발신자 제외)
-        for (ChatMember receiver : allMembers) {
-            if (receiver.getMember().getId().equals(senderId)) {
+        for (ChatRoomMemberRepository.MemberSummary receiver : memberSummaries) {
+            Long receiverId = receiver.getMemberId();
+            if (receiverId.equals(senderId)) {
                 continue;
             }
-            if (subscriberIds.contains(receiver.getMember().getId())) {
+            if (subscriberIds.contains(receiverId)) {
                 continue;
             }
-            if (receiver.isNotificationAlways()) {
+            if (receiver.getChatNotificationSetting() == ChatNotificationSetting.ALWAYS) {
                 eventPublisher.publishEvent(
                         new NotificationEvent(
-                                receiver.getMember().getId(),
+                                receiverId,
                                 senderId,
                                 NotificationType.CHAT_MESSAGE,
                                 savedMessage.getContent()
@@ -212,6 +216,10 @@ public class ChatMessageService {
 
         // 1. 채팅방의 모든 멤버 조회 (읽음 상태 확인 및 입장 시간 확인용)
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
+        List<Long> sortedLastReadSequences = allMembers.stream()
+                .map(cm -> cm.getLastReadSequence() == null ? 0L : cm.getLastReadSequence())
+                .sorted()
+                .toList();
 
         // 2. 요청자의 입장 시간 확인
         LocalDateTime joinDate = allMembers.stream()
@@ -246,10 +254,8 @@ public class ChatMessageService {
                 .map(message -> {
                     String senderName = senderNames.getOrDefault(message.getSenderId(), "Unknown");
 
-                    // 읽지 않은 사람 수
-                    int unreadCount = (int) allMembers.stream()
-                            .filter(member -> member.hasNotRead(message.getSequence()))
-                            .count();
+                    // 읽지 않은 사람 수 (정렬된 lastReadSequence에서 lower bound로 계산)
+                    int unreadCount = lowerBound(sortedLastReadSequences, message.getSequence());
 
                     return MessageResp.withUnreadCount(message, senderName, unreadCount);
                 })
@@ -290,5 +296,20 @@ public class ChatMessageService {
                     return new MessageUnreadCountResp(message.getId(), unreadCount);
                 })
                 .collect(Collectors.toList());
+    }
+
+    /** 정렬된 lastReadSequence 리스트에서 target보다 작은 원소 개수 반환 */
+    private int lowerBound(List<Long> sorted, long target) {
+        int left = 0;
+        int right = sorted.size();
+        while (left < right) {
+            int mid = (left + right) >>> 1;
+            if (sorted.get(mid) < target) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return left;
     }
 }
