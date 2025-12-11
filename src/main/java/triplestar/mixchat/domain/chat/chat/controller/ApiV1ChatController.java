@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -46,6 +47,8 @@ import triplestar.mixchat.domain.chat.chat.service.ChatMessageService;
 import triplestar.mixchat.domain.chat.chat.service.DirectChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.GroupChatRoomService;
 import triplestar.mixchat.domain.chat.chat.service.LoadTestCleanupService;
+import triplestar.mixchat.domain.chat.search.dto.ChatSearchResultResp;
+import triplestar.mixchat.domain.chat.search.service.ChatMessageSearchService;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.global.security.CustomUserDetails;
@@ -64,6 +67,7 @@ public class ApiV1ChatController implements ApiChatController {
     private final S3Uploader s3Uploader;
     private final SimpMessagingTemplate messagingTemplate;
     private final AiFeedbackService aiFeedbackService;
+    private final ChatMessageSearchService chatMessageSearchService;
 
     @PatchMapping("/rooms/group/{roomId}/password")
     public CustomResponse<Void> updateGroupChatPassword(
@@ -174,6 +178,29 @@ public class ApiV1ChatController implements ApiChatController {
     ) {
         List<AIChatRoomResp> rooms = aiChatRoomService.getRoomsForUser(currentUser.getId());
         return CustomResponse.ok("AI 채팅방 목록 조회에 성공하였습니다.", rooms);
+    }
+
+    @Override
+    @GetMapping("/search")
+    public CustomResponse<?> searchMessages(
+            @RequestParam ChatRoomType chatRoomType,
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new IllegalArgumentException("검색어를 입력해 주세요.");
+        }
+
+        int safePage = Math.max(page, 0);
+        int safeSize = size > 0 ? Math.min(size, 100) : 20;
+
+        var resultPage = chatMessageSearchService
+                .search(currentUser.getId(), chatRoomType, keyword.trim(), PageRequest.of(safePage, safeSize))
+                .map(ChatSearchResultResp::fromDocument);
+
+        return CustomResponse.ok("채팅 메시지 검색 결과", resultPage);
     }
 
     @Override

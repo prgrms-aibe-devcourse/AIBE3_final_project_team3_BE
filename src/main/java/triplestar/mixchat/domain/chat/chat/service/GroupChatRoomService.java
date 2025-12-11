@@ -168,11 +168,11 @@ public class GroupChatRoomService {
         GroupChatRoom room = groupChatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다. ID: " + roomId));
 
-        // 이미 참가한 회원인지 확인
+        // 이미 참가한 회원인지 확인 (idempotent: 이미 참가 시 성공 반환)
         boolean alreadyMember = chatRoomMemberRepository.existsByChatRoomIdAndChatRoomTypeAndMember_Id(
                 roomId, ChatRoomType.GROUP, userId);
         if (alreadyMember) {
-            throw new IllegalStateException("이미 참가한 채팅방입니다.");
+            return JoinRoomResp.of(roomId);
         }
 
         // 비밀번호 검증

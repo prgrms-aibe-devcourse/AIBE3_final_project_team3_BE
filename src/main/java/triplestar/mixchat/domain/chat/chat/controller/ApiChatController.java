@@ -90,6 +90,16 @@ public interface ApiChatController {
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 
+    @Operation(summary = "채팅 메시지 검색", description = "선택한 탭(DIRECT, GROUP, AI) 내 내가 속한 방에서 키워드로 메시지를 검색합니다.")
+    @SignInInRequireResponse
+    CustomResponse<?> searchMessages(
+            @Parameter(description = "검색 대상 채팅방 타입(DIRECT, GROUP, AI)") @RequestParam ChatRoomType chatRoomType,
+            @Parameter(description = "검색 키워드(2자 이상 권장)") @RequestParam String keyword,
+            @Parameter(description = "페이지 번호(0부터 시작)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기(기본 20, 최대 100)") @RequestParam(defaultValue = "20") int size,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
+    );
+
     @Operation(
         summary = "채팅방 메시지 목록 조회 (페이징)",
         description = "지정된 채팅방의 메시지 내역을 페이징하여 조회합니다. cursor와 size 파라미터를 생략하면 최근 25개 메시지를 반환합니다."
@@ -151,4 +161,3 @@ public interface ApiChatController {
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 }
-

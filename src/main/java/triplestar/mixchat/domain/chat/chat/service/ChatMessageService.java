@@ -26,6 +26,7 @@ import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage.MessageType;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
+import triplestar.mixchat.domain.chat.search.service.ChatMessageSearchService;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.notification.constant.NotificationType;
@@ -48,6 +49,7 @@ public class ChatMessageService {
     private final ChatNotificationService chatNotificationService;
     private final AiChatBotService aiChatBotService;
     private final ChatSequenceGenerator sequenceGenerator;
+    private final ChatMessageSearchService chatMessageSearchService;
 
     @Transactional
     public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatRoomType chatRoomType, boolean isTranslateEnabled) {
@@ -71,6 +73,20 @@ public class ChatMessageService {
         ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType, isTranslateEnabled);
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
+        // Elasticsearch 인덱싱은 비동기로 (트랜잭션 커밋 후 실행)
+        if (messageType == ChatMessage.MessageType.TEXT) {
+            eventPublisher.publishEvent(new triplestar.mixchat.domain.chat.search.event.MessageIndexEvent(
+                    savedMessage.getId(),
+                    savedMessage.getChatRoomId(),
+                    savedMessage.getChatRoomType(),
+                    savedMessage.getSenderId(),
+                    senderNickname,
+                    savedMessage.getContent(),
+                    savedMessage.getSequence(),
+                    savedMessage.getCreatedAt()
+            ));
+        }
+
         // AI 채팅방인 경우 메시지 생성 및 저장 후 별도로직 수행
         if (chatRoomType == ChatRoomType.AI) {
             return saveAiRoomMessage(roomId, senderId, senderNickname, content, chatRoomType, savedMessage);
@@ -85,12 +101,14 @@ public class ChatMessageService {
         Set<Long> memberIdsToMarkRead = new HashSet<>();
         memberIdsToMarkRead.add(senderId); // 발신자도 포함(방어적 코드)
 
-        // 2. Redis에서 구독자 목록 조회 및 읽음 처리 대상에 추가
+        // 2. Redis에서 구독자 목록 조회 (한 번만 조회해서 읽음 처리 + 알림 전송 여부 확인에 재사용)
+        Set<Long> subscriberIds = new HashSet<>();
         Set<String> subscribers = subscriberCacheService.getSubscribers(roomId);
         if (subscribers != null && !subscribers.isEmpty()) {
             for (String subscriberIdStr : subscribers) {
                 try {
                     Long subscriberId = Long.parseLong(subscriberIdStr);
+                    subscriberIds.add(subscriberId);
                     memberIdsToMarkRead.add(subscriberId); // Set이므로 중복 자동 제거
                 } catch (NumberFormatException e) {
                     log.error("구독자 ID 파싱 실패 - roomId: {}, 잘못된 ID: {}", roomId, subscriberIdStr);
@@ -105,7 +123,8 @@ public class ChatMessageService {
             );
         }
 
-        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
+        // N+1 방지: Member를 fetch join으로 한 번에 조회
+        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeWithMembers(roomId, chatRoomType);
 
         // 읽지 않은 사람 수
         int unreadCount = (int) allMembers.stream()
@@ -117,7 +136,7 @@ public class ChatMessageService {
             if (receiver.getMember().getId().equals(senderId)) {
                 continue;
             }
-            if (subscriberCacheService.isSubscribed(roomId, receiver.getMember().getId())) {
+            if (subscriberIds.contains(receiver.getMember().getId())) {
                 continue;
             }
             if (receiver.isNotificationAlways()) {
