@@ -41,6 +41,9 @@ public class StompHandler implements ExecutorChannelInterceptor {
 
     private static final Pattern ROOM_DESTINATION_PATTERN =
             Pattern.compile("^/topic/(direct|group|ai)\\.rooms\\.(\\d+)");
+    
+    private static final Pattern USER_TOPIC_PATTERN =
+            Pattern.compile("^/topic/users\\.(\\d+)\\.rooms\\.update");
 
     // 생성자를 직접 작성하고 @Lazy 어노테이션으로 순환 참조 해결
     public StompHandler(
@@ -146,6 +149,16 @@ public class StompHandler implements ExecutorChannelInterceptor {
             // 멤버십 검증 (캐시 사용으로 성능 최적화)
             chatMemberService.verifyUserIsMemberOfRoom(
                     userDetails.getId(), roomId, chatRoomType);
+            return;
+        }
+
+        // 사용자별 토픽 구독 확인 (/topic/users.{userId}.rooms.update)
+        Matcher userTopicMatcher = USER_TOPIC_PATTERN.matcher(destination);
+        if (userTopicMatcher.matches()) {
+            Long targetUserId = Long.parseLong(userTopicMatcher.group(1));
+            if (!targetUserId.equals(userDetails.getId())) {
+                 throw new AccessDeniedException("본인의 알림만 구독할 수 있습니다.");
+            }
             return;
         }
 

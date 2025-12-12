@@ -42,13 +42,20 @@ public class ChatNotificationService {
                 .toList();
 
         for (Long memberId : memberIds) {
+            // 1. Standard User Destination (via Broker Relay or SimpleBroker)
             String userDestination = "/queue/rooms.update";
             messagingTemplate.convertAndSendToUser(
                     memberId.toString(),
                     userDestination,
                     updateResp
             );
-            log.info("[RoomListUpdate] Sent to user={}, destination=/user/{}/queue/rooms.update", memberId, memberId);
+            
+            // 2. Topic-based Fallback (reliable even if User Destinations are misconfigured)
+            String topicDestination = String.format("/topic/users.%d.rooms.update", memberId);
+            messagingTemplate.convertAndSend(topicDestination, updateResp);
+
+            log.info("[RoomListUpdate] Sent to user={}, dest1=/user/{}/queue/rooms.update, dest2={}", 
+                    memberId, memberId, topicDestination);
         }
 
         log.info("[RoomListUpdate] Sent to room={} and {} members, roomId={}, type={}, senderId={}, sequence={}",
