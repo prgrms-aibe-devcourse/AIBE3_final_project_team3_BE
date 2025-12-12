@@ -26,7 +26,8 @@ public class ChatNotificationService {
     public void sendRoomListUpdateBroadcast(RoomLastMessageUpdateResp updateResp) {
         String destination = "/topic/room-list-updates";
         messagingTemplate.convertAndSend(destination, updateResp);
-        log.debug("Room list update broadcast to destination={}: roomId={}, sequence={}",
-                destination, updateResp.roomId(), updateResp.latestSequence());
+        log.info("[RoomListUpdate Broadcast] destination={}, roomId={}, type={}, lastMessageAt={}, sequence={}, content={}",
+                destination, updateResp.roomId(), updateResp.chatRoomType(),
+                updateResp.lastMessageAt(), updateResp.latestSequence(), updateResp.lastMessageContent());
     }
 }

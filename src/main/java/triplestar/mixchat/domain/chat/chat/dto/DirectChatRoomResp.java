@@ -29,20 +29,30 @@ public record DirectChatRoomResp(
         @Schema(description = "마지막 메시지 내용", example = "안녕하세요!")
         String lastMessageContent
 ) {
-    public static DirectChatRoomResp from(DirectChatRoom entity, Long unreadCount, Long lastReadSequence, String lastMessageContent) {
+    public static DirectChatRoomResp from(
+            DirectChatRoom entity,
+            Long unreadCount,
+            Long lastReadSequence,
+            LocalDateTime lastMessageAt,
+            String lastMessageContent
+    ) {
         return new DirectChatRoomResp(
                 entity.getId(),
                 ChatMemberResp.from(entity.getUser1(), true),
                 ChatMemberResp.from(entity.getUser2(), true),
                 unreadCount,
                 lastReadSequence,
-                entity.getModifiedAt(),
+                lastMessageAt,
                 lastMessageContent
         );
     }
 
-    // lastReadSequence 추가되며 기존 호환성 유지하도록 추가
+    // 기존 호환성을 위한 메서드
+    public static DirectChatRoomResp from(DirectChatRoom entity, Long unreadCount, Long lastReadSequence, String lastMessageContent) {
+        return from(entity, unreadCount, lastReadSequence, entity.getModifiedAt(), lastMessageContent);
+    }
+
     public static DirectChatRoomResp from(DirectChatRoom entity, Long unreadCount, String lastMessageContent) {
-        return from(entity, unreadCount, null, lastMessageContent);
+        return from(entity, unreadCount, null, entity.getModifiedAt(), lastMessageContent);
     }
 }

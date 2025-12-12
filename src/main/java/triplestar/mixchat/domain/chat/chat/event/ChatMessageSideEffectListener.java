@@ -38,6 +38,7 @@ public class ChatMessageSideEffectListener {
             RoomLastMessageUpdateResp updateResp = new RoomLastMessageUpdateResp(
                     event.roomId(),
                     event.chatRoomType(),
+                    event.senderId(),
                     event.createdAt().toString(),
                     event.sequence(),
                     event.content()

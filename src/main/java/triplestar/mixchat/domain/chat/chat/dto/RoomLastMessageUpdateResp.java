@@ -13,6 +13,9 @@ public record RoomLastMessageUpdateResp(
         @Schema(description = "채팅방 타입", example = "DIRECT", requiredMode = REQUIRED)
         ChatRoomType chatRoomType,
 
+        @Schema(description = "메시지 발신자 ID", example = "123", requiredMode = REQUIRED)
+        Long senderId,
+
         @Schema(description = "최근 메시지 발신 시간", example = "2025-12-04T10:30:00", requiredMode = REQUIRED)
         String lastMessageAt,
 
