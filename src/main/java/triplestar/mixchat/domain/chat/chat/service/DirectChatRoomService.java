@@ -1,5 +1,7 @@
 package triplestar.mixchat.domain.chat.chat.service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -122,16 +124,21 @@ public class DirectChatRoomService {
                 .collect(Collectors.toList());
 
         // Batch Query: 모든 방의 최신 메시지를 한 번에 조회
-        List<triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent> latestMessages
+        List<ChatMessageRepository.LatestMessageContent> latestMessages
                 = chatMessageRepository.findLatestMessageContentByRoomIds(roomIds, ChatRoomType.DIRECT);
 
-        Map<Long, String> lastMessageContentMap = latestMessages.stream()
-                .collect(Collectors.toMap(
-                        triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent::getChatRoomId,
-                        triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent::getContent
-                ));
+        log.info("[MongoDB 조회 결과] latestMessages count: {}", latestMessages.size());
+        latestMessages.forEach(msg -> log.info("  - roomId={}, content={}, created_at={}",
+                msg.getChatRoomId(), msg.getContent(), msg.getCreated_at()));
 
-        // DTO 변환
+        Map<Long, ChatMessageRepository.LatestMessageContent> latestMessageMap =
+                latestMessages.stream()
+                        .collect(Collectors.toMap(
+                                ChatMessageRepository.LatestMessageContent::getChatRoomId,
+                                msg -> msg
+                        ));
+
+        // DTO 변환 및 정렬
         return results.stream()
                 .map(result -> {
                     DirectChatRoom room = (DirectChatRoom) result[0];
@@ -140,9 +147,19 @@ public class DirectChatRoomService {
                     long unreadCount = (lastRead == null) ? room.getCurrentSequence() : room.getCurrentSequence() - lastRead;
                     if (unreadCount < 0) unreadCount = 0;
 
-                    String lastMessageContent = lastMessageContentMap.get(room.getId());
+                    var latestMessage = latestMessageMap.get(room.getId());
+                    String lastMessageContent = latestMessage != null ? latestMessage.getContent() : null;
+                    LocalDateTime lastMessageAt = latestMessage != null && latestMessage.getCreated_at() != null
+                            ? LocalDateTime.ofInstant(latestMessage.getCreated_at().toInstant(), ZoneId.systemDefault())
+                            : null;
 
-                    return DirectChatRoomResp.from(room, unreadCount, lastRead, lastMessageContent);
+                    return DirectChatRoomResp.from(room, unreadCount, lastRead, lastMessageAt, lastMessageContent);
+                })
+                .sorted((a, b) -> {
+                    if (a.lastMessageAt() == null && b.lastMessageAt() == null) return 0;
+                    if (a.lastMessageAt() == null) return 1;
+                    if (b.lastMessageAt() == null) return -1;
+                    return b.lastMessageAt().compareTo(a.lastMessageAt());
                 })
                 .collect(Collectors.toList());
     }

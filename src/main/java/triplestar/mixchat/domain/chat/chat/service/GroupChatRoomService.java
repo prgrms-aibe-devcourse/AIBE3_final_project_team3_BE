@@ -1,6 +1,8 @@
 package triplestar.mixchat.domain.chat.chat.service;
 
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -24,6 +26,7 @@ import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomSummaryResp;
 import triplestar.mixchat.domain.chat.chat.dto.JoinRoomResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.GroupChatRoom;
+import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
 import triplestar.mixchat.domain.member.friend.repository.FriendshipRepository;
@@ -448,30 +451,46 @@ public class GroupChatRoomService {
                 ));
 
         // 3. Batch Query: 모든 방의 최신 메시지 내용을 한번에 조회 (MongoDB Aggregation)
-        List<triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent> latestMessages
+        List<ChatMessageRepository.LatestMessageContent> latestMessages
                 = chatMessageRepository.findLatestMessageContentByRoomIds(roomIds, ChatRoomType.GROUP);
 
-        Map<Long, String> lastMessageContentMap = latestMessages.stream()
-                .collect(Collectors.toMap(
-                        triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent::getChatRoomId,
-                        triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent::getContent
-                ));
+        log.info("[MongoDB 조회 결과] latestMessages count: {}", latestMessages.size());
+        latestMessages.forEach(msg -> log.info("  - roomId={}, content={}, created_at={}",
+                msg.getChatRoomId(), msg.getContent(), msg.getCreated_at()));
 
-        // 4. DTO 변환 (친구 조회 제거, 멤버 목록 제거)
+        Map<Long, ChatMessageRepository.LatestMessageContent> latestMessageMap =
+                latestMessages.stream()
+                        .collect(Collectors.toMap(
+                                ChatMessageRepository.LatestMessageContent::getChatRoomId,
+                                msg -> msg
+                        ));
+
+        // 4. DTO 변환 및 정렬
         return rooms.stream()
                 .map(room -> {
                     Long lastReadSequence = lastReadSequenceMap.getOrDefault(room.getId(), 0L);
                     long currentSequence = room.getCurrentSequence();
                     long unreadCount = Math.max(0, currentSequence - lastReadSequence);
 
-                    String lastMessageContent = lastMessageContentMap.get(room.getId());
+                    var latestMessage = latestMessageMap.get(room.getId());
+                    String lastMessageContent = latestMessage != null ? latestMessage.getContent() : null;
+                    LocalDateTime lastMessageAt = latestMessage != null && latestMessage.getCreated_at() != null
+                            ? LocalDateTime.ofInstant(latestMessage.getCreated_at().toInstant(), ZoneId.systemDefault())
+                            : null;
 
                     return GroupChatRoomSummaryResp.from(
                             room,
                             unreadCount,
                             lastReadSequence,
+                            lastMessageAt,
                             lastMessageContent
                     );
+                })
+                .sorted((a, b) -> {
+                    if (a.lastMessageAt() == null && b.lastMessageAt() == null) return 0;
+                    if (a.lastMessageAt() == null) return 1;
+                    if (b.lastMessageAt() == null) return -1;
+                    return b.lastMessageAt().compareTo(a.lastMessageAt());
                 })
                 .collect(Collectors.toList());
     }
