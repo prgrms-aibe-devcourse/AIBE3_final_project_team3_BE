@@ -16,12 +16,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import triplestar.mixchat.domain.admin.admin.dto.AdminPostDeleteReq;
+import triplestar.mixchat.domain.admin.admin.dto.AdminPostDeleteResp;
 import triplestar.mixchat.domain.admin.admin.dto.AdminReportListResp;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateReq;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameCreateResp;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameNoteResp;
 import triplestar.mixchat.domain.admin.admin.dto.AdminSentenceGameResp;
 import triplestar.mixchat.domain.admin.admin.service.AdminChatRoomService;
+import triplestar.mixchat.domain.admin.admin.service.AdminPostService;
 import triplestar.mixchat.domain.admin.admin.service.AdminReportService;
 import triplestar.mixchat.domain.admin.admin.service.AdminSentenceGameService;
 import triplestar.mixchat.domain.report.report.dto.ReportStatusUpdateReq;
@@ -36,6 +39,7 @@ public class ApiV1AdminController implements  ApiAdminController {
     private final AdminReportService adminReportService;
     private final AdminSentenceGameService adminSentenceGameService;
     private final AdminChatRoomService adminChatRoomService;
+    private final AdminPostService adminPostService;
 
     @Override
     @PatchMapping("/reports/{reportId}")
@@ -103,5 +107,16 @@ public class ApiV1AdminController implements  ApiAdminController {
     ) {
         adminChatRoomService.forceCloseRoom(roomId, admin.getId(), reasonCode);
         return CustomResponse.ok("채팅방 강제 폐쇄 완료");
+    }
+
+    @Override
+    @DeleteMapping("/posts/{postId}")
+    public CustomResponse<AdminPostDeleteResp> deletePost(
+            @AuthenticationPrincipal CustomUserDetails admin,
+            @PathVariable Long postId,
+            @RequestBody AdminPostDeleteReq request
+    ) {
+        adminPostService.deletePostByAdmin(admin.getId(), postId, request.reasonCode());
+        return CustomResponse.ok("게시글 삭제 완료", null);
     }
 }
