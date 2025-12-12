@@ -48,9 +48,4 @@ public class DirectChatRoom extends BaseEntity {
     public static DirectChatRoom create(Member user1, Member user2) {
         return new DirectChatRoom(user1, user2);
     }
-
-    // 다음 sequence 번호 생성, 락 추가로 synchronized는 필요 없을듯해 제거
-    public Long generateNextSequence() {
-        return ++this.currentSequence;
-    }
 }

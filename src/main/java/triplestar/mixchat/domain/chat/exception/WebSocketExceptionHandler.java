@@ -13,10 +13,7 @@ import triplestar.mixchat.global.customException.ServiceException;
 @RestControllerAdvice
 public class WebSocketExceptionHandler {
 
-    /**
-     * 예측 가능한 비즈니스 로직 예외 처리 (e.g., 채팅방 멤버가 아님)
-     * 로그 레벨: WARN
-     */
+    // 예측 가능한 비즈니스 로직 예외 처리 (e.g., 채팅방 멤버가 아님)
     @MessageExceptionHandler(ServiceException.class)
     @SendToUser("/topic/errors")
     public String handleServiceException(ServiceException ex) {
@@ -24,10 +21,7 @@ public class WebSocketExceptionHandler {
         return ex.getMessage(); // 서비스 예외에 담긴 구체적인 메시지를 사용자에게 전달
     }
 
-    /**
-     * 400 Bad Request: 잘못된 인자나 요청 형식 오류 처리
-     * 로그 레벨: WARN
-     */
+    // 400 Bad Request: 잘못된 인자나 요청 형식 오류 처리
     @MessageExceptionHandler(IllegalArgumentException.class)
     @SendToUser("/topic/errors")
     public String handleIllegalArgumentException(IllegalArgumentException ex) {
@@ -35,10 +29,7 @@ public class WebSocketExceptionHandler {
         return "잘못된 요청입니다: " + ex.getMessage();
     }
 
-    /**
-     * 인가/권한 관련 예외 처리
-     * 로그 레벨: WARN
-     */
+    // 인가/권한 관련 예외 처리
     @MessageExceptionHandler(AccessDeniedException.class)
     @SendToUser("/topic/errors")
     public String handleAccessDeniedException(AccessDeniedException ex) {
@@ -46,10 +37,7 @@ public class WebSocketExceptionHandler {
         return "요청에 대한 접근 권한이 없습니다.";
     }
 
-    /**
-     * 401 Unauthorized: 인증 관련 예외 처리 (e.g., 잘못된 토큰)
-     * 로그 레벨: WARN
-     */
+    // 401 Unauthorized: 인증 관련 예외 처리 (e.g., 잘못된 토큰)
     @MessageExceptionHandler(AuthenticationException.class)
     @SendToUser("/topic/errors")
     public String handleAuthenticationException(AuthenticationException ex) {
@@ -57,10 +45,7 @@ public class WebSocketExceptionHandler {
         return "인증에 실패했습니다. " + ex.getMessage();
     }
 
-    /**
-     * 예측하지 못한 모든 서버 예외 처리
-     * 로그 레벨: ERROR
-     */
+    // 예측하지 못한 모든 서버 예외 처리
     @MessageExceptionHandler(Exception.class)
     @SendToUser("/topic/errors")
     public String handleException(Exception ex) {

@@ -21,6 +21,8 @@ import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomSummaryResp;
+import triplestar.mixchat.domain.chat.chat.dto.MessageReq;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.global.response.CustomResponse;
@@ -78,13 +80,23 @@ public interface ApiChatController {
 
     @Operation(summary = "자신의 그룹 채팅방 목록 조회", description = "현재 로그인한 사용자가 참여하고 있는 모든 그룹 채팅방의 목록을 반환합니다.")
     @SignInInRequireResponse
-    CustomResponse<List<GroupChatRoomResp>> getGroupChatRooms(
+    CustomResponse<List<GroupChatRoomSummaryResp>> getGroupChatRooms(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 
     @Operation(summary = "자신의 AI 채팅방 목록 조회", description = "현재 로그인한 사용자가 참여하고 있는 모든 AI 채팅방의 목록을 반환합니다.")
     @SignInInRequireResponse
     CustomResponse<List<AIChatRoomResp>> getAiChatRooms(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
+    );
+
+    @Operation(summary = "채팅 메시지 검색", description = "선택한 탭(DIRECT, GROUP, AI) 내 내가 속한 방에서 키워드로 메시지를 검색합니다.")
+    @SignInInRequireResponse
+    CustomResponse<?> searchMessages(
+            @Parameter(description = "검색 대상 채팅방 타입(DIRECT, GROUP, AI)") @RequestParam ChatRoomType chatRoomType,
+            @Parameter(description = "검색 키워드(2자 이상 권장)") @RequestParam String keyword,
+            @Parameter(description = "페이지 번호(0부터 시작)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기(기본 20, 최대 100)") @RequestParam(defaultValue = "20") int size,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 
@@ -134,10 +146,18 @@ public interface ApiChatController {
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 
+    @Operation(summary = "텍스트 메시지 전송 (부하 테스트용)", description = "REST API를 통해 텍스트 메시지를 전송합니다. WebSocket 대신 HTTP로 메시지를 전송하여 부하 테스트 도구(k6)에서 사용할 수 있습니다. 개발/로컬/테스트 환경에서만 활성화됩니다.")
+    @SignInInRequireResponse
+    CustomResponse<MessageResp> sendMessageForLoadTest(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody MessageReq request,
+            @RequestParam(required = false) Long testSenderId,
+            @RequestParam(required = false) String testNickname
+    );
+
     @Operation(summary = "부하테스트 데이터 정리", description = "부하테스트로 생성된 모든 데이터를 일괄 삭제합니다. [LOAD_TEST] 태그가 있는 Group/AI 채팅방과 테스트 계정(1~100) 간의 Direct 채팅방을 삭제합니다.")
     @SignInInRequireResponse
     CustomResponse<?> cleanupLoadTestData(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 }
-

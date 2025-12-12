@@ -97,10 +97,7 @@ public class LoadTestCleanupService {
         return totalDeleted;
     }
 
-    /**
-     * 채팅방의 메시지 데이터 삭제 (MongoDB)
-     * @return 삭제된 메시지 수
-     */
+    // 채팅방의 메시지 데이터 삭제 (MongoDB)
     private long cleanupRoomData(Long roomId, ChatRoomType roomType) {
         long messageCount = chatMessageRepository.countByChatRoomIdAndChatRoomType(roomId, roomType);
 
@@ -112,10 +109,7 @@ public class LoadTestCleanupService {
         return messageCount;
     }
 
-    /**
-     * 채팅방의 멤버 데이터 삭제 (MySQL)
-     * @return 삭제된 멤버 수
-     */
+    // 채팅방의 멤버 데이터 삭제 (MySQL)
     private int cleanupRoomMembers(Long roomId, ChatRoomType roomType) {
         int memberCount = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, roomType).size();
 

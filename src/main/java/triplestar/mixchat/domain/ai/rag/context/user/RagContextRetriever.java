@@ -12,10 +12,10 @@ import triplestar.mixchat.domain.learningNote.learningNote.service.LearningNoteR
 
 @Component
 @RequiredArgsConstructor
-public class RagContextRetriever{
-    private final LearningNoteRagService  learningNoteRagService;
-    public List<UserContextChunk> retrieve(Long roomId, Long userId) {
+public class RagContextRetriever {
+    private final LearningNoteRagService learningNoteRagService;
 
+    public List<UserContextChunk> retrieve(Long roomId, Long userId) {
         List<LearningNote> notes = learningNoteRagService.loadNotesFromCache(roomId, userId);
 
         if(notes == null || notes.isEmpty()) {

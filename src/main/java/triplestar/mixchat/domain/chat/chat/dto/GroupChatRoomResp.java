@@ -39,6 +39,9 @@ public record GroupChatRoomResp(
         @Schema(description = "안 읽은 메시지 수", example = "10", requiredMode = REQUIRED)
         Long unreadCount,
 
+        @Schema(description = "마지막으로 읽은 Sequence", example = "50")
+        Long lastReadSequence,
+
         @Schema(description = "채팅방 멤버 목록", requiredMode = REQUIRED)
         List<ChatMemberResp> members,
 
@@ -48,7 +51,7 @@ public record GroupChatRoomResp(
         @Schema(description = "마지막 메시지 내용", example = "안녕하세요!")
         String lastMessageContent
 ) {
-    public static GroupChatRoomResp from(GroupChatRoom entity, List<ChatMember> chatMembers, Long currentUserId, Set<Long> friendIdSet, Long unreadCount, String lastMessageContent) {
+    public static GroupChatRoomResp from(GroupChatRoom entity, List<ChatMember> chatMembers, Long currentUserId, Set<Long> friendIdSet, Long unreadCount, Long lastReadSequence, String lastMessageContent) {
         List<ChatMemberResp> memberDtos = chatMembers.stream()
                 .map(chatMember -> {
                     boolean isFriend = !chatMember.getMember().getId().equals(currentUserId) && friendIdSet.contains(chatMember.getMember().getId());
@@ -68,9 +71,15 @@ public record GroupChatRoomResp(
                 entity.getCreatedAt(),
                 entity.getOwner().getId(),
                 unreadCount,
+                lastReadSequence,
                 memberDtos,
                 entity.getModifiedAt(),
                 lastMessageContent
         );
+    }
+
+    // lastReadSequence 추가되며 기존 호환성 유지하도록 추가
+    public static GroupChatRoomResp from(GroupChatRoom entity, List<ChatMember> chatMembers, Long currentUserId, Set<Long> friendIdSet, Long unreadCount, String lastMessageContent) {
+        return from(entity, chatMembers, currentUserId, friendIdSet, unreadCount, null, lastMessageContent);
     }
 }

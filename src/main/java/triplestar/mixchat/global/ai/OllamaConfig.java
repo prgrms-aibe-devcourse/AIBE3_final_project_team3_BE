@@ -8,62 +8,45 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
+import org.springframework.core.annotation.Order;
 
+// Ollama WebUI 설정 - openAI 호환 API 사용
 @Configuration
-public class AiConfig {
+public class OllamaConfig {
 
     @Value("${spring.ai.ollama.base-url}")
-    private String ollamaBaseUrl;
+    private String baseUrl;
 
     @Value("${spring.ai.ollama.api-key}")
-    private String ollamaApiKey;
+    private String apiKey;
 
     @Value("${spring.ai.ollama.chat.options.model}")
-    private String ollamaModel;
+    private String model;
 
-    // OpenAi는 Auto Configuration 사용으로 별도 설정 불필요
-
-    // OLLAMA API 설정
-    // OLLAMA 또한 openWebUI를 기반으로 OpenAI API를 흉내내므로 OpenAiApi 사용
     @Bean
     public OpenAiApi ollamaOpenAiApi() {
         return OpenAiApi.builder()
-                .baseUrl(ollamaBaseUrl)
-                .apiKey(ollamaApiKey)
+                .baseUrl(baseUrl)
+                .apiKey(apiKey)
                 .build();
     }
 
     @Bean
-    @Primary
     public OpenAiChatModel ollamaOpenAiChatModel(@Qualifier("ollamaOpenAiApi") OpenAiApi ollamaOpenAiApi) {
         return OpenAiChatModel.builder()
                 .openAiApi(ollamaOpenAiApi)
                 .defaultOptions(
                         OpenAiChatOptions.builder()
-                                .model(ollamaModel)
+                                .model(model)
                                 .build()
                 )
                 .build();
     }
 
     @Bean
-    @Primary
+    @Order(1)
     @Qualifier("ollama")
     public ChatClient ollamaChatClient(@Qualifier("ollamaOpenAiChatModel") OpenAiChatModel openAiChatModel) {
         return ChatClient.builder(openAiChatModel).build();
     }
-
-    @Bean
-    @Qualifier("openai")
-    public ChatClient openAiChatClient(OpenAiChatModel model) {
-        return ChatClient.builder(model).build();
-    }
-
-    // Gemini Model (Vertex AI 설정 필요 - 당장 사용하지 않으므로 비활성화)
-//    @Bean
-//    @Qualifier("gemini")
-//    public ChatClient geminiChatClient(VertexAiGeminiChatModel model) {
-//        return ChatClient.builder(model).build();
-//    }
 }

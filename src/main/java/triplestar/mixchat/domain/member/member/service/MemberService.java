@@ -4,12 +4,12 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import triplestar.mixchat.domain.member.member.constant.ProfileImageProperties;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
 import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
@@ -27,13 +27,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final S3Uploader s3Uploader;
     private final PresenceService presenceService;
-
-    @Qualifier("defaultProfileImageUrl")
-    private final String defaultProfileBaseURL;
-    @Qualifier("maxProfileImageSizeBytes")
-    private final Long maxProfileImageSize;
-    @Qualifier("allowedImageTypes")
-    private final Set<String> allowedImageTypes;
+    private final ProfileImageProperties profileImageProperties;
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
@@ -91,10 +85,14 @@ public class MemberService {
 
     @Transactional
     public void uploadProfileImage(Long memberId, MultipartFile multipartFile) {
+        String defaultProfileImageUrl = profileImageProperties.defaultProfileImageUrl();
+        Long maxProfileImageSize = profileImageProperties.maxProfileImageSizeBytes();
+        Set<String> allowedImageTypes = profileImageProperties.allowedImageTypes();
+
         Member member = findMemberById(memberId);
 
         if (multipartFile == null || multipartFile.isEmpty()) {
-            member.updateProfileImageUrl(defaultProfileBaseURL);
+            member.updateProfileImageUrl(defaultProfileImageUrl);
             return;
         }
 
@@ -114,13 +112,15 @@ public class MemberService {
 
     @Transactional
     public void deleteSoftly(Long memberId) {
+        String defaultProfileImageUrl = profileImageProperties.defaultProfileImageUrl();
+
         Member member = findMemberById(memberId);
         String profileUrl = member.getProfileImageUrl();
-        if (profileUrl != null && !profileUrl.equals(defaultProfileBaseURL)) {
+        if (profileUrl != null && !profileUrl.equals(defaultProfileImageUrl)) {
             s3Uploader.deleteFileByUrl(profileUrl);
         }
 
         member.deleteSoftly();
-        member.updateProfileImageUrl(defaultProfileBaseURL);
+        member.updateProfileImageUrl(defaultProfileImageUrl);
     }
 }

@@ -1,8 +1,7 @@
 package triplestar.mixchat.domain.chat.chat.service;
 
-import static java.time.LocalDateTime.now;
-
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -15,19 +14,18 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.ai.chatbot.AiChatBotService;
-import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationReq;
+import triplestar.mixchat.domain.chat.chat.constant.ChatNotificationSetting;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.MessagePageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
-import triplestar.mixchat.domain.chat.chat.dto.RoomLastMessageUpdateResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage.MessageType;
+import triplestar.mixchat.domain.chat.chat.event.ChatMessageCreatedEvent;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
-import triplestar.mixchat.domain.chat.chat.repository.DirectChatRoomRepository;
-import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
+import triplestar.mixchat.domain.chat.search.service.ChatMessageSearchService;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.notification.constant.NotificationType;
@@ -46,15 +44,16 @@ public class ChatMessageService {
     private final ChatMemberService chatMemberService;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final DirectChatRoomRepository directChatRoomRepository;
-    private final GroupChatRoomRepository groupChatRoomRepository;
-    private final ChatSubscriberCacheService subscriberCacheService;
     private final ChatNotificationService chatNotificationService;
-    private final jakarta.persistence.EntityManager entityManager;
     private final AiChatBotService aiChatBotService;
+    private final ChatSequenceGenerator sequenceGenerator;
+    private final ChatMessageSearchService chatMessageSearchService;
+    private final ChatSubscriberCacheService subscriberCacheService;
 
     @Transactional
-    public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content, ChatMessage.MessageType messageType, ChatRoomType chatRoomType, boolean isTranslateEnabled) {
+    public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content,
+                                   ChatMessage.MessageType messageType, ChatRoomType chatRoomType,
+                                   boolean isTranslateEnabled) {
         // 시스템 메시지가 아닐 경우에만 멤버 검증을 수행
         if (messageType != ChatMessage.MessageType.SYSTEM) {
             chatMemberService.verifyUserIsMemberOfRoom(senderId, roomId, chatRoomType);
@@ -68,108 +67,101 @@ public class ChatMessageService {
             }
         }
 
-        // Sequence 생성 (비관적 락으로 동시성 제어)
-        Long sequence = generateSequence(roomId, chatRoomType);
+        // Sequence 생성 (Redis INCR 기반)
+        Long sequence = sequenceGenerator.generateSequence(roomId, chatRoomType);
 
         // 메시지 생성 및 저장
-        ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType, isTranslateEnabled);
+        ChatMessage message = new ChatMessage(roomId, senderId, sequence, content, messageType, chatRoomType,
+                isTranslateEnabled);
         ChatMessage savedMessage = chatMessageRepository.save(message);
 
-        // AI 채팅방인 경우 메시지 생성 및 저장 후 별도로직 수행
+        // AI 채팅방인 경우 메시지 생성 및 저장 후 별도 로직 수행
         if (chatRoomType == ChatRoomType.AI) {
             return saveAiRoomMessage(roomId, senderId, senderNickname, content, chatRoomType, savedMessage);
         }
 
-        // TEXT 타입만 번역
-        if (isTranslateEnabled && messageType == ChatMessage.MessageType.TEXT) {
-            eventPublisher.publishEvent(new TranslationReq(savedMessage.getId(), savedMessage.getContent()));
-        }
+        // === 트랜잭션 내에서 모든 DB 연산 처리 (방향 A 패턴) ===
 
-        // 1. 발신자 + 구독자 모두를 하나의 Set으로 수집 (읽음 처리 대상)
+        // 1. 읽음 상태 업데이트 (발신자 + 구독자)
         Set<Long> memberIdsToMarkRead = new HashSet<>();
-        memberIdsToMarkRead.add(senderId); // 발신자도 포함(방어적 코드)
+        memberIdsToMarkRead.add(senderId);
 
-        // 2. Redis에서 구독자 목록 조회 및 읽음 처리 대상에 추가
+        // 현재 구독 중인 사용자 조회 (Redis)
         Set<String> subscribers = subscriberCacheService.getSubscribers(roomId);
+        Set<Long> subscriberIds = new HashSet<>();
         if (subscribers != null && !subscribers.isEmpty()) {
             for (String subscriberIdStr : subscribers) {
                 try {
                     Long subscriberId = Long.parseLong(subscriberIdStr);
-                    memberIdsToMarkRead.add(subscriberId); // Set이므로 중복 자동 제거
+                    subscriberIds.add(subscriberId);
+                    memberIdsToMarkRead.add(subscriberId);
                 } catch (NumberFormatException e) {
                     log.error("구독자 ID 파싱 실패 - roomId: {}, 잘못된 ID: {}", roomId, subscriberIdStr);
                 }
             }
         }
 
-        // 3. Bulk Update: 발신자 + 구독자 모두 한 번에 처리 (쿼리 통합)
         if (!memberIdsToMarkRead.isEmpty()) {
             chatRoomMemberRepository.bulkUpdateLastReadSequence(
-                    roomId, chatRoomType, memberIdsToMarkRead, sequence, now()
+                    roomId, chatRoomType, memberIdsToMarkRead, sequence, LocalDateTime.now()
             );
         }
 
-        List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
+        // 2. unreadCount 계산
+       List<ChatRoomMemberRepository.MemberSummary> memberSummaries =
+                chatRoomMemberRepository.findMemberSummariesByRoomIdAndChatRoomType(roomId, chatRoomType);
 
-        // 읽지 않은 사람 수
-        int unreadCount = (int) allMembers.stream()
-                .filter(member -> member.hasNotRead(sequence))
+        int unreadCount = (int) memberSummaries.stream()
+                .filter(summary -> {
+                    Long lastRead = summary.getLastReadSequence();
+                    return lastRead == null || lastRead < sequence;
+                })
                 .count();
 
-        // 5. 알림 이벤트 (구독 중이지 않은 사람들에게만)
-        List<ChatMember> roomMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomTypeAndMember_IdNot(roomId, chatRoomType, senderId);
-        for (ChatMember receiver : roomMembers) {
-            if (subscriberCacheService.isSubscribed(roomId, receiver.getMember().getId())) {
+        // 3. 알림 이벤트 생성 (DB 저장 또는 발행용 데이터 준비)
+        List<NotificationEvent> notificationEvents = new ArrayList<>();
+        for (ChatRoomMemberRepository.MemberSummary receiver : memberSummaries) {
+            Long receiverId = receiver.getMemberId();
+            if (receiverId.equals(senderId) || subscriberIds.contains(receiverId)) {
                 continue;
             }
-            if (receiver.isNotificationAlways()) {
-                eventPublisher.publishEvent(
+            if (receiver.getChatNotificationSetting() == ChatNotificationSetting.ALWAYS) {
+                notificationEvents.add(
                         new NotificationEvent(
-                                receiver.getMember().getId(),
+                                receiverId,
                                 senderId,
                                 NotificationType.CHAT_MESSAGE,
-                                savedMessage.getContent()
+                                content
                         )
                 );
             }
         }
 
-        // 6. 모든 멤버에게 채팅방 리스트 업데이트 알림 전송 (실시간 정렬용)
-        String lastMessageAt = savedMessage.getCreatedAt().toString();
-        String lastMessageContent = savedMessage.isTranslateEnabled() && savedMessage.getTranslatedContent() != null
-                ? savedMessage.getTranslatedContent()
-                : savedMessage.getContent();
+        // 4. 이벤트 발행 (AFTER_COMMIT에서 외부 I/O만 처리)
+        ChatMessageCreatedEvent createdEvent = new ChatMessageCreatedEvent(
+                savedMessage.getId(),
+                savedMessage.getChatRoomId(),
+                savedMessage.getSenderId(),
+                senderNickname,
+                savedMessage.getContent(),
+                savedMessage.getMessageType(),
+                savedMessage.getChatRoomType(),
+                savedMessage.getSequence(),
+                savedMessage.isTranslateEnabled(),
+                savedMessage.getCreatedAt(),
+                unreadCount
+        );
+        eventPublisher.publishEvent(createdEvent);
 
-        // 각 멤버별로 unreadCount를 계산해서 개별 전송
-        allMembers.forEach(member -> {
-            // 해당 멤버의 안읽은 메시지 수 계산 (현재 sequence - 마지막 읽은 sequence)
-            long memberLastRead = member.getLastReadSequence();
-            int unreadCountForMember = (int) Math.max(0, sequence - memberLastRead);
+        // 알림 이벤트 발행 (개별 발행)
+        notificationEvents.forEach(eventPublisher::publishEvent);
 
-            RoomLastMessageUpdateResp updateResp = new RoomLastMessageUpdateResp(
-                    roomId,
-                    chatRoomType,
-                    lastMessageAt,
-                    unreadCountForMember,
-                    lastMessageContent
-            );
-
-            chatNotificationService.sendRoomListUpdate(
-                    member.getMember().getId().toString(),
-                    updateResp
-            );
-        });
-
-        MessageResp response = MessageResp.withUnreadCount(savedMessage, senderNickname, unreadCount);
-
-        // 7. 현재 채팅방(Topic)에 메시지 전송
-        chatNotificationService.sendChatMessage(roomId, chatRoomType, response);
-
-        return response;
+        // 최소 정보 + unreadCount 반환
+        return MessageResp.withUnreadCount(savedMessage, senderNickname, unreadCount);
     }
 
     private MessageResp saveAiRoomMessage(Long roomId, Long senderId, String senderNickname, String content,
-                                       ChatRoomType chatRoomType, ChatMessage savedMessage) {
+                                          ChatRoomType chatRoomType, ChatMessage savedMessage) {
         // 웹소켓 알림 전송
         MessageResp resp = MessageResp.from(savedMessage, senderNickname);
         chatNotificationService.sendChatMessage(roomId, chatRoomType, resp);
@@ -186,7 +178,8 @@ public class ChatMessageService {
     }
 
     @Transactional
-    public MessageResp saveFileMessage(Long roomId, Long senderId, String senderNickname, String fileUrl, ChatMessage.MessageType messageType, ChatRoomType chatRoomType) {
+    public MessageResp saveFileMessage(Long roomId, Long senderId, String senderNickname, String fileUrl,
+                                       ChatMessage.MessageType messageType, ChatRoomType chatRoomType) {
         if (messageType != ChatMessage.MessageType.IMAGE && messageType != ChatMessage.MessageType.FILE) {
             throw new IllegalArgumentException("파일 메시지는 IMAGE 또는 FILE 타입이어야 합니다.");
         }
@@ -195,15 +188,25 @@ public class ChatMessageService {
     }
 
     // 메시지 목록 조회 (페이징), 발신자 이름 및 unreadCount 포함
-    public MessagePageResp getMessagesWithSenderInfo(Long roomId, ChatRoomType chatRoomType, Long requesterId, Long cursor, Integer size) {
+    public MessagePageResp getMessagesWithSenderInfo(Long roomId, ChatRoomType chatRoomType, Long requesterId,
+                                                     Long cursor, Integer size) {
         // 보안 검증: 요청자가 해당 채팅방의 멤버인지 확인
         chatMemberService.verifyUserIsMemberOfRoom(requesterId, roomId, chatRoomType);
 
         // 기본값: size = 25, 최대 100
         int pageSize = (size != null && size > 0 && size <= 100) ? size : 25;
 
+        // AI 채팅방은 별도처리
+        if (chatRoomType.equals(ChatRoomType.AI)) {
+            return getMessagePageResp(roomId, chatRoomType, pageSize);
+        }
+
         // 1. 채팅방의 모든 멤버 조회 (읽음 상태 확인 및 입장 시간 확인용)
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
+        List<Long> sortedLastReadSequences = allMembers.stream()
+                .map(cm -> cm.getLastReadSequence() == null ? 0L : cm.getLastReadSequence())
+                .sorted()
+                .toList();
 
         // 2. 요청자의 입장 시간 확인
         LocalDateTime joinDate = allMembers.stream()
@@ -238,10 +241,8 @@ public class ChatMessageService {
                 .map(message -> {
                     String senderName = senderNames.getOrDefault(message.getSenderId(), "Unknown");
 
-                    // 읽지 않은 사람 수
-                    int unreadCount = (int) allMembers.stream()
-                            .filter(member -> member.hasNotRead(message.getSequence()))
-                            .count();
+                    // 읽지 않은 사람 수 (정렬된 lastReadSequence에서 lower bound로 계산)
+                    int unreadCount = lowerBound(sortedLastReadSequences, message.getSequence());
 
                     return MessageResp.withUnreadCount(message, senderName, unreadCount);
                 })
@@ -261,8 +262,32 @@ public class ChatMessageService {
         return MessagePageResp.of(messageResps, nextCursor, hasMore);
     }
 
+    // AI 채팅방 전용 메시지 조회 (입장 시간 필터 없음)
+    private MessagePageResp getMessagePageResp(Long roomId, ChatRoomType chatRoomType, int pageSize) {
+        List<ChatMessage> messages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeAndCreatedAtGreaterThanEqualOrderBySequenceDesc(
+                roomId, chatRoomType, LocalDateTime.of(2000, 1, 1, 0, 0), PageRequest.of(0, pageSize)
+        );
+
+        List<MessageResp> messageResps = messages.stream()
+                .map(message -> MessageResp.from(message, "user"))
+                .collect(Collectors.toList());
+
+        // 다음 페이지 정보 계산
+        Long nextCursor = null;
+        boolean hasMore = false;
+
+        if (!messages.isEmpty()) {
+            // nextCursor는 가장 오래된 메시지의 sequence (역순 정렬 후 첫 번째)
+            nextCursor = messages.get(0).getSequence();
+            // hasMore는 조회된 메시지 수가 pageSize와 같으면 true
+            hasMore = messages.size() == pageSize;
+        }
+        return MessagePageResp.of(messageResps, nextCursor, hasMore);
+    }
+
     // 누군가 채팅방 구독시 읽지 않은 사람 수 업데이트
-    public List<MessageUnreadCountResp> getUnreadCountUpdates(Long roomId, ChatRoomType chatRoomType, Long readUpToSequence) {
+    public List<MessageUnreadCountResp> getUnreadCountUpdates(Long roomId, ChatRoomType chatRoomType,
+                                                              Long readUpToSequence) {
         // 1. 채팅방의 모든 멤버 조회 (읽음 상태 확인용)
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
 
@@ -284,23 +309,18 @@ public class ChatMessageService {
                 .collect(Collectors.toList());
     }
 
-    // Sequence 생성 (비관적 락으로 동시성 제어)
-    private Long generateSequence(Long roomId, ChatRoomType chatRoomType) {
-        // 1) room 개별 조회 및 시퀀스 생성
-        Long newSeq = switch (chatRoomType) {
-            case DIRECT -> directChatRoomRepository.findByIdWithLock(roomId)
-                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
-                    .generateNextSequence();
-
-            case GROUP -> groupChatRoomRepository.findByIdWithLock(roomId)
-                    .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + roomId))
-                    .generateNextSequence();
-
-            case AI -> -1L;
-        };
-
-        // 2) 즉시 DB 반영
-        entityManager.flush();
-        return newSeq;
+    /** 정렬된 lastReadSequence 리스트에서 target보다 작은 원소 개수 반환 */
+    private int lowerBound(List<Long> sorted, long target) {
+        int left = 0;
+        int right = sorted.size();
+        while (left < right) {
+            int mid = (left + right) >>> 1;
+            if (sorted.get(mid) < target) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return left;
     }
 }

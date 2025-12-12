@@ -15,8 +15,9 @@ import triplestar.mixchat.global.response.CustomResponse;
 public class TempAiChatController {
 
     private final ChatClient ollamaChatClient;
+    private final ChatClient openAiChatClient;
 
-    @PostMapping(value = "/temp/chat")
+    @PostMapping(value = "/temp/ollama/chat")
     public CustomResponse<TempAiResp> chat(@RequestBody TempAiReq req) {
         String content = ollamaChatClient.prompt()
                 .user(req.message())
@@ -25,5 +26,16 @@ public class TempAiChatController {
 
         TempAiResp resp = new TempAiResp(content);
         return CustomResponse.ok("AI chat response placeholder", resp);
+    }
+
+    @PostMapping(value = "/temp/openai/chat")
+    public CustomResponse<TempAiResp> openAiChat(@RequestBody TempAiReq req) {
+        String content = openAiChatClient.prompt()
+                .user(req.message())
+                .call()
+                .content();
+
+        TempAiResp resp = new TempAiResp(content);
+        return CustomResponse.ok("OpenAI chat response placeholder", resp);
     }
 }

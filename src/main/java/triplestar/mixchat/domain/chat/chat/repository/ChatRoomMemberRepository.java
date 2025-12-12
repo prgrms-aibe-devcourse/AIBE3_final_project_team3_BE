@@ -8,11 +8,18 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import triplestar.mixchat.domain.chat.chat.constant.ChatNotificationSetting;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
 public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long> {
+
+    interface MemberSummary {
+        Long getMemberId();
+        Long getLastReadSequence();
+        ChatNotificationSetting getChatNotificationSetting();
+    }
 
     // 특정 사용자가 특정 대화방의 멤버인지 존재 여부만 빠르게 확인
     boolean existsByChatRoomIdAndChatRoomTypeAndMember_Id(Long chatRoomId, ChatRoomType chatRoomType, Long memberId);
@@ -38,26 +45,17 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long
     // 특정 대화방의 모든 멤버 수를 조회
     long countByChatRoomIdAndChatRoomType(Long chatRoomId, ChatRoomType chatRoomType);
 
-    /**
-     * 특정 멤버가 속한 모든 ChatMember 엔티티를 조회합니다.
-     * @param member 멤버 엔티티
-     * @return 해당 멤버가 속한 ChatMember 목록
-     */
+    // 특정 멤버가 속한 모든 ChatMember 엔티티를 조회/
     List<ChatMember> findByMember(Member member);
 
     // 특정 대화방 ID와 타입에 해당하는 모든 ChatMember 엔티티 조회
     List<ChatMember> findByChatRoomIdAndChatRoomType(Long chatRoomId, ChatRoomType chatRoomType);
 
     // 특정 대화방 ID와 타입에 해당하는 모든 ChatMember 엔티티를 멤버 정보와 함께 조회 (N+1 문제 방지)
-    // @Query("SELECT cm FROM ChatMember cm JOIN FETCH cm.member m WHERE cm.chatRoomId = :chatRoomId AND cm.chatRoomType = :chatRoomType")
-    // List<ChatMember> findByChatRoomIdAndChatRoomTypeWithMembers(@Param("chatRoomId") Long chatRoomId, @Param("chatRoomType") ChatRoomType chatRoomType);
+    @Query("SELECT cm FROM ChatMember cm JOIN FETCH cm.member m WHERE cm.chatRoomId = :chatRoomId AND cm.chatRoomType = :chatRoomType")
+    List<ChatMember> findByChatRoomIdAndChatRoomTypeWithMembers(@Param("chatRoomId") Long chatRoomId, @Param("chatRoomType") ChatRoomType chatRoomType);
 
-    /**
-     * 특정 멤버가 특정 대화 타입에 속한 모든 ChatMember 엔티티를 조회합니다.
-     * @param member 멤버 엔티티
-     * @param chatRoomType 대화방 타입
-     * @return 해당 멤버가 속한 ChatMember 목록
-     */
+    // 특정 멤버가 특정 대화 타입에 속한 모든 ChatMember 엔티티를 조회
     List<ChatMember> findByMemberAndChatRoomType(Member member, ChatRoomType chatRoomType);
 
     // 방 ID 목록에 해당하는 모든 ChatMember 엔티티를 멤버 정보와 함께 조회
@@ -78,7 +76,7 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long
         AND cm.member.id IN :memberIds
         AND (cm.lastReadSequence IS NULL OR cm.lastReadSequence < :sequence)
         """)
-    void bulkUpdateLastReadSequence(
+    int bulkUpdateLastReadSequence(
         @Param("roomId") Long roomId,
         @Param("chatRoomType") ChatRoomType chatRoomType,
         @Param("memberIds") Set<Long> memberIds,
@@ -88,4 +86,31 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatMember, Long
 
     // 방 ID와 대화방 타입으로 해당 방 정보 삭제
     void deleteByChatRoomIdAndChatRoomType(Long roomId, ChatRoomType roomType);
+
+    // 특정 멤버의 특정 타입 채팅방들에 대한 lastReadSequence를 한번에 조회 (Batch Query)
+    @Query("""
+        SELECT cm.chatRoomId, cm.lastReadSequence
+        FROM ChatMember cm
+        WHERE cm.member.id = :memberId
+        AND cm.chatRoomType = :chatRoomType
+        """)
+    List<Object[]> findLastReadSequencesByMemberAndRoomType(
+        @Param("memberId") Long memberId,
+        @Param("chatRoomType") ChatRoomType chatRoomType
+    );
+    // 특정 채팅방 ID 목록에 해당하는 각 방의 멤버 수를 조회 (N+1 문제 해결)
+    @Query("SELECT cm.chatRoomId, COUNT(cm) FROM ChatMember cm WHERE cm.chatRoomId IN :roomIds AND cm.chatRoomType = :chatRoomType GROUP BY cm.chatRoomId")
+    List<Object[]> countMembersByChatRoomIdInAndChatRoomType(@Param("roomIds") List<Long> roomIds, @Param("chatRoomType") ChatRoomType chatRoomType);
+
+    @Query("""
+        SELECT cm.member.id AS memberId,
+               cm.lastReadSequence AS lastReadSequence,
+               cm.chatNotificationSetting AS chatNotificationSetting
+        FROM ChatMember cm
+        WHERE cm.chatRoomId = :chatRoomId AND cm.chatRoomType = :chatRoomType
+        """)
+    List<MemberSummary> findMemberSummariesByRoomIdAndChatRoomType(
+            @Param("chatRoomId") Long chatRoomId,
+            @Param("chatRoomType") ChatRoomType chatRoomType
+    );
 }
