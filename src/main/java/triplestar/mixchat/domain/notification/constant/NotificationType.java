@@ -7,5 +7,6 @@ public enum NotificationType {
     FRIEND_REQUEST_REJECT,
     SYSTEM_ALERT,
     CHAT_INVITATION,
-    ROOM_CLOSED
+    ROOM_CLOSED,
+    POST_DELETED
 }
