@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,6 +65,28 @@ class FriendshipRequestServiceTest {
         assertThatThrownBy(() -> friendshipRequestService.sendRequest(member1.getId(), member1.getId()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("자기 자신에게 친구 요청을 보낼 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("친구 요청 실패 접근 불가 회원")
+    void send_fail_is_not_accessible() {
+        Member deletedUser = TestMemberFactory.createDeletedMember("deletedUser");
+        Member deleted = memberRepository.save(deletedUser);
+        assertThatThrownBy(() -> friendshipRequestService.sendRequest(member1.getId(), deleted.getId()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("친구 요청을 보낼 수 없는 대상입니다.");
+
+        Member blockedUser = TestMemberFactory.createBlockedMember("blockedUser");
+        Member blocked = memberRepository.save(blockedUser);
+        assertThatThrownBy(() -> friendshipRequestService.sendRequest(member1.getId(), blocked.getId()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("친구 요청을 보낼 수 없는 대상입니다.");
+
+        Member adminUser = TestMemberFactory.createAdmin("admin");
+        Member admin = memberRepository.save(adminUser);
+        assertThatThrownBy(() -> friendshipRequestService.sendRequest(member1.getId(), admin.getId()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("친구 요청을 보낼 수 없는 대상입니다.");
     }
 
     @Test
@@ -179,9 +202,9 @@ class FriendshipRequestServiceTest {
         Long requestId2 = friendshipRequestResp2.id();
         friendshipRequestService.processRequest(member3.getId(), requestId2, true);
 
-        Page<FriendSummaryResp> friendsOfMember1 = friendshipService.getFriends(member1.getId(), null);
-        Page<FriendSummaryResp> friendsOfMember2 = friendshipService.getFriends(member2.getId(), null);
-        Page<FriendSummaryResp> friendsOfMember3 = friendshipService.getFriends(member3.getId(), null);
+        Page<FriendSummaryResp> friendsOfMember1 = friendshipService.getFriends(member1.getId(), Pageable.ofSize(3));
+        Page<FriendSummaryResp> friendsOfMember2 = friendshipService.getFriends(member2.getId(), Pageable.ofSize(3));
+        Page<FriendSummaryResp> friendsOfMember3 = friendshipService.getFriends(member3.getId(), Pageable.ofSize(3));
 
         assertThat(friendsOfMember1.getTotalElements()).isEqualTo(2);
         assertThat(friendsOfMember2.getTotalElements()).isEqualTo(1);

@@ -11,16 +11,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.member.auth.dto.LogInReq;
+import triplestar.mixchat.domain.member.auth.dto.LogInResp;
+import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
-import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
-import triplestar.mixchat.domain.member.auth.dto.LogInReq;
-import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
-import triplestar.mixchat.domain.member.auth.dto.LogInResp;
 import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-import triplestar.mixchat.global.customException.UniqueConstraintException;
 import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
 
 @ActiveProfiles("test")
@@ -83,7 +81,7 @@ class AuthServiceTest {
         Assertions.assertThatThrownBy(() -> {
             joinDummy("test@test1.com");
             joinDummy("test@test1.com");
-        }).isInstanceOf(UniqueConstraintException.class);
+        }).isInstanceOf(IllegalStateException.class);
     }
 
     @Test

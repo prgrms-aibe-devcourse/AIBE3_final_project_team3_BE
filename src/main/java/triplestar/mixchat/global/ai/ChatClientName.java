@@ -2,7 +2,7 @@ package triplestar.mixchat.global.ai;
 
 public enum ChatClientName {
     OPENAI("openaiChatClient"),
-    OPENAI_ADVANCED("openaiRagChatClient"),
+    OPENAI_ADVANCED("openAiRagChatClient"),
     OLLAMA("ollamaChatClient");
 
     private final String beanName;

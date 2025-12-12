@@ -96,8 +96,7 @@ public class ApiV1ChatController implements ApiChatController {
             @Valid @RequestBody CreateDirectChatReq request
     ) {
         DirectChatRoomResp roomResp =
-                directChatRoomService.findOrCreateDirectChatRoom(currentUser.getId(), request.partnerId(),
-                        currentUser.getNickname());
+                directChatRoomService.findOrCreateDirectChatRoom(currentUser.getId(), request.partnerId());
         return CustomResponse.ok("1:1 채팅방 생성/조회에 성공하였습니다.", roomResp);
     }
 

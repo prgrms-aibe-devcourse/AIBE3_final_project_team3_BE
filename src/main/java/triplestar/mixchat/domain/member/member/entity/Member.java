@@ -194,7 +194,9 @@ public class Member extends BaseEntity {
         this.description = "삭제된 회원입니다.";
     }
 
-    public boolean isBot() {
-        return this.role == Role.ROLE_BOT;
+    public boolean isNotAccessible() {
+        return this.isBlocked()
+                || this.isDeleted()
+                || Role.isNotMember(this.getRole());
     }
 }

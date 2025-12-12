@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import triplestar.mixchat.domain.member.friend.dto.FriendshipStateInfo;
+import triplestar.mixchat.domain.member.friend.repository.FriendshipRepository;
 import triplestar.mixchat.domain.member.member.constant.ProfileImageProperties;
 import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
@@ -25,6 +27,7 @@ import triplestar.mixchat.global.s3.S3Uploader;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final FriendshipRepository friendshipRepository;
     private final S3Uploader s3Uploader;
     private final PresenceService presenceService;
     private final ProfileImageProperties profileImageProperties;
@@ -39,17 +42,19 @@ public class MemberService {
     }
 
     public MemberDetailResp getMemberDetails(Long currentUserId, Long memberId) {
-        // 비회원이 조회하는 경우
-        // isFriend, isPendingRequest는 모두 false로 반환
+        Member member = findMemberById(memberId);
+        if (member.isNotAccessible()) {
+            throw new IllegalStateException("조회할 수 없는 회원입니다.");
+        }
+
+        // 비회원이 조회하는 경우 : 친구 관계 정보는 제공하지 않음
         if (currentUserId == null) {
-            Member member = findMemberById(memberId);
             return MemberDetailResp.forAnonymousViewer(member);
         }
 
-        // 회원이 조회하는 경우
-        // 친구 관계 및 친구 신청 상태를 함께 조회
-        return memberRepository.findByIdWithFriendInfo(currentUserId, memberId)
-                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 회원입니다."));
+        // 회원이 조회하는 경우 : 친구 관계 및 친구 신청 상태를 함께 조회
+        FriendshipStateInfo friendshipStateInfo = friendshipRepository.findFriendshipStateInfo(currentUserId, memberId);
+        return MemberDetailResp.from(member, friendshipStateInfo);
     }
 
     // NOTE : 현재 로그인한 사용자를 제외한 모든 회원 조회 -> 추후 로그인 사용자도 포함시킬지 검토 필요

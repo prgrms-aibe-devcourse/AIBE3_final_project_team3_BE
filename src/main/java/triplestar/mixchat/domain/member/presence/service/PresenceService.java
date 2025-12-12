@@ -6,6 +6,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.presence.dto.ExpiredPresence;
 import triplestar.mixchat.domain.member.presence.repository.PresenceRepository;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PresenceService {
@@ -33,6 +35,7 @@ public class PresenceService {
     }
 
     public void disconnect(Long memberId) {
+        memberRepository.updateLastSeenAt(memberId, LocalDateTime.now());
         presenceRepository.remove(memberId);
     }
 

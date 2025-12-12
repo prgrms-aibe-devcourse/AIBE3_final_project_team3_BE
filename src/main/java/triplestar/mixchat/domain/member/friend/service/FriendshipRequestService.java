@@ -41,8 +41,12 @@ public class FriendshipRequestService {
     }
 
     private void validateFriendshipRequest(Member sender, Member receiver) {
+        // 생성이 불가능한 경우 처리
         if (sender.equals(receiver)) {
             throw new IllegalArgumentException("자기 자신에게 친구 요청을 보낼 수 없습니다.");
+        }
+        if (receiver.isNotAccessible()) {
+            throw new IllegalStateException("친구 요청을 보낼 수 없는 대상입니다.");
         }
         boolean friendshipExists = friendshipService.isFriends(sender.getId(), receiver.getId());
         if (friendshipExists) {
