@@ -1,8 +1,9 @@
 package triplestar.mixchat.domain.admin.admin.dto;
 
-import jakarta.validation.constraints.NotNull;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(description = "관리자용 게시글 삭제 요청")
 public record AdminPostDeleteReq(
-        @NotNull(message = "삭제 사유 코드는 필수입니다.")
+        @Schema(description = "삭제 사유", example = "2")
         int reasonCode
 ) {}
