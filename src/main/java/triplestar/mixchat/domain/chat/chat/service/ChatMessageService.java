@@ -54,6 +54,7 @@ public class ChatMessageService {
     public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content,
                                    ChatMessage.MessageType messageType, ChatRoomType chatRoomType,
                                    boolean isTranslateEnabled) {
+        String resolvedNickname = resolveSenderNickname(senderId, senderNickname);
         // 시스템 메시지가 아닐 경우에만 멤버 검증을 수행
         if (messageType != ChatMessage.MessageType.SYSTEM) {
             chatMemberService.verifyUserIsMemberOfRoom(senderId, roomId, chatRoomType);
@@ -77,7 +78,7 @@ public class ChatMessageService {
 
         // AI 채팅방인 경우 메시지 생성 및 저장 후 별도 로직 수행
         if (chatRoomType == ChatRoomType.AI) {
-            return saveAiRoomMessage(roomId, senderId, senderNickname, content, chatRoomType, savedMessage);
+            return saveAiRoomMessage(roomId, senderId, resolvedNickname, content, chatRoomType, savedMessage);
         }
 
         // === 트랜잭션 내에서 모든 DB 연산 처리 (방향 A 패턴) ===
@@ -142,7 +143,7 @@ public class ChatMessageService {
                 savedMessage.getId(),
                 savedMessage.getChatRoomId(),
                 savedMessage.getSenderId(),
-                senderNickname,
+                resolvedNickname,
                 savedMessage.getContent(),
                 savedMessage.getMessageType(),
                 savedMessage.getChatRoomType(),
@@ -157,7 +158,7 @@ public class ChatMessageService {
         notificationEvents.forEach(eventPublisher::publishEvent);
 
         // 최소 정보 + unreadCount 반환
-        return MessageResp.withUnreadCount(savedMessage, senderNickname, unreadCount);
+        return MessageResp.withUnreadCount(savedMessage, resolvedNickname, unreadCount);
     }
 
     private MessageResp saveAiRoomMessage(Long roomId, Long senderId, String senderNickname, String content,
@@ -175,6 +176,16 @@ public class ChatMessageService {
 
         // 재귀 호출 후에는 봇이 보낸 메시지이므로 저장 및 전송만 수행
         return resp;
+    }
+
+    private String resolveSenderNickname(Long senderId, String senderNickname) {
+        if (senderNickname != null && !senderNickname.isBlank()) {
+            return senderNickname;
+        }
+
+        return memberRepository.findById(senderId)
+                .map(Member::getNickname)
+                .orElseThrow(() -> new IllegalArgumentException("메시지 발신자 정보가 유효하지 않습니다."));
     }
 
     @Transactional

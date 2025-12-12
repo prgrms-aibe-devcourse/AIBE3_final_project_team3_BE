@@ -46,7 +46,7 @@ public class DirectChatRoomService {
     }
 
     @Transactional
-    public DirectChatRoomResp findOrCreateDirectChatRoom(Long member1Id, Long member2Id, String senderNickname) {
+    public DirectChatRoomResp findOrCreateDirectChatRoom(Long member1Id, Long member2Id) {
         Member member1 = findMemberById(member1Id);
         Member member2 = findMemberById(member2Id);
 

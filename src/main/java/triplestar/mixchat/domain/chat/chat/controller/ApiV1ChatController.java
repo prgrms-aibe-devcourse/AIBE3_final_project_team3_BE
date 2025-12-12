@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -65,7 +64,6 @@ public class ApiV1ChatController implements ApiChatController {
     private final ChatMessageService chatMessageService;
     private final LoadTestCleanupService loadTestCleanupService;
     private final S3Uploader s3Uploader;
-    private final SimpMessagingTemplate messagingTemplate;
     private final AiFeedbackService aiFeedbackService;
     private final ChatMessageSearchService chatMessageSearchService;
 
@@ -96,8 +94,7 @@ public class ApiV1ChatController implements ApiChatController {
             @Valid @RequestBody CreateDirectChatReq request
     ) {
         DirectChatRoomResp roomResp =
-                directChatRoomService.findOrCreateDirectChatRoom(currentUser.getId(), request.partnerId(),
-                        currentUser.getNickname());
+                directChatRoomService.findOrCreateDirectChatRoom(currentUser.getId(), request.partnerId());
         return CustomResponse.ok("1:1 채팅방 생성/조회에 성공하였습니다.", roomResp);
     }
 
@@ -243,9 +240,6 @@ public class ApiV1ChatController implements ApiChatController {
         MessageResp messageResp =
                 chatMessageService.saveFileMessage(roomId, currentUser.getId(), currentUser.getNickname(), fileUrl,
                         messageType, chatRoomType);
-
-        String destination = "/topic/" + chatRoomType.name().toLowerCase() + ".rooms." + roomId;
-        messagingTemplate.convertAndSend(destination, messageResp);
 
         return CustomResponse.ok("파일 업로드 및 메시지 전송에 성공하였습니다.", messageResp);
     }

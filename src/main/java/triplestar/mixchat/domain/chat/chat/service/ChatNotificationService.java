@@ -7,6 +7,9 @@ import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.RoomLastMessageUpdateResp;
+import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -14,6 +17,7 @@ import triplestar.mixchat.domain.chat.chat.dto.RoomLastMessageUpdateResp;
 public class ChatNotificationService {
 
     private final SimpMessageSendingOperations messagingTemplate;
+    private final ChatRoomMemberRepository chatRoomMemberRepository;
 
     // 채팅방 구독자들에게 메시지 전송
     public void sendChatMessage(Long roomId, ChatRoomType type, MessageResp messageResp) {
@@ -22,12 +26,33 @@ public class ChatNotificationService {
         log.debug("Message sent to destination={}: {}", destination, messageResp.id());
     }
 
-    // 모든 구독자에게 채팅방 목록 갱신 정보 Broadcast
+    // 채팅방 리스트 업데이트 전송 (해당 채팅방 멤버들에게 개별 전송)
     public void sendRoomListUpdateBroadcast(RoomLastMessageUpdateResp updateResp) {
-        String destination = "/topic/room-list-updates";
-        messagingTemplate.convertAndSend(destination, updateResp);
-        log.info("[RoomListUpdate Broadcast] destination={}, roomId={}, type={}, lastMessageAt={}, sequence={}, content={}",
-                destination, updateResp.roomId(), updateResp.chatRoomType(),
-                updateResp.lastMessageAt(), updateResp.latestSequence(), updateResp.lastMessageContent());
+        // 1. 현재 채팅방을 보고 있는 사람들에게 전송 (page.tsx에서 처리)
+        String roomDestination = String.format("/topic/%s.rooms.%d",
+                updateResp.chatRoomType().name().toLowerCase(),
+                updateResp.roomId());
+        messagingTemplate.convertAndSend(roomDestination, updateResp);
+
+        // 2. 해당 채팅방의 모든 멤버에게 개인 큐로 전송 (layout.tsx에서 처리)
+        List<Long> memberIds = chatRoomMemberRepository
+                .findByChatRoomIdAndChatRoomType(updateResp.roomId(), updateResp.chatRoomType())
+                .stream()
+                .map(chatMember -> chatMember.getMember().getId())
+                .toList();
+
+        for (Long memberId : memberIds) {
+            String userDestination = "/queue/rooms.update";
+            messagingTemplate.convertAndSendToUser(
+                    memberId.toString(),
+                    userDestination,
+                    updateResp
+            );
+            log.info("[RoomListUpdate] Sent to user={}, destination=/user/{}/queue/rooms.update", memberId, memberId);
+        }
+
+        log.info("[RoomListUpdate] Sent to room={} and {} members, roomId={}, type={}, senderId={}, sequence={}",
+                roomDestination, memberIds.size(), updateResp.roomId(), updateResp.chatRoomType(),
+                updateResp.senderId(), updateResp.latestSequence());
     }
 }
