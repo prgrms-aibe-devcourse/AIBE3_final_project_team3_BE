@@ -1,5 +1,5 @@
 cookie:
-  domain: ${DOMAIN_NAME:mixchat.shop}
+  domain: ${DOMAIN_NAME:mixchat.site}
 
 member:
   default-image-name: "default-profile.webp"

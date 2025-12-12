@@ -264,7 +264,7 @@ class ApiV1FriendshipControllerTest {
 
         ResultActions resultActions = mvc
                 .perform(
-                        get("/api/v1/members/friends?page=1&size=1")
+                        get("/api/v1/members/friends?page=1&size=1&sort=nickname,asc")
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andDo(print());

@@ -34,7 +34,6 @@ public class DirectChatRoomService {
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatAuthCacheService chatAuthCacheService;
-    private final ChatMessageService chatMessageService;
     private final ChatMemberService chatMemberService;
     private final SystemMessageService systemMessageService;
     private final triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository chatMessageRepository;
@@ -47,15 +46,15 @@ public class DirectChatRoomService {
 
     @Transactional
     public DirectChatRoomResp findOrCreateDirectChatRoom(Long member1Id, Long member2Id) {
+        // member1Id: 요청 보낸 사람, member2Id: 상대방
         Member member1 = findMemberById(member1Id);
         Member member2 = findMemberById(member2Id);
 
-        Long smallerId = Math.min(member1.getId(), member2.getId());
-        Long largerId = Math.max(member1.getId(), member2.getId());
+        if (member2.isNotAccessible()) {
+            throw new IllegalStateException("1:1 채팅 할 수 없는 대상입니다.");
+        }
 
-        // 1:1 채팅방 조회
-        DirectChatRoom room = directChatRoomRepository.findByUser1_IdAndUser2_Id(smallerId, largerId)
-                .orElse(null);
+        DirectChatRoom room = getDirectChatRoom(member1, member2);
 
         if (room == null) {
             // 방이 없으면 생성
@@ -86,8 +85,18 @@ public class DirectChatRoomService {
         return DirectChatRoomResp.from(room, 0L, null);
     }
 
+    private DirectChatRoom getDirectChatRoom(Member member1, Member member2) {
+        Long smallerId = Math.min(member1.getId(), member2.getId());
+        Long largerId = Math.max(member1.getId(), member2.getId());
+
+        // 1:1 채팅방 조회
+        return directChatRoomRepository.findByUser1_IdAndUser2_Id(smallerId, largerId)
+                .orElse(null);
+    }
+
     private void restoreMemberIfMissing(Long roomId, Member member, Long memberId) {
-        if (!chatRoomMemberRepository.existsByChatRoomIdAndChatRoomTypeAndMember_Id(roomId, ChatRoomType.DIRECT, memberId)) {
+        if (!chatRoomMemberRepository.existsByChatRoomIdAndChatRoomTypeAndMember_Id(roomId, ChatRoomType.DIRECT,
+                memberId)) {
             chatRoomMemberRepository.save(new ChatMember(member, roomId, ChatRoomType.DIRECT));
             chatAuthCacheService.addMember(roomId, memberId);
             // 재입장 시 시스템 메시지 전송

@@ -7,6 +7,7 @@ import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
+import triplestar.mixchat.domain.report.report.constant.ReportCategory;
 
 public class TestMemberFactory {
 
@@ -40,5 +41,17 @@ public class TestMemberFactory {
         );
         admin.updateProfileImageUrl("profile/uuid-1234.png");
         return admin;
+    }
+
+    public static Member createDeletedMember(String deletedUser) {
+        Member member = createMember(deletedUser);
+        member.deleteSoftly();
+        return member;
+    }
+
+    public static Member createBlockedMember(String blockedUser) {
+        Member member = createMember(blockedUser);
+        member.blockByReport(ReportCategory.ABUSE);
+        return member;
     }
 }

@@ -221,6 +221,11 @@ public class GroupChatRoomService {
         // 4. 대상 멤버 조회
         Member targetMember = findMemberById(targetMemberId);
 
+        // 일반 회원이 아닌 경우 초대 불가
+        if (targetMember.isNotAccessible()) {
+            throw new IllegalStateException("초대할 수 없는 대상입니다.");
+        }
+
         // 5. ChatMember 추가
         ChatMember newMember = new ChatMember(targetMember, roomId, ChatRoomType.GROUP);
         chatRoomMemberRepository.save(newMember);

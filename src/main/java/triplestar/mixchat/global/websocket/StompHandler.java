@@ -57,7 +57,7 @@ public class StompHandler implements ExecutorChannelInterceptor {
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
         if (accessor == null) {
-            throw new IllegalArgumentException("메시지 헤더를 찾을 수 없습니다.");
+            throw new BadCredentialsException("메시지 헤더를 찾을 수 없습니다.");
         }
 
         StompCommand command = accessor.getCommand();
@@ -105,14 +105,14 @@ public class StompHandler implements ExecutorChannelInterceptor {
         String token = resolveToken(accessor);
 
         if (token == null || token.isBlank()) {
-            throw new AccessDeniedException("인증 토큰이 필요합니다.");
+            throw new BadCredentialsException("인증 토큰이 필요합니다.");
         }
 
         AccessTokenPayload payload = authJwtProvider.parseAccessToken(token);
         Long memberId = payload.memberId();
 
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new AccessDeniedException("사용자 정보를 찾을 수 없습니다. ID: " + memberId));
+                .orElseThrow(() -> new BadCredentialsException("사용자 정보를 찾을 수 없습니다. ID: " + memberId));
 
         CustomUserDetails userDetails = new CustomUserDetails(member.getId(), member.getRole(), member.getNickname());
         Authentication authentication = new UsernamePasswordAuthenticationToken(
@@ -155,7 +155,7 @@ public class StompHandler implements ExecutorChannelInterceptor {
             return;
         }
 
-        throw new AccessDeniedException("허용되지 않은 구독 목적지입니다: " + destination);
+        throw new IllegalArgumentException("허용되지 않은 구독 목적지입니다: " + destination);
     }
 
     private Authentication requireAuth(StompHeaderAccessor accessor) {

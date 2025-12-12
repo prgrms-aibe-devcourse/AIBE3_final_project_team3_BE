@@ -8,14 +8,6 @@ import triplestar.mixchat.domain.member.friend.entity.FriendshipRequest;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
 @Repository
-public interface FriendshipRequestRepository extends JpaRepository<FriendshipRequest, Long> {
+public interface FriendshipRequestRepository extends JpaRepository<FriendshipRequest, Long>, FriendshipRequestRepositoryCustom {
     boolean existsBySenderAndReceiver(Member sender, Member receiver);
-
-    @Query("""
-            SELECT fr FROM FriendshipRequest fr
-            JOIN FETCH fr.sender
-            JOIN FETCH fr.receiver
-            WHERE fr.id = :id
-            """)
-    Optional<FriendshipRequest> findByIdWithSenderReceiver(Long id);
 }

@@ -2,9 +2,12 @@ package triplestar.mixchat.domain.member.member.dto;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.List;
+import triplestar.mixchat.domain.member.friend.dto.FriendshipStateInfo;
+import triplestar.mixchat.domain.member.member.constant.Role;
 import triplestar.mixchat.domain.member.member.entity.Member;
 
 @Schema(description = "회원 상세 조회 응답 DTO")
@@ -34,6 +37,9 @@ public record MemberDetailResp(
                 example = "2024-10-01T14:30:00", requiredMode = REQUIRED)
         LocalDateTime lastSeenAt,
 
+        @Schema(description = "회원 역할", example = "MEMBER", requiredMode = REQUIRED)
+        Role role,
+
         @Schema(description = "현재 로그인 사용자와 친구 관계인지 여부", example = "true", requiredMode = REQUIRED)
         boolean isFriend,
 
@@ -55,9 +61,27 @@ public record MemberDetailResp(
                 member.getDescription(),
                 member.getProfileImageUrl(),
                 member.getLastSeenAt(),
+                member.getRole(),
                 false,
                 false,
                 null
+        );
+    }
+
+    public static MemberDetailResp from(Member member, FriendshipStateInfo friendshipStateInfo) {
+        return new MemberDetailResp(
+                member.getId(),
+                member.getNickname(),
+                member.getCountry().name(),
+                member.getEnglishLevel().name(),
+                member.getInterests(),
+                member.getDescription(),
+                member.getProfileImageUrl(),
+                member.getLastSeenAt(),
+                member.getRole(),
+                friendshipStateInfo.isFriend(),
+                friendshipStateInfo.isFriendRequestSent(),
+                friendshipStateInfo.receivedFriendRequestId()
         );
     }
 }

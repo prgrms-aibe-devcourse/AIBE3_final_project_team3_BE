@@ -24,7 +24,10 @@ public record MemberSummaryResp(
         List<String> interests,
 
         @Schema(description = "자기소개", example = "안녕하세요.", requiredMode = REQUIRED)
-        String description
+        String description,
+
+        @Schema(description = "프로필 이미지 URL", example = "https://example.com/profile.jpg", requiredMode = REQUIRED)
+        String profileImageUrl
 ) {
     public static MemberSummaryResp from(Member savedMember) {
         return new MemberSummaryResp(
@@ -33,7 +36,8 @@ public record MemberSummaryResp(
                 savedMember.getCountry().name(),
                 savedMember.getEnglishLevel().name(),
                 savedMember.getInterests(),
-                savedMember.getDescription()
+                savedMember.getDescription(),
+                savedMember.getProfileImageUrl()
         );
     }
 }

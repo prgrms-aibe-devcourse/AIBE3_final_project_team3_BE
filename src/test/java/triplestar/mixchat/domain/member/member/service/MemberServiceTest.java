@@ -247,6 +247,22 @@ class MemberServiceTest extends RedisTestContainer {
     }
 
     @Test
+    @DisplayName("회원 상세 조회 - 회원 조회 실패(조회 불가 회원)")
+    void get_member_details_member_not_accessible_fail() {
+        Member deletedMember = memberRepository.save(
+                TestMemberFactory.createDeletedMember("deletedUser"));
+
+        assertThatThrownBy(() -> memberService.getMemberDetails(member1.getId(), deletedMember.getId()))
+                .isInstanceOf(IllegalStateException.class);
+
+        Member blockedMember = memberRepository.save(
+                TestMemberFactory.createBlockedMember("blockedUser"));
+
+        assertThatThrownBy(() -> memberService.getMemberDetails(member1.getId(), blockedMember.getId()))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
     @DisplayName("회원 탈퇴 성공")
     void member_delete_success() {
         Long memberId = member1.getId();

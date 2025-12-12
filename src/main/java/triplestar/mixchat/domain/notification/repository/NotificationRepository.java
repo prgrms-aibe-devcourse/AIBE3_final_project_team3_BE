@@ -11,39 +11,5 @@ import triplestar.mixchat.domain.notification.dto.NotificationResp;
 import triplestar.mixchat.domain.notification.entity.Notification;
 
 @Repository
-public interface NotificationRepository extends JpaRepository<Notification, Long> {
-
-    @Query("""
-                SELECT n
-                FROM Notification n
-                JOIN n.receiver r
-                LEFT JOIN FETCH n.sender s
-                WHERE r.id = :receiverId
-            """)
-    Page<Notification> findAllByReceiverId(Long receiverId, Pageable pageable);
-
-    @Query("""
-                UPDATE Notification n
-                SET n.isRead = true
-                WHERE n.receiver.id = :receiverId
-            """
-    )
-    @Modifying
-    void markAllAsRead(Long receiverId);
-
-    @Query("""
-                DELETE FROM Notification n
-                WHERE n.receiver.id = :receiverId
-            """
-    )
-    @Modifying
-    void deleteAllByReceiver(Long receiverId);
-
-    @Query("""
-                DELETE FROM Notification n
-                WHERE n.createdAt < :threshold
-            """
-    )
-    @Modifying
-    void deleteOld(LocalDateTime threshold);
+public interface NotificationRepository extends JpaRepository<Notification, Long>, NotificationRepositoryCustom{
 }

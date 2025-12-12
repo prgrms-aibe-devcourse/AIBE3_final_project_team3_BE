@@ -64,9 +64,9 @@ public class ApiV1MemberController implements ApiMemberController {
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             @PathVariable Long id
     ) {
-        Long signInId = customUserDetails != null ? customUserDetails.getId() : null;
+        Long currentUserId = customUserDetails != null ? customUserDetails.getId() : null;
 
-        MemberDetailResp memberDetails = memberService.getMemberDetails(signInId, id);
+        MemberDetailResp memberDetails = memberService.getMemberDetails(currentUserId, id);
         return CustomResponse.ok("회원 상세 정보 조회에 성공했습니다.", memberDetails);
     }
 

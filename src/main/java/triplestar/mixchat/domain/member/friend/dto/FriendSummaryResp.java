@@ -26,6 +26,9 @@ public record FriendSummaryResp(
         @Schema(description = "자기소개", example = "안녕하세요.", requiredMode = REQUIRED)
         String description,
 
+        @Schema(description = "프로필 이미지 URL", example = "https://cdn.example.com/profile/123_photo.jpg", requiredMode = REQUIRED)
+        String profileImageUrl,
+
         @Schema(description = "온라인 상태 여부", example = "true", requiredMode = REQUIRED)
         Boolean isOnline
 ) {
@@ -37,6 +40,7 @@ public record FriendSummaryResp(
                 savedMember.getEnglishLevel().name(),
                 savedMember.getInterests(),
                 savedMember.getDescription(),
+                savedMember.getProfileImageUrl(),
                 isOnline
         );
     }

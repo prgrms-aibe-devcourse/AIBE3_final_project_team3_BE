@@ -57,6 +57,10 @@ public class SecurityConfig {
                                 .requestMatchers("/ws-stomp/**").permitAll()
                                 // actuator 요청 허용
                                 .requestMatchers("/actuator/**").permitAll()
+                                // Member 권한이 없는경우 친구추가, 채팅방 생성 불가 명시(BOT, ADMIN)
+                                .requestMatchers(HttpMethod.POST, "/api/v1/members/friends").hasRole("MEMBER")
+                                .requestMatchers(HttpMethod.POST,"/api/v1/chats/rooms/group",
+                                        "/api/v1/chats/rooms/direct").hasRole("MEMBER")
                                 // 나머지 모든 요청은 인증 필요
                                 .requestMatchers("/**").authenticated()
                 )

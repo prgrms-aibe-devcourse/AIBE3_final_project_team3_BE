@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableAsync
 @SpringBootApplication
@@ -15,6 +16,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableMongoAuditing
 @EnableJpaRepositories(basePackages = "triplestar.mixchat.domain") // JPA 리포지토리 경로
 @EnableMongoRepositories(basePackages = "triplestar.mixchat.domain.chat.chat.repository") // MongoDB 리포지토리 경로
+@EnableScheduling
 @EnableCaching
 public class Application {
 

@@ -1,24 +1,24 @@
 package triplestar.mixchat.domain.member.auth.service;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
-import triplestar.mixchat.domain.member.auth.dto.LogInResp;
 import triplestar.mixchat.domain.member.auth.dto.LogInReq;
+import triplestar.mixchat.domain.member.auth.dto.LogInResp;
+import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
+import triplestar.mixchat.domain.member.auth.repository.RefreshTokenRepository;
 import triplestar.mixchat.domain.member.member.constant.ProfileImageProperties;
 import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.presence.service.PresenceService;
-import triplestar.mixchat.global.customException.UniqueConstraintException;
 import triplestar.mixchat.global.security.jwt.AccessTokenPayload;
 import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
-import triplestar.mixchat.domain.member.auth.repository.RefreshTokenRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -29,8 +29,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthJwtProvider authJwtProvider;
     private final RefreshTokenRepository refreshTokenRepository;
-
-    // 로그아웃시 즉시 오프라인 상태 전환을 위한 PresenceService 주입
     private final PresenceService presenceService;
     private final ProfileImageProperties profileImageProperties;
 
@@ -53,7 +51,7 @@ public class AuthService {
     private void validateJoinReq(SignUpReq req) {
         String reqEmail = req.email();
         if (memberRepository.existsByEmail(reqEmail)) {
-            throw new UniqueConstraintException("이미 사용중인 이메일입니다: " + reqEmail);
+            throw new IllegalStateException("이미 사용중인 이메일입니다: " + reqEmail);
         }
 
         String reqPassword = req.password();
