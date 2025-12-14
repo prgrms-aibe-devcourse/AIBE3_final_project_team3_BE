@@ -9,6 +9,8 @@ import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.dto.RoomLastMessageUpdateResp;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 
+import triplestar.mixchat.domain.chat.chat.dto.MessageUnreadCountResp;
+
 import java.util.List;
 
 @Slf4j
@@ -18,6 +20,19 @@ public class ChatNotificationService {
 
     private final SimpMessageSendingOperations messagingTemplate;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
+
+    // 읽음 카운트 업데이트 전송
+    public void sendUnreadCountUpdate(Long roomId, ChatRoomType type, List<MessageUnreadCountResp> updates) {
+        if (updates == null || updates.isEmpty()) {
+            return;
+        }
+        // 프론트엔드 구분을 위해 래퍼 객체나 type 필드가 있는 것이 좋으나,
+        // 현재 구조상 List를 그대로 보내거나, 필요한 경우 DTO를 추가해야 함.
+        // 여기서는 List<MessageUnreadCountResp>를 그대로 전송.
+        String destination = String.format("/topic/%s.rooms.%d", type.name().toLowerCase(), roomId);
+        messagingTemplate.convertAndSend(destination, updates);
+        log.debug("UnreadCount updates sent to destination={}: count={}", destination, updates.size());
+    }
 
     // 채팅방 구독자들에게 메시지 전송
     public void sendChatMessage(Long roomId, ChatRoomType type, MessageResp messageResp) {

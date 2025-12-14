@@ -226,7 +226,12 @@ public class ApiV1ChatController implements ApiChatController {
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         // 메시지 조회 전에 읽음 처리 (채팅방 입장 시 자동 읽음)
-        chatMemberService.markAsReadOnEnter(currentUser.getId(), roomId, chatRoomType);
+        Long lastReadSequence = chatMemberService.markAsReadOnEnter(currentUser.getId(), roomId, chatRoomType);
+
+        // 읽음 상태 변경이 있으면 브로드캐스트 (다른 사용자들에게 알림)
+        if (lastReadSequence != null) {
+            chatMessageService.broadcastReadStatus(roomId, chatRoomType, lastReadSequence);
+        }
 
         MessagePageResp messagePageResp = chatMessageService.getMessagesWithSenderInfo(roomId, chatRoomType,
                 currentUser.getId(), cursor, size);

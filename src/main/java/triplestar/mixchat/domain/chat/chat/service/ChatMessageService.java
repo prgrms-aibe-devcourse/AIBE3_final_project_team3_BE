@@ -296,6 +296,16 @@ public class ChatMessageService {
         return MessagePageResp.of(messageResps, nextCursor, hasMore);
     }
 
+    public void broadcastReadStatus(Long roomId, ChatRoomType chatRoomType, Long readUpToSequence) {
+        if (chatRoomType == ChatRoomType.AI) return;
+
+        // 변경된 unreadCount 계산
+        List<MessageUnreadCountResp> updates = getUnreadCountUpdates(roomId, chatRoomType, readUpToSequence);
+
+        // 알림 전송
+        chatNotificationService.sendUnreadCountUpdate(roomId, chatRoomType, updates);
+    }
+
     // 누군가 채팅방 구독시 읽지 않은 사람 수 업데이트
     public List<MessageUnreadCountResp> getUnreadCountUpdates(Long roomId, ChatRoomType chatRoomType,
                                                               Long readUpToSequence) {
