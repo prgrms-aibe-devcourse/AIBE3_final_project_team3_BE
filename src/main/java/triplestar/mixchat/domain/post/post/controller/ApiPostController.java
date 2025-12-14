@@ -47,6 +47,8 @@ public interface ApiPostController {
 
     @Operation(summary = "게시글 목록 조회", description = "정렬 조건과 페이지 정보를 이용해 게시글 목록을 조회합니다.")
     CustomResponse<Page<PostSummaryResp>> getPosts(
+            @Parameter(hidden = true)
+            CustomUserDetails userDetails,
             @Parameter(
                     description = "정렬 조건 (LATEST: 최신순, POPULAR: 인기순)",
                     schema = @Schema(type = "string", allowableValues = {"LATEST", "POPULAR"}),
@@ -60,7 +62,11 @@ public interface ApiPostController {
     );
 
     @Operation(summary = "게시글 상세 조회", description = "게시글 상세 정보를 조회하며 조회수를 1 증가시킵니다.")
-    CustomResponse<PostDetailResp> getPost(Long postId);
+    CustomResponse<PostDetailResp> getPost(
+            @Parameter(hidden = true)
+            CustomUserDetails userDetails,
+            Long postId
+    );
 
     @Operation(summary = "게시글 수정", description = "작성자 또는 관리자만 게시글을 수정할 수 있습니다.")
     @SignInInRequireResponse

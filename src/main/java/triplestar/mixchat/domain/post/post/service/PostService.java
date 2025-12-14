@@ -50,10 +50,10 @@ public class PostService {
 
         uploadAndApplyImages(post, images);
         Post saved = postRepository.save(post);
-        return toDetailResp(saved);
+        return toDetailResp(saved, memberId);
     }
 
-    public Page<PostSummaryResp> getPosts(PostSortType sortType, Pageable pageable) {
+    public Page<PostSummaryResp> getPosts(Long memberId, PostSortType sortType, Pageable pageable) {
         Page<Post> posts;
 
         if (PostSortType.POPULAR.equals(sortType)) {
@@ -102,20 +102,29 @@ public class PostService {
                                 PostLikeRepository.PostLikeCount::getLikeCount
                         ));
 
-        return posts.map(post -> toSummaryResp(post, likeCountMap.getOrDefault(post.getId(), 0L).intValue()));
+        // 사용자가 좋아요를 누른 게시글 ID 조회
+        java.util.Set<Long> likedPostIds = (memberId != null && !postIds.isEmpty())
+                ? java.util.Set.copyOf(postLikeRepository.findLikedPostIdsByMemberIdAndPostIds(memberId, postIds))
+                : java.util.Collections.emptySet();
+
+        return posts.map(post -> toSummaryResp(
+                post,
+                likeCountMap.getOrDefault(post.getId(), 0L).intValue(),
+                likedPostIds.contains(post.getId())
+        ));
     }
 
     @Transactional(readOnly = true)
-    public PostDetailResp getPost(Long postId) {
+    public PostDetailResp getPost(Long postId, Long memberId) {
         Post post = findPost(postId);
-        return toDetailResp(post);
+        return toDetailResp(post, memberId);
     }
 
     @Transactional
-    public PostDetailResp getPostAndIncreaseView(Long postId) {
+    public PostDetailResp getPostAndIncreaseView(Long postId, Long memberId) {
         Post post = findPost(postId);
         post.increaseViewCount();
-        return toDetailResp(post);
+        return toDetailResp(post, memberId);
     }
 
 
@@ -263,7 +272,7 @@ public class PostService {
         }
     }
 
-    private PostSummaryResp toSummaryResp(Post post, Integer likeCount) {
+    private PostSummaryResp toSummaryResp(Post post, Integer likeCount, boolean isLiked) {
         int actualLikeCount = (likeCount != null)
                 ? likeCount
                 : postLikeRepository.countByPostId(post.getId());
@@ -276,13 +285,19 @@ public class PostService {
                 post.getImageUrls(),
                 post.getViewCount(),
                 actualLikeCount,
+                isLiked,
                 post.getCreatedAt(),
                 post.getModifiedAt()
         );
     }
 
-    private PostDetailResp toDetailResp(Post post) {
+    private PostDetailResp toDetailResp(Post post, Long memberId) {
         int actualLikeCount = postLikeRepository.countByPostId(post.getId());
+        boolean isLiked = false;
+        if (memberId != null) {
+            Member member = findMember(memberId);
+            isLiked = postLikeRepository.existsByMemberAndPost(member, post);
+        }
         return new PostDetailResp(
                 post.getId(),
                 post.getAuthor().getId(),
@@ -292,6 +307,7 @@ public class PostService {
                 post.getImageUrls(),
                 post.getViewCount(),
                 actualLikeCount,
+                isLiked,
                 post.getCreatedAt(),
                 post.getModifiedAt()
         );
