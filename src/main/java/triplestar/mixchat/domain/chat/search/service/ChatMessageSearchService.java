@@ -5,7 +5,6 @@ import co.elastic.clients.elasticsearch._types.SortOrder;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -20,7 +19,6 @@ import org.springframework.data.elasticsearch.core.SearchPage;
 import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.entity.AIChatRoom;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.repository.AIChatRoomRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
@@ -70,25 +68,34 @@ public class ChatMessageSearchService {
         }
 
         List<Long> allowedRoomIds = resolveReadableRoomIds(memberId, chatRoomType);
+        log.info("=== [Chat Search Debug] MemberId: {}, Type: {}, Keyword: {}", memberId, chatRoomType, keyword);
+        log.info("=== [Chat Search Debug] Allowed Room IDs (Count: {}): {}", allowedRoomIds.size(), allowedRoomIds);
+
         if (allowedRoomIds.isEmpty()) {
+            log.warn("=== [Chat Search Debug] No allowed chat rooms found. Returning empty result.");
             return Page.empty(pageable);
         }
 
         NativeQuery query = NativeQuery.builder()
-                .withQuery(q -> q.bool(b -> b
+                .withQuery(q -> q.bool(b ->b
                         .must(m -> m.multiMatch(mm -> mm
                                 .fields("content^2", "translatedContent")
                                 .query(keyword)))
-                        .filter(f -> f.term(t -> t.field("chatRoomType").value(chatRoomType.name())))
+                        .filter(f -> f.term(t -> t.field("chatRoomType.keyword").value(chatRoomType.name())))
                         .filter(f -> f.terms(t -> t.field("chatRoomId").terms(ts -> ts.value(
                                 allowedRoomIds.stream().map(FieldValue::of).toList()
                         ))))
                 ))
-                .withSort(s -> s.field(f -> f.field("createdAt").order(SortOrder.Desc)))
+                .withSort(s -> s.field(f -> f.field("sequence").order(SortOrder.Desc)))
                 .withPageable(pageable)
                 .build();
+        
+        // 쿼리 내용 로그 (JSON 형태는 아니지만 객체 정보 확인 가능)
+        log.info("=== [Chat Search Debug] Generated ES Query: {}", query.getQuery());
 
         SearchHits<ChatMessageDocument> searchHits = elasticsearchTemplate.search(query, ChatMessageDocument.class);
+        log.info("=== [Chat Search Debug] Search Hits Count: {}", searchHits.getTotalHits());
+
         SearchPage<ChatMessageDocument> page = SearchHitSupport.searchPageFor(searchHits, pageable);
         List<ChatMessageDocument> content = page.getSearchHits().stream()
                 .map(SearchHit::getContent)
@@ -104,14 +111,7 @@ public class ChatMessageSearchService {
         }
 
         return switch (chatRoomType) {
-            case DIRECT, GROUP -> {
-                Member memberRef = memberRepository.getReferenceById(memberId);
-                List<ChatMember> memberships = chatRoomMemberRepository.findByMemberAndChatRoomType(memberRef, chatRoomType);
-                yield memberships.stream()
-                        .map(ChatMember::getChatRoomId)
-                        .distinct()
-                        .collect(Collectors.toList());
-            }
+            case DIRECT, GROUP -> chatRoomMemberRepository.findChatRoomIdsByMemberIdAndChatRoomType(memberId, chatRoomType);
             case AI -> aiChatRoomRepository.findAllByMember_Id(memberId)
                     .stream()
                     .map(AIChatRoom::getId)
