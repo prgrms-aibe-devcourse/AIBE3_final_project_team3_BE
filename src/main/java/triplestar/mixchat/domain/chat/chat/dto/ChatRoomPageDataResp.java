@@ -16,14 +16,18 @@ public record ChatRoomPageDataResp(
     Long nextCursor,
 
     @Schema(description = "다음 페이지가 존재하는지 여부", example = "true")
-    boolean hasMore
+    boolean hasMore,
+
+    @Schema(description = "사용자의 마지막 읽은 Sequence (업데이트된 값)", example = "100")
+    Long lastReadSequence
 ) {
-    public static ChatRoomPageDataResp of(ChatRoomType chatRoomType, MessagePageResp messagePageResp) {
+    public static ChatRoomPageDataResp of(ChatRoomType chatRoomType, MessagePageResp messagePageResp, Long lastReadSequence) {
         return new ChatRoomPageDataResp(
             chatRoomType,
             messagePageResp.messages(),
             messagePageResp.nextCursor(),
-            messagePageResp.hasMore()
+            messagePageResp.hasMore(),
+            lastReadSequence
         );
     }
 }

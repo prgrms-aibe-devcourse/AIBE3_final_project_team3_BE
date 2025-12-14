@@ -235,7 +235,7 @@ public class ApiV1ChatController implements ApiChatController {
 
         MessagePageResp messagePageResp = chatMessageService.getMessagesWithSenderInfo(roomId, chatRoomType,
                 currentUser.getId(), cursor, size);
-        ChatRoomPageDataResp responseData = ChatRoomPageDataResp.of(chatRoomType, messagePageResp);
+        ChatRoomPageDataResp responseData = ChatRoomPageDataResp.of(chatRoomType, messagePageResp, lastReadSequence);
         return CustomResponse.ok("메시지 목록과 대화 타입 조회에 성공하였습니다.", responseData);
     }
 
