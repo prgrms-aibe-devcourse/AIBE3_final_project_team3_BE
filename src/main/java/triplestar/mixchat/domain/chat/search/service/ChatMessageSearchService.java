@@ -2,6 +2,8 @@ package triplestar.mixchat.domain.chat.search.service;
 
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
+import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -63,24 +65,23 @@ public class ChatMessageSearchService {
     }
 
     public Page<ChatMessageDocument> search(Long memberId, ChatRoomType chatRoomType, String keyword, Pageable pageable) {
-        if (keyword == null || keyword.isBlank()) {
+        String kw = keyword == null ? "" : keyword.trim();
+        if (kw.length() < 2) {
             return Page.empty(pageable);
         }
 
         List<Long> allowedRoomIds = resolveReadableRoomIds(memberId, chatRoomType);
-        log.info("=== [Chat Search Debug] MemberId: {}, Type: {}, Keyword: {}", memberId, chatRoomType, keyword);
-        log.info("=== [Chat Search Debug] Allowed Room IDs (Count: {}): {}", allowedRoomIds.size(), allowedRoomIds);
-
         if (allowedRoomIds.isEmpty()) {
-            log.warn("=== [Chat Search Debug] No allowed chat rooms found. Returning empty result.");
             return Page.empty(pageable);
         }
 
         NativeQuery query = NativeQuery.builder()
-                .withQuery(q -> q.bool(b ->b
+                .withQuery(q -> q.bool(b -> b
                         .must(m -> m.multiMatch(mm -> mm
                                 .fields("content^2", "translatedContent")
-                                .query(keyword)))
+                                .type(TextQueryType.PhrasePrefix)
+                                .operator(Operator.And)
+                                .query(kw)))
                         .filter(f -> f.term(t -> t.field("chatRoomType.keyword").value(chatRoomType.name())))
                         .filter(f -> f.terms(t -> t.field("chatRoomId").terms(ts -> ts.value(
                                 allowedRoomIds.stream().map(FieldValue::of).toList()
@@ -89,13 +90,8 @@ public class ChatMessageSearchService {
                 .withSort(s -> s.field(f -> f.field("sequence").order(SortOrder.Desc)))
                 .withPageable(pageable)
                 .build();
-        
-        // 쿼리 내용 로그 (JSON 형태는 아니지만 객체 정보 확인 가능)
-        log.info("=== [Chat Search Debug] Generated ES Query: {}", query.getQuery());
 
         SearchHits<ChatMessageDocument> searchHits = elasticsearchTemplate.search(query, ChatMessageDocument.class);
-        log.info("=== [Chat Search Debug] Search Hits Count: {}", searchHits.getTotalHits());
-
         SearchPage<ChatMessageDocument> page = SearchHitSupport.searchPageFor(searchHits, pageable);
         List<ChatMessageDocument> content = page.getSearchHits().stream()
                 .map(SearchHit::getContent)
