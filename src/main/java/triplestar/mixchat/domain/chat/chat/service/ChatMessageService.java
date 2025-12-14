@@ -33,6 +33,8 @@ import triplestar.mixchat.global.ai.BotConstant;
 import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
 import triplestar.mixchat.global.notifiaction.NotificationEvent;
 
+import triplestar.mixchat.domain.member.presence.service.PresenceService;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -49,6 +51,7 @@ public class ChatMessageService {
     private final ChatSequenceGenerator sequenceGenerator;
     private final ChatMessageSearchService chatMessageSearchService;
     private final ChatSubscriberCacheService subscriberCacheService;
+    private final PresenceService presenceService;
 
     @Transactional
     public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content,
@@ -83,23 +86,27 @@ public class ChatMessageService {
 
         // === 트랜잭션 내에서 모든 DB 연산 처리 (방향 A 패턴) ===
 
-        // 1. 읽음 상태 업데이트 (발신자 + 구독자)
+        // 1. 읽음 상태 업데이트 (발신자 + 구독자 중 온라인인 사람)
         Set<Long> memberIdsToMarkRead = new HashSet<>();
         memberIdsToMarkRead.add(senderId);
 
         // 현재 구독 중인 사용자 조회 (Redis)
         Set<String> subscribers = subscriberCacheService.getSubscribers(roomId);
-        Set<Long> subscriberIds = new HashSet<>();
+        List<Long> subscriberIds = new ArrayList<>();
         if (subscribers != null && !subscribers.isEmpty()) {
             for (String subscriberIdStr : subscribers) {
                 try {
-                    Long subscriberId = Long.parseLong(subscriberIdStr);
-                    subscriberIds.add(subscriberId);
-                    memberIdsToMarkRead.add(subscriberId);
+                    subscriberIds.add(Long.parseLong(subscriberIdStr));
                 } catch (NumberFormatException e) {
                     log.error("구독자 ID 파싱 실패 - roomId: {}, 잘못된 ID: {}", roomId, subscriberIdStr);
                 }
             }
+        }
+
+        // 실제로 온라인인 사람만 필터링
+        if (!subscriberIds.isEmpty()) {
+            Set<Long> onlineSubscribers = presenceService.filterIsOnline(subscriberIds);
+            memberIdsToMarkRead.addAll(onlineSubscribers);
         }
 
         if (!memberIdsToMarkRead.isEmpty()) {

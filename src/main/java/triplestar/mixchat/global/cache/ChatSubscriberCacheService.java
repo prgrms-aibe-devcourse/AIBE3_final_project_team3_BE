@@ -1,5 +1,6 @@
 package triplestar.mixchat.global.cache;
 
+import jakarta.annotation.PostConstruct;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +33,29 @@ public class ChatSubscriberCacheService {
     private static final String SESSIONS_KEY_SUFFIX = ":sessions";
     private static final String MEMBERS_KEY_SUFFIX = ":members";
     private static final String SESSION_MEMBER_MAPPING_PREFIX = "session:member:";
+
+    // 서버 시작 시 모든 구독 정보 초기화 (유령 구독자 방지)
+    @PostConstruct
+    public void clearAllSubscribers() {
+        log.info("=== Redis 구독자 캐시 초기화 시작 ===");
+        try {
+            Set<String> sessionKeys = redisTemplate.keys(SESSIONS_KEY_PREFIX + "*");
+            Set<String> mappingKeys = redisTemplate.keys(SESSION_MEMBER_MAPPING_PREFIX + "*");
+
+            Set<String> allKeys = new HashSet<>();
+            if (sessionKeys != null) allKeys.addAll(sessionKeys);
+            if (mappingKeys != null) allKeys.addAll(mappingKeys);
+
+            if (!allKeys.isEmpty()) {
+                redisTemplate.delete(allKeys);
+                log.info("구독자 캐시 초기화 완료 - 삭제된 키 개수: {}", allKeys.size());
+            } else {
+                log.info("초기화할 구독자 캐시가 없습니다.");
+            }
+        } catch (Exception e) {
+            log.error("Redis 구독자 캐시 초기화 실패", e);
+        }
+    }
 
     private String getSessionsKey(Long roomId) {
         return SESSIONS_KEY_PREFIX + roomId + SESSIONS_KEY_SUFFIX;
