@@ -37,6 +37,7 @@ public class DirectChatRoomService {
     private final ChatMemberService chatMemberService;
     private final SystemMessageService systemMessageService;
     private final triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository chatMessageRepository;
+    private final ChatSequenceGenerator chatSequenceGenerator;
     // todo: 각 서비스 Facade패턴 도입 고려
 
     private Member findMemberById(Long memberId) {
@@ -154,7 +155,8 @@ public class DirectChatRoomService {
                     DirectChatRoom room = (DirectChatRoom) result[0];
                     Long lastRead = (Long) result[1];
 
-                    long unreadCount = (lastRead == null) ? room.getCurrentSequence() : room.getCurrentSequence() - lastRead;
+                    long currentSequence = chatSequenceGenerator.getCurrentSequence(room.getId(), ChatRoomType.DIRECT);
+                    long unreadCount = (lastRead == null) ? currentSequence : currentSequence - lastRead;
                     if (unreadCount < 0) unreadCount = 0;
 
                     var latestMessage = latestMessageMap.get(room.getId());

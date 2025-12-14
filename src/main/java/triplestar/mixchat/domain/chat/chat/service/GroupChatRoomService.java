@@ -54,6 +54,7 @@ public class GroupChatRoomService {
     private final SystemMessageService systemMessageService;
     private final triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository chatMessageRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ChatSequenceGenerator chatSequenceGenerator;
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
@@ -411,7 +412,8 @@ public class GroupChatRoomService {
         return rooms.stream()
                 .map(room -> {
                     Long lastRead = lastReadSequenceMap.get(room.getId());
-                    long unreadCount = (lastRead == null) ? room.getCurrentSequence() : room.getCurrentSequence() - lastRead;
+                    long currentSequence = chatSequenceGenerator.getCurrentSequence(room.getId(), ChatRoomType.GROUP);
+                    long unreadCount = (lastRead == null) ? currentSequence : currentSequence - lastRead;
                     if (unreadCount < 0) unreadCount = 0;
 
                     // 마지막 메시지 조회 (번역된 메시지가 있으면 번역된 내용 사용)
@@ -475,7 +477,7 @@ public class GroupChatRoomService {
         return rooms.stream()
                 .map(room -> {
                     Long lastReadSequence = lastReadSequenceMap.getOrDefault(room.getId(), 0L);
-                    long currentSequence = room.getCurrentSequence();
+                    long currentSequence = chatSequenceGenerator.getCurrentSequence(room.getId(), ChatRoomType.GROUP);
                     long unreadCount = Math.max(0, currentSequence - lastReadSequence);
 
                     var latestMessage = latestMessageMap.get(room.getId());
