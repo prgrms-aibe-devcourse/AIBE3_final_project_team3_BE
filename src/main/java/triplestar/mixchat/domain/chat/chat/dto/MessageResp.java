@@ -2,6 +2,7 @@ package triplestar.mixchat.domain.chat.chat.dto;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
@@ -27,6 +28,7 @@ public record MessageResp(
         Boolean isTranslateEnabled,
 
         @Schema(description = "메시지 발신 시간", requiredMode = REQUIRED)
+        @JsonFormat(shape = JsonFormat.Shape.STRING)
         LocalDateTime createdAt,
 
         @Schema(description = "메시지 타입", example = "TALK", requiredMode = REQUIRED)

@@ -6,6 +6,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -149,11 +150,17 @@ public class ApiV1ChatController implements ApiChatController {
 
     // todo: 비밀번호 걸린 방도 public 조회는 혼동 여지 존재. 위를 me로 바꾸고 아래를 group으로 고려
     @GetMapping("/rooms/group/public")
-    public CustomResponse<List<GroupChatRoomPublicResp>> getPublicGroupChatRooms(
+    public CustomResponse<?> getPublicGroupChatRooms(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        List<GroupChatRoomPublicResp> rooms = groupChatRoomService.getGroupPublicRooms(currentUser.getId());
-        return CustomResponse.ok("공개 그룹 채팅방 목록 조회에 성공하였습니다.", rooms);
+        int safePage = Math.max(page, 0);
+        int safeSize = size > 0 ? Math.min(size, 50) : 12;
+
+        var pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "id"));
+        var roomsPage = groupChatRoomService.getGroupPublicRooms(currentUser.getId(), pageable);
+        return CustomResponse.ok("공개 그룹 채팅방 목록 조회에 성공하였습니다.", roomsPage);
     }
 
     @PostMapping("/rooms/group/{roomId}/join")

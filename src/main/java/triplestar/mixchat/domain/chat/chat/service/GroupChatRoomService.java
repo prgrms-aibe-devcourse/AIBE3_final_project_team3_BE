@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
@@ -282,9 +283,9 @@ public class GroupChatRoomService {
     }
 
     // 공개 그룹 채팅방 목록 조회 (Find 페이지용)
-    public List<GroupChatRoomPublicResp> getGroupPublicRooms(Long currentUserId) {
-        List<GroupChatRoom> rooms = groupChatRoomRepository.findPublicRoomsExcludingMemberId(currentUserId);
-        return convertToPublicRoomSummaries(rooms);
+    public Page<GroupChatRoomPublicResp> getGroupPublicRooms(Long currentUserId, Pageable pageable) {
+        Page<GroupChatRoom> roomsPage = groupChatRoomRepository.findPublicRoomsExcludingMemberId(currentUserId, pageable);
+        return convertToPublicRoomSummaries(roomsPage);
     }
 
     @Transactional
@@ -501,10 +502,12 @@ public class GroupChatRoomService {
     }
 
     // 공개 그룹 채팅방 목록을 Public DTO로 변환 (Find 페이지용)
-    private List<GroupChatRoomPublicResp> convertToPublicRoomSummaries(List<GroupChatRoom> rooms) {
-        if (rooms.isEmpty()) {
-            return Collections.emptyList();
+    private Page<GroupChatRoomPublicResp> convertToPublicRoomSummaries(Page<GroupChatRoom> roomsPage) {
+        if (roomsPage.isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), roomsPage.getPageable(), roomsPage.getTotalElements());
         }
+
+        List<GroupChatRoom> rooms = roomsPage.getContent();
 
         // 1. 모든 방의 ID 수집
         List<Long> roomIds = rooms.stream()
@@ -526,11 +529,13 @@ public class GroupChatRoomService {
         }
 
         // 3. DTO 변환
-        return rooms.stream()
+        List<GroupChatRoomPublicResp> dtoList = rooms.stream()
                 .map(room -> {
                     long memberCount = memberCountMap.getOrDefault(room.getId(), 0L);
                     return GroupChatRoomPublicResp.from(room, memberCount);
                 })
                 .collect(Collectors.toList());
+
+        return new PageImpl<>(dtoList, roomsPage.getPageable(), roomsPage.getTotalElements());
     }
 }

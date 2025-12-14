@@ -2,11 +2,10 @@ package triplestar.mixchat.domain.chat.search.event;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 import triplestar.mixchat.domain.chat.search.document.ChatMessageDocument;
 
 @Component
@@ -17,7 +16,7 @@ public class MessageIndexEventListener {
     private final ElasticsearchTemplate elasticsearchTemplate;
 
     @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void handleMessageIndexEvent(MessageIndexEvent event) {
         try {
             ChatMessageDocument document = new ChatMessageDocument(
