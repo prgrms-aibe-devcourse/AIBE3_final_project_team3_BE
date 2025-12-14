@@ -35,16 +35,19 @@ public class WebSocketEventListener {
     private final ChatMessageService chatMessageService;
     private final SimpMessageSendingOperations messagingTemplate;
 
+    // 세션별 구독 중인 방 목록 추적 (KEYS 명령어 사용 방지)
     private final ConcurrentHashMap<String, SessionSubscription> sessionSubscriptions = new ConcurrentHashMap<>();
+    // subscriptionId와 roomId 매핑 (구독 해제 시 사용)
     private final ConcurrentHashMap<String, RoomSubscriptionInfo> subscriptionIdToRoomInfo = new ConcurrentHashMap<>();
 
     private static final Pattern ROOM_DESTINATION_PATTERN =
             Pattern.compile("^/topic/(direct|group|ai)\\.rooms\\.(\\d+)");
 
+    // 세션별 구독 정보 저장용 내부 클래스(redis keys 사용 방지)
     private static class SessionSubscription {
         private final Long memberId;
-        private final Set<String> subscriptionIds = ConcurrentHashMap.newKeySet();
-        private final ConcurrentHashMap<Long, ChatRoomType> roomTypeMap = new ConcurrentHashMap<>();
+        private final Set<String> subscriptionIds = ConcurrentHashMap.newKeySet(); // disconnect 시 subscriptionIdToRoomInfo 정리용
+        private final ConcurrentHashMap<Long, ChatRoomType> roomTypeMap = new ConcurrentHashMap<>(); // roomId -> chatRoomType
 
         SessionSubscription(Long memberId) {
             this.memberId = memberId;
@@ -73,6 +76,7 @@ public class WebSocketEventListener {
         }
     }
 
+    // subscriptionId별 방 정보 저장용 내부 클래스
     private static class RoomSubscriptionInfo {
         private final Long roomId;
         private final Long memberId;
@@ -103,6 +107,7 @@ public class WebSocketEventListener {
         }
     }
 
+    // 채팅방 구독 시작
     @EventListener
     public void handleSubscribe(SessionSubscribeEvent event) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
@@ -157,6 +162,7 @@ public class WebSocketEventListener {
         }
     }
 
+    // 채팅방 구독 해제
     @EventListener
     public void handleUnsubscribe(SessionUnsubscribeEvent event) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
@@ -187,6 +193,7 @@ public class WebSocketEventListener {
         chatMemberService.broadcastSubscriberCount(roomId, chatRoomType);
     }
 
+    // WebSocket 세션 종료 - 해당 세션이 구독한 방만 제거 (KEYS 사용 방지)
     @EventListener
     public void handleDisconnect(SessionDisconnectEvent event) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
@@ -206,6 +213,7 @@ public class WebSocketEventListener {
         ConcurrentHashMap<Long, ChatRoomType> roomTypeMap = subscription.getRoomTypeMap();
         Set<String> subscriptionIds = subscription.getSubscriptionIds();
 
+        // 실제 구독한 방만 Redis에서 제거 및 구독자 수 브로드캐스트
         for (Map.Entry<Long, ChatRoomType> entry : roomTypeMap.entrySet()) {
             Long roomId = entry.getKey();
             ChatRoomType chatRoomType = entry.getValue();
@@ -218,6 +226,7 @@ public class WebSocketEventListener {
             chatMemberService.broadcastSubscriberCount(roomId, chatRoomType);
         }
 
+        // [중요] subscriptionIdToRoomInfo 맵에서도 제거 (메모리 누수 방지)
         for (String subId : subscriptionIds) {
             subscriptionIdToRoomInfo.remove(subId);
         }
