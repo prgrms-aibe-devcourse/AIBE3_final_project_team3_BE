@@ -3,6 +3,7 @@ package triplestar.mixchat;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
@@ -14,8 +15,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableJpaAuditing
 @EnableMongoAuditing
-@EnableJpaRepositories(basePackages = "triplestar.mixchat.domain") // JPA 리포지토리 경로
-@EnableMongoRepositories(basePackages = "triplestar.mixchat.domain.chat.chat.repository") // MongoDB 리포지토리 경로
+@EnableJpaRepositories(basePackages = "triplestar.mixchat.domain")
+@EnableMongoRepositories(basePackages = "triplestar.mixchat.domain.chat.chat.repository")
+@EnableElasticsearchRepositories(basePackages = "triplestar.mixchat.domain")
 @EnableScheduling
 @EnableCaching
 public class Application {
