@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
-import triplestar.mixchat.global.ai.BotMemberProvider;
+import triplestar.mixchat.global.ai.BotMemberIdProvider;
 
 @Slf4j
 @Component
@@ -24,7 +24,7 @@ import triplestar.mixchat.global.ai.BotMemberProvider;
 public class ChatHistoryProvider {
 
     private final ChatMessageRepository chatMessageRepository;
-    private final BotMemberProvider botMemberProvider;
+    private final BotMemberIdProvider botMemberProvider;
 
     public List<Message> getRecentHistory(Long roomId, int maxTurns) {
         List<ChatMessage> messages = chatMessageRepository.

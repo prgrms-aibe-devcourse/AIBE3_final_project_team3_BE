@@ -3,14 +3,16 @@ package triplestar.mixchat.global.ai;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import triplestar.mixchat.domain.member.member.constant.Role;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 
 @Getter
+@Profile("!test")
 @Component
 @RequiredArgsConstructor
-public class BotMemberProvider {
+public class DbBotMemberProvider implements BotMemberIdProvider {
 
     private final MemberRepository memberRepository;
 

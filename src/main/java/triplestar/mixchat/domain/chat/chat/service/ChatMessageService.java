@@ -28,12 +28,11 @@ import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.search.service.ChatMessageSearchService;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
+import triplestar.mixchat.domain.member.presence.service.PresenceService;
 import triplestar.mixchat.domain.notification.constant.NotificationType;
-import triplestar.mixchat.global.ai.BotMemberProvider;
+import triplestar.mixchat.global.ai.BotMemberIdProvider;
 import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
 import triplestar.mixchat.global.notifiaction.NotificationEvent;
-
-import triplestar.mixchat.domain.member.presence.service.PresenceService;
 
 @Service
 @Slf4j
@@ -52,7 +51,7 @@ public class ChatMessageService {
     private final ChatMessageSearchService chatMessageSearchService;
     private final ChatSubscriberCacheService subscriberCacheService;
     private final PresenceService presenceService;
-    private final BotMemberProvider botMemberProvider;
+    private final BotMemberIdProvider botMemberProvider;
 
     @Transactional
     public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content,
@@ -117,7 +116,7 @@ public class ChatMessageService {
         }
 
         // 2. unreadCount 계산
-       List<ChatRoomMemberRepository.MemberSummary> memberSummaries =
+        List<ChatRoomMemberRepository.MemberSummary> memberSummaries =
                 chatRoomMemberRepository.findMemberSummariesByRoomIdAndChatRoomType(roomId, chatRoomType);
 
         int unreadCount = (int) memberSummaries.stream()
@@ -317,7 +316,9 @@ public class ChatMessageService {
     }
 
     public void broadcastReadStatus(Long roomId, ChatRoomType chatRoomType, Long readUpToSequence) {
-        if (chatRoomType == ChatRoomType.AI) return;
+        if (chatRoomType == ChatRoomType.AI) {
+            return;
+        }
 
         // 변경된 unreadCount 계산
         List<MessageUnreadCountResp> updates = getUnreadCountUpdates(roomId, chatRoomType, readUpToSequence);
