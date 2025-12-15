@@ -40,7 +40,7 @@ class ApiV1AIChatControllerIntegrationTest extends BaseChatIntegrationTest {
         memberRepository.deleteAll();
         userPromptRepository.deleteAll();
 
-        seedBot101();
+        seedBot1000();
 
         user1 = memberRepository.save(TestMemberFactory.createMember("user1"));
 
@@ -58,25 +58,25 @@ class ApiV1AIChatControllerIntegrationTest extends BaseChatIntegrationTest {
         personaId = persona.getId();
     }
 
-    private void seedBot101() {
-        // 이미 101 있으면 스킵
+    private void seedBot1000() {
+        // 이미 1000 있으면 스킵
         Integer exists = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM members WHERE id = 101",
+                "SELECT COUNT(*) FROM members WHERE id = 1000",
                 Integer.class
         );
         if (exists != null && exists > 0) return;
 
-        // ⚠️ members 테이블이 비어있어야 첫 insert가 101이 됨
+        // ⚠️ members 테이블이 비어있어야 첫 insert가 1000이 됨
         Integer cnt = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM members", Integer.class);
         if (cnt != null && cnt != 0) {
             throw new IllegalStateException(
-                    "members 테이블이 비어있지 않아 bot을 id=101로 만들 수 없습니다. " +
+                    "members 테이블이 비어있지 않아 bot을 id=1000로 만들 수 없습니다. " +
                             "setUp에서 memberRepository.deleteAll()이 먼저 수행되는지 확인하세요."
             );
         }
 
-        // MySQL 전용: 다음 insert id를 101로 맞춘다
-        jdbcTemplate.execute("ALTER TABLE members AUTO_INCREMENT = 101");
+        // MySQL 전용: 다음 insert id를 1000로 맞춘다
+        jdbcTemplate.execute("ALTER TABLE members AUTO_INCREMENT = 1000");
 
         // 너가 준 SQL 그대로 insert
         jdbcTemplate.update("""
@@ -95,11 +95,11 @@ class ApiV1AIChatControllerIntegrationTest extends BaseChatIntegrationTest {
 
         // 안전 체크
         Integer ok = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM members WHERE id = 101",
+                "SELECT COUNT(*) FROM members WHERE id = 1000",
                 Integer.class
         );
         if (ok == null || ok == 0) {
-            throw new IllegalStateException("봇 생성은 됐지만 id=101이 아닙니다. AUTO_INCREMENT 적용이 안 된 환경일 수 있습니다.");
+            throw new IllegalStateException("봇 생성은 됐지만 id=1000이 아닙니다. AUTO_INCREMENT 적용이 안 된 환경일 수 있습니다.");
         }
     }
 
