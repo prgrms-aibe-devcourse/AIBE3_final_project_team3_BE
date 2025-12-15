@@ -69,26 +69,26 @@ class ApiV1PostControllerTest {
     @Test
     void getPosts_returnsPage() {
         Page<PostSummaryResp> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 20), 0);
-        when(postService.getPosts(PostSortType.LATEST, PageRequest.of(0, 20))).thenReturn(page);
+        when(postService.getPosts(null, PostSortType.LATEST, PageRequest.of(0, 20))).thenReturn(page);
 
-        CustomResponse<Page<PostSummaryResp>> response = controller.getPosts("LATEST", 0, 20);
+        CustomResponse<Page<PostSummaryResp>> response = controller.getPosts(null, "LATEST", 0, 20);
 
         assertEquals("게시글 목록 조회 성공", response.msg());
         assertSame(page, response.data());
-        verify(postService).getPosts(PostSortType.LATEST, PageRequest.of(0, 20));
+        verify(postService).getPosts(null, PostSortType.LATEST, PageRequest.of(0, 20));
     }
 
     @Test
     void getPost_returnsDetail() {
         Long postId = 42L;
         PostDetailResp resp = mock(PostDetailResp.class);
-        when(postService.getPostAndIncreaseView(postId)).thenReturn(resp);
+        when(postService.getPostAndIncreaseView(postId, null)).thenReturn(resp);
 
-        CustomResponse<PostDetailResp> response = controller.getPost(postId);
+        CustomResponse<PostDetailResp> response = controller.getPost(null, postId);
 
         assertEquals("게시글 상세 조회 성공", response.msg());
         assertSame(resp, response.data());
-        verify(postService).getPostAndIncreaseView(postId);
+        verify(postService).getPostAndIncreaseView(postId, null);
     }
 
     @Test
@@ -96,19 +96,19 @@ class ApiV1PostControllerTest {
         Long postId = 2L;
         String title = "수정된 제목";
         String content = "수정된 내용";
-        PostUpdateReq req = new PostUpdateReq(title, content);
+        PostUpdateReq req = new PostUpdateReq(title, content, false);
         PostDetailResp resp = mock(PostDetailResp.class);
 
-        when(postService.getPost(postId)).thenReturn(resp);
+        when(postService.getPost(postId, user.getId())).thenReturn(resp);
         // updatePost는 void
         doNothing().when(postService).updatePost(postId, user.getId(), false, req, null);
 
-        CustomResponse<PostDetailResp> response = controller.updatePost(user, postId, title, content, null);
+        CustomResponse<PostDetailResp> response = controller.updatePost(user, postId, title, content, "false", null);
 
         assertEquals("게시글 수정 성공", response.msg());
         assertSame(resp, response.data());
         verify(postService).updatePost(postId, user.getId(), false, req, null);
-        verify(postService).getPost(postId);
+        verify(postService).getPost(postId, user.getId());
     }
 
     @Test
@@ -116,13 +116,13 @@ class ApiV1PostControllerTest {
         Long postId = 3L;
         String title = "관리자 수정 제목";
         String content = "관리자 수정 내용";
-        PostUpdateReq req = new PostUpdateReq(title, content);
+        PostUpdateReq req = new PostUpdateReq(title, content, false);
         PostDetailResp resp = mock(PostDetailResp.class);
 
         doNothing().when(postService).updatePost(postId, admin.getId(), true, req, null);
-        when(postService.getPost(postId)).thenReturn(resp);
+        when(postService.getPost(postId, admin.getId())).thenReturn(resp);
 
-        CustomResponse<PostDetailResp> response = controller.updatePost(admin, postId, title, content, null);
+        CustomResponse<PostDetailResp> response = controller.updatePost(admin, postId, title, content, "false", null);
 
         assertEquals("게시글 수정 성공", response.msg());
         assertSame(resp, response.data());
@@ -285,4 +285,3 @@ class ApiV1PostControllerTest {
         verify(commentService).unlikeComment(user.getId(), commentId);
     }
 }
-
