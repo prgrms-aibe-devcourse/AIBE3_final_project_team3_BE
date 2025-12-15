@@ -25,7 +25,7 @@ scrape_configs:
     metrics_path: '/actuator/prometheus'
     scrape_interval: 5s  # 부하 테스트 시 더 자주 수집
     static_configs:
-      - targets: ['host.docker.internal:8080']  # Windows/Mac Docker Desktop
+      - targets: ['localhost:8080']  # Windows/Mac Docker Desktop
         labels:
           application: 'mixchat'
           service: 'backend'
