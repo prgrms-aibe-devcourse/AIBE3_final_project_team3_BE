@@ -16,6 +16,7 @@ public record SignUpReq(
         @Schema(description = "사용자 이메일 주소", example = "user@example.com")
         @NotBlank
         @Email
+        @Size(max = 255)
         String email,
 
         @Schema(description = "비밀번호 (8자 이상, 대소문자/숫자 필수)", example = "P@sswOrd123")
@@ -29,6 +30,7 @@ public record SignUpReq(
 
         @Schema(description = "실명")
         @NotBlank
+        @Size(max = 50)
         String name,
 
         @Schema(description = "국가 코드 (ISO 3166 Alpha-2)", example = "KR")
@@ -37,6 +39,7 @@ public record SignUpReq(
 
         @Schema(description = "사용자 닉네임", example = "MixMaster")
         @NotBlank
+        @Size(max = 50)
         String nickname,
 
         @Schema(description = "영어 실력 레벨")
@@ -45,10 +48,12 @@ public record SignUpReq(
 
         @Schema(description = "관심사 목록 (최소 1개 이상 필수)", example = "[\"요리\", \"여행\"]")
         @NotEmpty
-        List<String> interests,
+        @Size(min = 1, max = 10)
+        List<@NotBlank @Size(max = 30) String> interests,
 
         @Schema(description = "자기소개")
         @NotBlank
+        @Size(max = 1000)
         String description
 ) {
 }

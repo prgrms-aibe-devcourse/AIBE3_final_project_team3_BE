@@ -17,8 +17,7 @@ import triplestar.mixchat.domain.chat.chat.repository.DirectChatRoomRepository;
 import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
 import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
-import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-import triplestar.mixchat.global.ai.BotConstant;
+import triplestar.mixchat.global.ai.BotMemberProvider;
 import triplestar.mixchat.global.cache.ChatAuthCacheService;
 import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
 
@@ -36,6 +35,7 @@ public class ChatMemberService {
     private final AIChatRoomRepository aiChatRoomRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatSequenceGenerator chatSequenceGenerator;
+    private final BotMemberProvider botMemberProvider;
 
     //사용자가 특정 대화방의 멤버인지 확인 (캐시 적용)
     public void verifyUserIsMemberOfRoom(Long memberId, Long roomId, ChatRoomType chatRoomType) {
@@ -43,7 +43,7 @@ public class ChatMemberService {
             throw new AccessDeniedException("사용자, 대화방 정보 또는 대화 타입이 유효하지 않습니다.");
         }
 
-        if (memberId.equals(BotConstant.BOT_MEMBER_ID)) {
+        if (memberId.equals(botMemberProvider.getBotMemberId())) {
             // 봇 사용자는 모든 방에 접근 허용
             return;
         }

@@ -2,6 +2,7 @@ package triplestar.mixchat.domain.member.auth.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -71,6 +72,7 @@ public class AuthService {
         if (!member.getPassword().matches(req.password(), passwordEncoder)) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
+        memberRepository.updateLastSeenAt(member.getId(), LocalDateTime.now());
 
         String accessToken = authJwtProvider.generateAccessToken(
                 new AccessTokenPayload(member.getId(), member.getRole()));

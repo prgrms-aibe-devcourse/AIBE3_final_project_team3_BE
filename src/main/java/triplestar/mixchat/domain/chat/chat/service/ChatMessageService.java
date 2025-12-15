@@ -29,7 +29,7 @@ import triplestar.mixchat.domain.chat.search.service.ChatMessageSearchService;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.notification.constant.NotificationType;
-import triplestar.mixchat.global.ai.BotConstant;
+import triplestar.mixchat.global.ai.BotMemberProvider;
 import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
 import triplestar.mixchat.global.notifiaction.NotificationEvent;
 
@@ -52,6 +52,7 @@ public class ChatMessageService {
     private final ChatMessageSearchService chatMessageSearchService;
     private final ChatSubscriberCacheService subscriberCacheService;
     private final PresenceService presenceService;
+    private final BotMemberProvider botMemberProvider;
 
     @Transactional
     public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content,
@@ -175,9 +176,9 @@ public class ChatMessageService {
         chatNotificationService.sendChatMessage(roomId, chatRoomType, resp);
 
         // 사람이 보낸 메시지인 경우 ai 응답 생성을 위해 aiChatBotService.chat() 이후 saveMessage 재귀 호출
-        if (!senderId.equals(BotConstant.BOT_MEMBER_ID)) {
+        if (!senderId.equals(botMemberProvider.getBotMemberId())) {
             String chat = aiChatBotService.chat(senderId, roomId, content);
-            return saveMessage(roomId, BotConstant.BOT_MEMBER_ID, "Chat Bot", chat, MessageType.TEXT,
+            return saveMessage(roomId, botMemberProvider.getBotMemberId(), "Chat Bot", chat, MessageType.TEXT,
                     chatRoomType, false);
         }
 
@@ -369,6 +370,4 @@ public class ChatMessageService {
 
         return result;
     }
-
-
 }
