@@ -105,28 +105,25 @@ public class ChatSubscriberCacheService {
         String sessionRoomsKey = getSessionRoomsKey(sessionId);
         String memberSessionsKey = getMemberSessionsKey(memberId);
 
-        // 1. 세션별 구독 제거
+        // 1. 방별 세션 목록에서 세션 제거
         redisTemplate.opsForSet().remove(sessionsKey, sessionId);
 
-        // 2. 세션이 구독 중인 방 목록에서도 제거
+        // 2. 세션이 구독 중인 방 목록에서 해당 방 제거
         redisTemplate.opsForSet().remove(sessionRoomsKey, String.valueOf(roomId));
 
-        // 3. 이 회원의 다른 세션이 남아있는지 확인 (매핑 삭제 전에 확인)
+        // 3. 회원의 활성 세션 목록에서 해당 세션 제거
+        redisTemplate.opsForSet().remove(memberSessionsKey, sessionId);
+
+        // 4. 이 회원의 다른 세션이 해당 방에 남아있는지 확인
         boolean hasOtherSessions = checkOtherSessionsForMember(roomId, memberId);
 
-        // 4. 모든 세션이 해제되었으면 members Set에서도 제거
+        // 5. 더 이상 해당 방에 이 회원의 세션이 없으면 members Set에서도 제거
         if (!hasOtherSessions) {
             redisTemplate.opsForSet().remove(membersKey, String.valueOf(memberId));
         }
-        
-        // 주의: memberSessionsKey(회원->세션)에서는 여기서 바로 삭제하지 않음.
-        // 왜냐하면 해당 세션이 '다른 방'에는 여전히 구독 중일 수 있기 때문.
-        // 이 키는 cleanUpSession에서 세션 자체가 죽을 때 삭제하거나, TTL로 관리됨.
     }
     
-    /**
-     * 특정 회원의 모든 세션을 해당 방에서 강제 구독 해제 (강퇴, 방 나가기 용)
-     */
+    // 특정 회원의 모든 세션을 해당 방에서 강제 구독 해제 (강퇴, 방 나가기 용)
     public void removeSubscribersByMemberId(Long roomId, Long memberId) {
         String memberSessionsKey = getMemberSessionsKey(memberId);
         
@@ -141,10 +138,7 @@ public class ChatSubscriberCacheService {
         }
     }
 
-    /**
-     * 세션 종료 시 해당 세션과 관련된 모든 구독 정보 정리 (유령 구독자 방지 핵심)
-     * 메모리 상태와 무관하게 Redis 데이터만으로 정리 가능
-     */
+    // 세션 종료 시 해당 세션과 관련된 모든 구독 정보 정리 (유령 구독자 방지 핵심)
     public void cleanUpSession(String sessionId) {
         String mappingKey = getSessionMappingKey(sessionId);
         String sessionRoomsKey = getSessionRoomsKey(sessionId);
@@ -171,7 +165,7 @@ public class ChatSubscriberCacheService {
             }
         }
         
-        // 3. 회원 -> 세션 목록에서도 제거
+        // 3. 회원 활성 세션 목록에서도 제거
         String memberSessionsKey = getMemberSessionsKey(memberId);
         redisTemplate.opsForSet().remove(memberSessionsKey, sessionId);
 
@@ -195,25 +189,11 @@ public class ChatSubscriberCacheService {
         return redisTemplate.opsForSet().members(membersKey);
     }
 
-    // 특정 회원의 다른 세션이 남아있는지 확인
+    // 특정 회원의 다른 세션이 해당 방에 남아있는지 확인 (최적화)
     private boolean checkOtherSessionsForMember(Long roomId, Long memberId) {
-        String sessionsKey = getSessionsKey(roomId);
-        Set<String> allSessions = redisTemplate.opsForSet().members(sessionsKey);
-
-        if (allSessions == null || allSessions.isEmpty()) {
-            return false;
-        }
-
-        // 모든 세션을 확인하여 같은 memberId를 가진 세션이 있는지 검사
-        for (String sessionId : allSessions) {
-            String mappingKey = getSessionMappingKey(sessionId);
-            String sessionMemberId = redisTemplate.opsForValue().get(mappingKey);
-
-            if (sessionMemberId != null && sessionMemberId.equals(String.valueOf(memberId))) {
-                return true; // 같은 회원의 다른 세션 발견
-            }
-        }
-
-        return false;
+        // 해당 멤버의 총 활성 세션 수를 확인 (SCARD 명령은 O(1))
+        Long memberActiveSessionCount = redisTemplate.opsForSet().size(getMemberSessionsKey(memberId));
+        // 현재 세션이 이미 제거되었으므로, 0보다 크면 다른 세션이 남아있는 것
+        return memberActiveSessionCount != null && memberActiveSessionCount > 0;
     }
 }
