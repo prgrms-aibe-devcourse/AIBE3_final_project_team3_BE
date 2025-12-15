@@ -3,6 +3,7 @@ package triplestar.mixchat.domain.chat.chat.service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -73,7 +74,7 @@ public class GroupChatRoomService {
         // 방장(owner)을 creator로 설정하여 방 생성
         GroupChatRoom newRoom = GroupChatRoom.create(request.roomName(), request.description(), request.topic(), encryptedPassword, creator);
 
-        List<Member> members = memberRepository.findAllById(request.memberIds());
+        List<Member> members = new ArrayList<>(memberRepository.findAllById(request.memberIds()));
         if (!members.contains(creator)) {
             members.add(creator);
         }
