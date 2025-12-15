@@ -138,10 +138,6 @@ public class DirectChatRoomService {
         List<ChatMessageRepository.LatestMessageContent> latestMessages
                 = chatMessageRepository.findLatestMessageContentByRoomIds(roomIds, ChatRoomType.DIRECT);
 
-        log.info("[MongoDB 조회 결과] latestMessages count: {}", latestMessages.size());
-        latestMessages.forEach(msg -> log.info("  - roomId={}, content={}, created_at={}",
-                msg.getChatRoomId(), msg.getContent(), msg.getCreated_at()));
-
         Map<Long, ChatMessageRepository.LatestMessageContent> latestMessageMap =
                 latestMessages.stream()
                         .collect(Collectors.toMap(

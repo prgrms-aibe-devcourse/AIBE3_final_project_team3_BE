@@ -255,16 +255,28 @@ public class ChatMessageService {
         Map<Long, String> senderNames = memberRepository.findAllById(senderIds).stream()
                 .collect(Collectors.toMap(Member::getId, Member::getNickname));
 
-        List<MessageResp> messageResps = messages.stream()
-                .map(message -> {
-                    String senderName = senderNames.getOrDefault(message.getSenderId(), "Unknown");
+        // Two Pointer 알고리즘 적용 (O(N+M))
+        int[] unreadCounts = new int[messages.size()];
+        int memberIdx = 0;
+        int memberCount = sortedLastReadSequences.size();
 
-                    // 읽지 않은 사람 수 (정렬된 lastReadSequence에서 lower bound로 계산)
-                    int unreadCount = lowerBound(sortedLastReadSequences, message.getSequence());
+        // 메시지는 내림차순(최신->과거)이므로, 역순(과거->최신)으로 순회하며 비교
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            ChatMessage message = messages.get(i);
 
-                    return MessageResp.withUnreadCount(message, senderName, unreadCount);
-                })
-                .collect(Collectors.toList());
+            // 현재 메시지 시퀀스보다 lastReadSequence가 작은 멤버 수 카운트 (포인터 전진)
+            while (memberIdx < memberCount && sortedLastReadSequences.get(memberIdx) < message.getSequence()) {
+                memberIdx++;
+            }
+            unreadCounts[i] = memberIdx;
+        }
+
+        List<MessageResp> messageResps = new ArrayList<>();
+        for (int i = 0; i < messages.size(); i++) {
+            ChatMessage message = messages.get(i);
+            String senderName = senderNames.getOrDefault(message.getSenderId(), "Unknown");
+            messageResps.add(MessageResp.withUnreadCount(message, senderName, unreadCounts[i]));
+        }
 
         // 다음 페이지 정보 계산
         Long nextCursor = null;
@@ -319,36 +331,44 @@ public class ChatMessageService {
         // 1. 채팅방의 모든 멤버 조회 (읽음 상태 확인용)
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
 
-        // 최근 50개 업데이트(페이징이 25개이므로 여유있게 50개 조회)
+        // 멤버들의 lastReadSequence 미리 추출 및 오름차순 정렬 (O(N log N))
+        List<Long> sortedLastReadSequences = allMembers.stream()
+                .map(cm -> cm.getLastReadSequence() == null ? 0L : cm.getLastReadSequence())
+                .sorted()
+                .toList();
+
+        // 최근 50개 업데이트(페이징이 25개이므로 여유있게 50개 조회) - 시퀀스 내림차순(최신순)
         List<ChatMessage> recentMessages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(
                 roomId, chatRoomType, PageRequest.of(0, 50)
         );
 
-        return recentMessages.stream()
+        List<ChatMessage> targetMessages = recentMessages.stream()
                 .filter(msg -> msg.getSequence() <= readUpToSequence) // readUpToSequence 이하만 필터링
-                .map(message -> {
-                    // 읽지 않은 사람 수
-                    int unreadCount = (int) allMembers.stream()
-                            .filter(member -> member.hasNotRead(message.getSequence()))
-                            .count();
-
-                    return new MessageUnreadCountResp(message.getId(), unreadCount);
-                })
                 .collect(Collectors.toList());
+
+        // 투 포인터 알고리즘 적용 (O(N+M))
+        int[] unreadCounts = new int[targetMessages.size()];
+        int memberIdx = 0;
+        int memberCount = sortedLastReadSequences.size();
+
+        // 메시지는 내림차순이므로, 역순(과거순)으로 순회하여 오름차순인 sortedLastReadSequences와 비교
+        for (int i = targetMessages.size() - 1; i >= 0; i--) {
+            ChatMessage message = targetMessages.get(i);
+
+            // 현재 메시지 시퀀스보다 lastReadSequence가 작은 멤버 수 카운트 (포인터 전진)
+            while (memberIdx < memberCount && sortedLastReadSequences.get(memberIdx) < message.getSequence()) {
+                memberIdx++;
+            }
+            unreadCounts[i] = memberIdx;
+        }
+
+        List<MessageUnreadCountResp> result = new ArrayList<>();
+        for (int i = 0; i < targetMessages.size(); i++) {
+            result.add(new MessageUnreadCountResp(targetMessages.get(i).getId(), unreadCounts[i]));
+        }
+
+        return result;
     }
 
-    /** 정렬된 lastReadSequence 리스트에서 target보다 작은 원소 개수 반환 */
-    private int lowerBound(List<Long> sorted, long target) {
-        int left = 0;
-        int right = sorted.size();
-        while (left < right) {
-            int mid = (left + right) >>> 1;
-            if (sorted.get(mid) < target) {
-                left = mid + 1;
-            } else {
-                right = mid;
-            }
-        }
-        return left;
-    }
+
 }

@@ -72,7 +72,6 @@ public class ChatSequenceGenerator {
 
                 if (currentSeq > 0) {
                     redisTemplate.opsForValue().set(key, String.valueOf(currentSeq), SEQUENCE_TTL);
-                    log.debug("Direct 채팅방 동기화: roomId={}, sequence={}", room.getId(), currentSeq);
                 }
             });
 
@@ -83,7 +82,6 @@ public class ChatSequenceGenerator {
 
                 if (currentSeq > 0) {
                     redisTemplate.opsForValue().set(key, String.valueOf(currentSeq), SEQUENCE_TTL);
-                    log.debug("Group 채팅방 동기화: roomId={}, sequence={}", room.getId(), currentSeq);
                 }
             });
 

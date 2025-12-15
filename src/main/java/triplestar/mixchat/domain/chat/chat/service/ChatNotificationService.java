@@ -31,14 +31,14 @@ public class ChatNotificationService {
         // 여기서는 List<MessageUnreadCountResp>를 그대로 전송.
         String destination = String.format("/topic/%s.rooms.%d", type.name().toLowerCase(), roomId);
         messagingTemplate.convertAndSend(destination, updates);
-        log.debug("UnreadCount updates sent to destination={}: count={}", destination, updates.size());
+        log.debug("[안 읽은 메시지 업데이트] 전송 완료 - destination={}, count={}", destination, updates.size());
     }
 
     // 채팅방 구독자들에게 메시지 전송
     public void sendChatMessage(Long roomId, ChatRoomType type, MessageResp messageResp) {
         String destination = String.format("/topic/%s.rooms.%d", type.name().toLowerCase(), roomId);
         messagingTemplate.convertAndSend(destination, messageResp);
-        log.debug("Message sent to destination={}: {}", destination, messageResp.id());
+        log.debug("[채팅 메시지 전송] 완료 - destination={}, messageId={}", destination, messageResp.id());
     }
 
     // 채팅방 리스트 업데이트 전송 (해당 채팅방 멤버들에게 개별 전송)
@@ -69,12 +69,10 @@ public class ChatNotificationService {
             String topicDestination = String.format("/topic/users.%d.rooms.update", memberId);
             messagingTemplate.convertAndSend(topicDestination, updateResp);
 
-            log.info("[RoomListUpdate] Sent to user={}, dest1=/user/{}/queue/rooms.update, dest2={}", 
-                    memberId, memberId, topicDestination);
+            log.debug("[채팅방 목록 업데이트] 사용자 전송 - user={}, dest={}", memberId, topicDestination);
         }
 
-        log.info("[RoomListUpdate] Sent to room={} and {} members, roomId={}, type={}, senderId={}, sequence={}",
-                roomDestination, memberIds.size(), updateResp.roomId(), updateResp.chatRoomType(),
-                updateResp.senderId(), updateResp.latestSequence());
+        log.debug("[채팅방 목록 업데이트] 전체 완료 - room={}, members={}, sequence={}",
+                roomDestination, memberIds.size(), updateResp.latestSequence());
     }
 }

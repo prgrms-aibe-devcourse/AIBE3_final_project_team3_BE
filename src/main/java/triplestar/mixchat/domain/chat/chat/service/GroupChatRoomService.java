@@ -144,12 +144,7 @@ public class GroupChatRoomService {
         chatAuthCacheService.removeMember(roomId, currentUserId);
 
         // Redis 구독자 캐시에서 세션 제거
-        Set<String> memberSessions = chatSubscriberCacheService.getSessionsByMemberId(roomId, currentUserId);
-        if (memberSessions != null) {
-            for (String sessionId : memberSessions) {
-                chatSubscriberCacheService.removeSubscriber(roomId, currentUserId, sessionId);
-            }
-        }
+        chatSubscriberCacheService.removeSubscribersByMemberId(roomId, currentUserId);
 
         // 6. 남은 멤버 수 확인 후 대화방 삭제
         long remainingMembersCount = chatRoomMemberRepository.countByChatRoomIdAndChatRoomType(
@@ -319,12 +314,7 @@ public class GroupChatRoomService {
         chatAuthCacheService.removeMember(roomId, targetMemberId);
 
         // Redis 구독자 캐시에서 세션 제거
-        Set<String> memberSessions = chatSubscriberCacheService.getSessionsByMemberId(roomId, targetMemberId);
-        if (memberSessions != null) {
-            for (String sessionId : memberSessions) {
-                chatSubscriberCacheService.removeSubscriber(roomId, targetMemberId, sessionId);
-            }
-        }
+        chatSubscriberCacheService.removeSubscribersByMemberId(roomId, targetMemberId);
 
         // 7. 시스템 메시지 저장 및 전송
         systemMessageService.sendKickMessage(roomId, targetNickname, ChatRoomType.GROUP);
@@ -461,10 +451,6 @@ public class GroupChatRoomService {
         // 3. Batch Query: 모든 방의 최신 메시지 내용을 한번에 조회 (MongoDB Aggregation)
         List<ChatMessageRepository.LatestMessageContent> latestMessages
                 = chatMessageRepository.findLatestMessageContentByRoomIds(roomIds, ChatRoomType.GROUP);
-
-        log.info("[MongoDB 조회 결과] latestMessages count: {}", latestMessages.size());
-        latestMessages.forEach(msg -> log.info("  - roomId={}, content={}, created_at={}",
-                msg.getChatRoomId(), msg.getContent(), msg.getCreated_at()));
 
         Map<Long, ChatMessageRepository.LatestMessageContent> latestMessageMap =
                 latestMessages.stream()

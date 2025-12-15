@@ -203,32 +203,24 @@ public class WebSocketEventListener {
             return;
         }
 
+        // 메모리에서 세션 정보 제거
         SessionSubscription subscription = sessionSubscriptions.remove(sessionId);
-        if (subscription == null) {
-            log.warn("WebSocket 연결 종료 - 세션 정보 없음: sessionId={}", sessionId);
-            return;
-        }
 
-        Long memberId = subscription.getMemberId();
-        ConcurrentHashMap<Long, ChatRoomType> roomTypeMap = subscription.getRoomTypeMap();
-        Set<String> subscriptionIds = subscription.getSubscriptionIds();
+        // Redis에서 세션 관련 모든 구독 정보 정리 (메모리에 없어도 수행)
+        subscriberCacheService.cleanUpSession(sessionId);
 
-        // 실제 구독한 방만 Redis에서 제거 및 구독자 수 브로드캐스트
-        for (Map.Entry<Long, ChatRoomType> entry : roomTypeMap.entrySet()) {
-            Long roomId = entry.getKey();
-            ChatRoomType chatRoomType = entry.getValue();
+        if (subscription != null) {
+            // 메모리 맵 정리
+            subscription.getSubscriptionIds().forEach(subscriptionIdToRoomInfo::remove);
 
-            if (chatRoomType == ChatRoomType.AI) {
-                continue;
-            }
-
-            subscriberCacheService.removeSubscriber(roomId, memberId, sessionId);
-            chatMemberService.broadcastSubscriberCount(roomId, chatRoomType);
-        }
-
-        // [중요] subscriptionIdToRoomInfo 맵에서도 제거 (메모리 누수 방지)
-        for (String subId : subscriptionIds) {
-            subscriptionIdToRoomInfo.remove(subId);
+            // 구독자 수 브로드캐스트
+            subscription.getRoomTypeMap().forEach((roomId, type) -> {
+                if (type != ChatRoomType.AI) {
+                    chatMemberService.broadcastSubscriberCount(roomId, type);
+                }
+            });
+        } else {
+            log.debug("WebSocket 연결 종료 - 메모리 세션 정보 없음 (Redis 정리만 수행): sessionId={}", sessionId);
         }
     }
 }

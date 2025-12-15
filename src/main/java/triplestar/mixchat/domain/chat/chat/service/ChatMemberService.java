@@ -118,14 +118,8 @@ public class ChatMemberService {
         // 3. Redis 구독자 캐시에서 해당 멤버의 모든 세션 제거
         // WebSocket 연결이 끊기기 전에 HTTP DELETE로 방을 나가는 경우를 대비
         // (유령 구독자 방지 및 정확한 구독자 수 유지)
-        Set<String> memberSessions = chatSubscriberCacheService.getSessionsByMemberId(roomId, memberId);
-        if (memberSessions != null && !memberSessions.isEmpty()) {
-            for (String sessionId : memberSessions) {
-                chatSubscriberCacheService.removeSubscriber(roomId, memberId, sessionId);
-            }
-            log.info("채팅방 퇴장 시 구독자 캐시 정리 완료 - memberId: {}, roomId: {}, 제거된 세션 수: {}",
-                    memberId, roomId, memberSessions.size());
-        }
+        chatSubscriberCacheService.removeSubscribersByMemberId(roomId, memberId);
+        log.debug("채팅방 퇴장 시 구독자 캐시 정리 완료 - memberId: {}, roomId: {}", memberId, roomId);
 
         // 4. 남은 멤버 수 확인 후 대화방 삭제 (해당 타입의 방에만 적용)
         long remainingMembersCount = chatRoomMemberRepository.countByChatRoomIdAndChatRoomType(roomId, chatRoomType);
@@ -180,7 +174,7 @@ public class ChatMemberService {
 
         SubscriberCountUpdateResp resp = SubscriberCountUpdateResp.of(subscriberCount, totalMemberCount);
         String destination = "/topic/" + chatRoomType.name().toLowerCase() + ".rooms." + roomId;
-        log.info("📢 Broadcasting subscriber count - destination: {}, subscriberCount: {}, totalMemberCount: {}",
+        log.debug("구독자 수 변경 알림 전송 - destination: {}, subscriberCount: {}, totalMemberCount: {}",
                 destination, subscriberCount, totalMemberCount);
         messagingTemplate.convertAndSend(destination, resp);
     }
