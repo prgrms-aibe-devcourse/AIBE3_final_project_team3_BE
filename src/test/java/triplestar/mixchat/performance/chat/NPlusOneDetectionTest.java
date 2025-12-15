@@ -130,7 +130,7 @@ class NPlusOneDetectionTest {
         );
 
         result.printResult();
-        
+
         // MongoDB 조회이므로 JPA N+1과는 다르게 쿼리 수가 적게 나와야 함 (1개)
         log.info("Queries: " + result.getQueryCount());
     }
