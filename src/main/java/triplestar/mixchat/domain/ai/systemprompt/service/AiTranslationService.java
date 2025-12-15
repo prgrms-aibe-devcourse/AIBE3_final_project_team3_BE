@@ -71,7 +71,8 @@ public class AiTranslationService {
                             providerName, req.chatMessageId(), req.originalContent(), translatedContent);
                     chatMessage.setTranslatedContent(translatedContent);
                     ChatMessage updatedMessage = chatMessageRepository.save(chatMessage);
-                    chatMessageSearchService.updateTranslation(updatedMessage.getId(), translatedContent);
+                    // 부분 업데이트 대신 전체 문서 재색인 (Upsert)으로 변경하여 순서 문제 해결
+                    chatMessageSearchService.indexMessage(updatedMessage);
                     notifyClientOfUpdate(updatedMessage);
                     return;
                 } else {

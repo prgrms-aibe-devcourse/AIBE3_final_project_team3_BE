@@ -9,7 +9,6 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage.MessageType;
-import triplestar.mixchat.domain.chat.search.event.MessageIndexEvent;
 
 @Slf4j
 @Component
@@ -25,19 +24,7 @@ public class ChatMessageIndexAndTranslateListener {
             return;
         }
 
-        // Elasticsearch 인덱싱
-        if (event.messageType() == MessageType.TEXT) {
-            eventPublisher.publishEvent(new MessageIndexEvent(
-                    event.messageId(),
-                    event.roomId(),
-                    event.chatRoomType(),
-                    event.senderId(),
-                    event.senderNickname(),
-                    event.content(),
-                    event.sequence(),
-                    event.createdAt()
-            ));
-        }
+        // Elasticsearch 인덱싱은 MessageIndexEventListener가 직접 이 이벤트를 구독하여 처리함 (Multicasting)
 
         // 번역 요청 (TEXT + 사용자가 번역을 켠 경우)
         if (event.translateEnabled() && event.messageType() == MessageType.TEXT) {

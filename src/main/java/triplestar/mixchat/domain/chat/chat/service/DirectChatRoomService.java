@@ -1,5 +1,7 @@
 package triplestar.mixchat.domain.chat.chat.service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +16,7 @@ import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.DirectChatRoom;
+import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.DirectChatRoomRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
@@ -34,6 +37,7 @@ public class DirectChatRoomService {
     private final ChatMemberService chatMemberService;
     private final SystemMessageService systemMessageService;
     private final triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository chatMessageRepository;
+    private final ChatSequenceGenerator chatSequenceGenerator;
     // todo: 각 서비스 Facade패턴 도입 고려
 
     private Member findMemberById(Long memberId) {
@@ -131,28 +135,39 @@ public class DirectChatRoomService {
                 .collect(Collectors.toList());
 
         // Batch Query: 모든 방의 최신 메시지를 한 번에 조회
-        List<triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent> latestMessages
+        List<ChatMessageRepository.LatestMessageContent> latestMessages
                 = chatMessageRepository.findLatestMessageContentByRoomIds(roomIds, ChatRoomType.DIRECT);
 
-        Map<Long, String> lastMessageContentMap = latestMessages.stream()
-                .collect(Collectors.toMap(
-                        triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent::getChatRoomId,
-                        triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent::getContent
-                ));
+        Map<Long, ChatMessageRepository.LatestMessageContent> latestMessageMap =
+                latestMessages.stream()
+                        .collect(Collectors.toMap(
+                                ChatMessageRepository.LatestMessageContent::getChatRoomId,
+                                msg -> msg
+                        ));
 
-        // DTO 변환
+        // DTO 변환 및 정렬
         return results.stream()
                 .map(result -> {
                     DirectChatRoom room = (DirectChatRoom) result[0];
                     Long lastRead = (Long) result[1];
 
-                    long unreadCount = (lastRead == null) ? room.getCurrentSequence() : room.getCurrentSequence() - lastRead;
-                    if (unreadCount < 0) {
-                        unreadCount = 0; // 예외 상황에 대비
-                    }
-                    String lastMessageContent = lastMessageContentMap.get(room.getId());
+                    long currentSequence = chatSequenceGenerator.getCurrentSequence(room.getId(), ChatRoomType.DIRECT);
+                    long unreadCount = (lastRead == null) ? currentSequence : currentSequence - lastRead;
+                    if (unreadCount < 0) unreadCount = 0;
 
-                    return DirectChatRoomResp.from(room, unreadCount, lastRead, lastMessageContent);
+                    var latestMessage = latestMessageMap.get(room.getId());
+                    String lastMessageContent = latestMessage != null ? latestMessage.getContent() : null;
+                    LocalDateTime lastMessageAt = latestMessage != null && latestMessage.getCreated_at() != null
+                            ? LocalDateTime.ofInstant(latestMessage.getCreated_at().toInstant(), ZoneId.systemDefault())
+                            : null;
+
+                    return DirectChatRoomResp.from(room, unreadCount, lastRead, lastMessageAt, lastMessageContent);
+                })
+                .sorted((a, b) -> {
+                    if (a.lastMessageAt() == null && b.lastMessageAt() == null) return 0;
+                    if (a.lastMessageAt() == null) return 1;
+                    if (b.lastMessageAt() == null) return -1;
+                    return b.lastMessageAt().compareTo(a.lastMessageAt());
                 })
                 .collect(Collectors.toList());
     }

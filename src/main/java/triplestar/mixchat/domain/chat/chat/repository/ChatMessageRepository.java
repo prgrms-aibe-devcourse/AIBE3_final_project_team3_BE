@@ -1,6 +1,7 @@
 package triplestar.mixchat.domain.chat.chat.repository;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
@@ -75,10 +76,10 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
                 "'$translatedContent', " +
                 "'$content' " +
             "] } }, " +
-            "createdAt: { $first: '$created_at' }, " +
+            "created_at: { $first: '$created_at' }, " +
             "sequence: { $first: '$sequence' } " +
         "} }",
-        "{ $project: { chatRoomId: '$_id', content: 1, createdAt: 1, sequence: 1, _id: 0 } }"
+        "{ $project: { chatRoomId: '$_id', content: 1, created_at: 1, sequence: 1, _id: 0 } }"
     })
     List<LatestMessageContent> findLatestMessageContentByRoomIds(List<Long> roomIds, ChatRoomType chatRoomType);
 
@@ -86,7 +87,7 @@ public interface ChatMessageRepository extends MongoRepository<ChatMessage, Stri
     interface LatestMessageContent {
         Long getChatRoomId();
         String getContent();
-        LocalDateTime getCreatedAt();
+        Date getCreated_at();  // MongoDB 필드명과 일치
         Long getSequence();
     }
 }

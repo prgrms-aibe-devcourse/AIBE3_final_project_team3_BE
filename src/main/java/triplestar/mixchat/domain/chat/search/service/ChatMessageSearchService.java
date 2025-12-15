@@ -2,10 +2,11 @@ package triplestar.mixchat.domain.chat.search.service;
 
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
+import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -20,7 +21,6 @@ import org.springframework.data.elasticsearch.core.SearchPage;
 import org.springframework.stereotype.Service;
 import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 import triplestar.mixchat.domain.chat.chat.entity.AIChatRoom;
-import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.domain.chat.chat.repository.AIChatRoomRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
@@ -65,7 +65,8 @@ public class ChatMessageSearchService {
     }
 
     public Page<ChatMessageDocument> search(Long memberId, ChatRoomType chatRoomType, String keyword, Pageable pageable) {
-        if (keyword == null || keyword.isBlank()) {
+        String kw = keyword == null ? "" : keyword.trim();
+        if (kw.length() < 2) {
             return Page.empty(pageable);
         }
 
@@ -78,13 +79,15 @@ public class ChatMessageSearchService {
                 .withQuery(q -> q.bool(b -> b
                         .must(m -> m.multiMatch(mm -> mm
                                 .fields("content^2", "translatedContent")
-                                .query(keyword)))
-                        .filter(f -> f.term(t -> t.field("chatRoomType").value(chatRoomType.name())))
+                                .type(TextQueryType.PhrasePrefix)
+                                .operator(Operator.And)
+                                .query(kw)))
+                        .filter(f -> f.term(t -> t.field("chatRoomType.keyword").value(chatRoomType.name())))
                         .filter(f -> f.terms(t -> t.field("chatRoomId").terms(ts -> ts.value(
                                 allowedRoomIds.stream().map(FieldValue::of).toList()
                         ))))
                 ))
-                .withSort(s -> s.field(f -> f.field("createdAt").order(SortOrder.Desc)))
+                .withSort(s -> s.field(f -> f.field("sequence").order(SortOrder.Desc)))
                 .withPageable(pageable)
                 .build();
 
@@ -104,14 +107,7 @@ public class ChatMessageSearchService {
         }
 
         return switch (chatRoomType) {
-            case DIRECT, GROUP -> {
-                Member memberRef = memberRepository.getReferenceById(memberId);
-                List<ChatMember> memberships = chatRoomMemberRepository.findByMemberAndChatRoomType(memberRef, chatRoomType);
-                yield memberships.stream()
-                        .map(ChatMember::getChatRoomId)
-                        .distinct()
-                        .collect(Collectors.toList());
-            }
+            case DIRECT, GROUP -> chatRoomMemberRepository.findChatRoomIdsByMemberIdAndChatRoomType(memberId, chatRoomType);
             case AI -> aiChatRoomRepository.findAllByMember_Id(memberId)
                     .stream()
                     .map(AIChatRoom::getId)

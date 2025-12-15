@@ -6,8 +6,8 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -65,7 +65,6 @@ public class ApiV1ChatController implements ApiChatController {
     private final ChatMessageService chatMessageService;
     private final LoadTestCleanupService loadTestCleanupService;
     private final S3Uploader s3Uploader;
-    private final SimpMessagingTemplate messagingTemplate;
     private final AiFeedbackService aiFeedbackService;
     private final ChatMessageSearchService chatMessageSearchService;
 
@@ -151,11 +150,17 @@ public class ApiV1ChatController implements ApiChatController {
 
     // todo: 비밀번호 걸린 방도 public 조회는 혼동 여지 존재. 위를 me로 바꾸고 아래를 group으로 고려
     @GetMapping("/rooms/group/public")
-    public CustomResponse<List<GroupChatRoomPublicResp>> getPublicGroupChatRooms(
+    public CustomResponse<?> getPublicGroupChatRooms(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        List<GroupChatRoomPublicResp> rooms = groupChatRoomService.getGroupPublicRooms(currentUser.getId());
-        return CustomResponse.ok("공개 그룹 채팅방 목록 조회에 성공하였습니다.", rooms);
+        int safePage = Math.max(page, 0);
+        int safeSize = size > 0 ? Math.min(size, 50) : 12;
+
+        var pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "id"));
+        var roomsPage = groupChatRoomService.getGroupPublicRooms(currentUser.getId(), pageable);
+        return CustomResponse.ok("공개 그룹 채팅방 목록 조회에 성공하였습니다.", roomsPage);
     }
 
     @PostMapping("/rooms/group/{roomId}/join")
@@ -221,11 +226,16 @@ public class ApiV1ChatController implements ApiChatController {
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         // 메시지 조회 전에 읽음 처리 (채팅방 입장 시 자동 읽음)
-        chatMemberService.markAsReadOnEnter(currentUser.getId(), roomId, chatRoomType);
+        Long lastReadSequence = chatMemberService.markAsReadOnEnter(currentUser.getId(), roomId, chatRoomType);
+
+        // 읽음 상태 변경이 있으면 브로드캐스트 (다른 사용자들에게 알림)
+        if (lastReadSequence != null) {
+            chatMessageService.broadcastReadStatus(roomId, chatRoomType, lastReadSequence);
+        }
 
         MessagePageResp messagePageResp = chatMessageService.getMessagesWithSenderInfo(roomId, chatRoomType,
                 currentUser.getId(), cursor, size);
-        ChatRoomPageDataResp responseData = ChatRoomPageDataResp.of(chatRoomType, messagePageResp);
+        ChatRoomPageDataResp responseData = ChatRoomPageDataResp.of(chatRoomType, messagePageResp, lastReadSequence);
         return CustomResponse.ok("메시지 목록과 대화 타입 조회에 성공하였습니다.", responseData);
     }
 
@@ -242,9 +252,6 @@ public class ApiV1ChatController implements ApiChatController {
         MessageResp messageResp =
                 chatMessageService.saveFileMessage(roomId, currentUser.getId(), currentUser.getNickname(), fileUrl,
                         messageType, chatRoomType);
-
-        String destination = "/topic/" + chatRoomType.name().toLowerCase() + ".rooms." + roomId;
-        messagingTemplate.convertAndSend(destination, messageResp);
 
         return CustomResponse.ok("파일 업로드 및 메시지 전송에 성공하였습니다.", messageResp);
     }

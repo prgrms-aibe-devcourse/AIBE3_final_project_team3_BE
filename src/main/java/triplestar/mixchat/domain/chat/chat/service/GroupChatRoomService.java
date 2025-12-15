@@ -1,6 +1,8 @@
 package triplestar.mixchat.domain.chat.chat.service;
 
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -10,6 +12,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
@@ -24,6 +27,7 @@ import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomSummaryResp;
 import triplestar.mixchat.domain.chat.chat.dto.JoinRoomResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMember;
 import triplestar.mixchat.domain.chat.chat.entity.GroupChatRoom;
+import triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository;
 import triplestar.mixchat.domain.chat.chat.repository.ChatRoomMemberRepository;
 import triplestar.mixchat.domain.chat.chat.repository.GroupChatRoomRepository;
 import triplestar.mixchat.domain.member.friend.repository.FriendshipRepository;
@@ -50,6 +54,7 @@ public class GroupChatRoomService {
     private final SystemMessageService systemMessageService;
     private final triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository chatMessageRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ChatSequenceGenerator chatSequenceGenerator;
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findById(memberId)
@@ -139,12 +144,7 @@ public class GroupChatRoomService {
         chatAuthCacheService.removeMember(roomId, currentUserId);
 
         // Redis 구독자 캐시에서 세션 제거
-        Set<String> memberSessions = chatSubscriberCacheService.getSessionsByMemberId(roomId, currentUserId);
-        if (memberSessions != null) {
-            for (String sessionId : memberSessions) {
-                chatSubscriberCacheService.removeSubscriber(roomId, currentUserId, sessionId);
-            }
-        }
+        chatSubscriberCacheService.removeSubscribersByMemberId(roomId, currentUserId);
 
         // 6. 남은 멤버 수 확인 후 대화방 삭제
         long remainingMembersCount = chatRoomMemberRepository.countByChatRoomIdAndChatRoomType(
@@ -279,9 +279,9 @@ public class GroupChatRoomService {
     }
 
     // 공개 그룹 채팅방 목록 조회 (Find 페이지용)
-    public List<GroupChatRoomPublicResp> getGroupPublicRooms(Long currentUserId) {
-        List<GroupChatRoom> rooms = groupChatRoomRepository.findPublicRoomsExcludingMemberId(currentUserId);
-        return convertToPublicRoomSummaries(rooms);
+    public Page<GroupChatRoomPublicResp> getGroupPublicRooms(Long currentUserId, Pageable pageable) {
+        Page<GroupChatRoom> roomsPage = groupChatRoomRepository.findPublicRoomsExcludingMemberId(currentUserId, pageable);
+        return convertToPublicRoomSummaries(roomsPage);
     }
 
     @Transactional
@@ -314,12 +314,7 @@ public class GroupChatRoomService {
         chatAuthCacheService.removeMember(roomId, targetMemberId);
 
         // Redis 구독자 캐시에서 세션 제거
-        Set<String> memberSessions = chatSubscriberCacheService.getSessionsByMemberId(roomId, targetMemberId);
-        if (memberSessions != null) {
-            for (String sessionId : memberSessions) {
-                chatSubscriberCacheService.removeSubscriber(roomId, targetMemberId, sessionId);
-            }
-        }
+        chatSubscriberCacheService.removeSubscribersByMemberId(roomId, targetMemberId);
 
         // 7. 시스템 메시지 저장 및 전송
         systemMessageService.sendKickMessage(roomId, targetNickname, ChatRoomType.GROUP);
@@ -407,7 +402,8 @@ public class GroupChatRoomService {
         return rooms.stream()
                 .map(room -> {
                     Long lastRead = lastReadSequenceMap.get(room.getId());
-                    long unreadCount = (lastRead == null) ? room.getCurrentSequence() : room.getCurrentSequence() - lastRead;
+                    long currentSequence = chatSequenceGenerator.getCurrentSequence(room.getId(), ChatRoomType.GROUP);
+                    long unreadCount = (lastRead == null) ? currentSequence : currentSequence - lastRead;
                     if (unreadCount < 0) unreadCount = 0;
 
                     // 마지막 메시지 조회 (번역된 메시지가 있으면 번역된 내용 사용)
@@ -453,39 +449,53 @@ public class GroupChatRoomService {
                 ));
 
         // 3. Batch Query: 모든 방의 최신 메시지 내용을 한번에 조회 (MongoDB Aggregation)
-        List<triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent> latestMessages
+        List<ChatMessageRepository.LatestMessageContent> latestMessages
                 = chatMessageRepository.findLatestMessageContentByRoomIds(roomIds, ChatRoomType.GROUP);
 
-        Map<Long, String> lastMessageContentMap = latestMessages.stream()
-                .collect(Collectors.toMap(
-                        triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent::getChatRoomId,
-                        triplestar.mixchat.domain.chat.chat.repository.ChatMessageRepository.LatestMessageContent::getContent
-                ));
+        Map<Long, ChatMessageRepository.LatestMessageContent> latestMessageMap =
+                latestMessages.stream()
+                        .collect(Collectors.toMap(
+                                ChatMessageRepository.LatestMessageContent::getChatRoomId,
+                                msg -> msg
+                        ));
 
-        // 4. DTO 변환 (친구 조회 제거, 멤버 목록 제거)
+        // 4. DTO 변환 및 정렬
         return rooms.stream()
                 .map(room -> {
                     Long lastReadSequence = lastReadSequenceMap.getOrDefault(room.getId(), 0L);
-                    long currentSequence = room.getCurrentSequence();
+                    long currentSequence = chatSequenceGenerator.getCurrentSequence(room.getId(), ChatRoomType.GROUP);
                     long unreadCount = Math.max(0, currentSequence - lastReadSequence);
 
-                    String lastMessageContent = lastMessageContentMap.get(room.getId());
+                    var latestMessage = latestMessageMap.get(room.getId());
+                    String lastMessageContent = latestMessage != null ? latestMessage.getContent() : null;
+                    LocalDateTime lastMessageAt = latestMessage != null && latestMessage.getCreated_at() != null
+                            ? LocalDateTime.ofInstant(latestMessage.getCreated_at().toInstant(), ZoneId.systemDefault())
+                            : null;
 
                     return GroupChatRoomSummaryResp.from(
                             room,
                             unreadCount,
                             lastReadSequence,
+                            lastMessageAt,
                             lastMessageContent
                     );
+                })
+                .sorted((a, b) -> {
+                    if (a.lastMessageAt() == null && b.lastMessageAt() == null) return 0;
+                    if (a.lastMessageAt() == null) return 1;
+                    if (b.lastMessageAt() == null) return -1;
+                    return b.lastMessageAt().compareTo(a.lastMessageAt());
                 })
                 .collect(Collectors.toList());
     }
 
     // 공개 그룹 채팅방 목록을 Public DTO로 변환 (Find 페이지용)
-    private List<GroupChatRoomPublicResp> convertToPublicRoomSummaries(List<GroupChatRoom> rooms) {
-        if (rooms.isEmpty()) {
-            return Collections.emptyList();
+    private Page<GroupChatRoomPublicResp> convertToPublicRoomSummaries(Page<GroupChatRoom> roomsPage) {
+        if (roomsPage.isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), roomsPage.getPageable(), roomsPage.getTotalElements());
         }
+
+        List<GroupChatRoom> rooms = roomsPage.getContent();
 
         // 1. 모든 방의 ID 수집
         List<Long> roomIds = rooms.stream()
@@ -507,11 +517,13 @@ public class GroupChatRoomService {
         }
 
         // 3. DTO 변환
-        return rooms.stream()
+        List<GroupChatRoomPublicResp> dtoList = rooms.stream()
                 .map(room -> {
                     long memberCount = memberCountMap.getOrDefault(room.getId(), 0L);
                     return GroupChatRoomPublicResp.from(room, memberCount);
                 })
                 .collect(Collectors.toList());
+
+        return new PageImpl<>(dtoList, roomsPage.getPageable(), roomsPage.getTotalElements());
     }
 }

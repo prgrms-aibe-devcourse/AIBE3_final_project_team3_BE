@@ -1,6 +1,8 @@
 package triplestar.mixchat.domain.chat.search.document;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
@@ -40,8 +42,9 @@ public class ChatMessageDocument {
     @Field(type = FieldType.Long)
     private Long sequence;
 
-    @Field(type = FieldType.Date)
-    private LocalDateTime createdAt;
+    // ES에 저장된 날짜 포맷이 혼재되어 있어(yyyy-MM-dd, yyyy-MM-dd'T'HH:mm:ss) String으로 받아 직접 파싱
+    @Field(type = FieldType.Date, pattern = "yyyy-MM-dd||yyyy-MM-dd'T'HH:mm:ss||strict_date_optional_time")
+    private String createdAt;
 
     public ChatMessageDocument(
             String messageId,
@@ -62,7 +65,7 @@ public class ChatMessageDocument {
         this.content = content;
         this.translatedContent = translatedContent;
         this.sequence = sequence;
-        this.createdAt = createdAt;
+        this.createdAt = createdAt != null ? createdAt.toString() : null;
     }
 
     public static ChatMessageDocument fromEntity(ChatMessage message, String senderName) {
@@ -80,16 +83,27 @@ public class ChatMessageDocument {
     }
 
     public ChatMessageDocument withTranslation(String translatedContent) {
-        return new ChatMessageDocument(
-                this.messageId,
-                this.chatRoomId,
-                this.chatRoomType,
-                this.senderId,
-                this.senderName,
-                this.content,
-                translatedContent,
-                this.sequence,
-                this.createdAt
-        );
+        ChatMessageDocument doc = new ChatMessageDocument();
+        doc.messageId = this.messageId;
+        doc.chatRoomId = this.chatRoomId;
+        doc.chatRoomType = this.chatRoomType;
+        doc.senderId = this.senderId;
+        doc.senderName = this.senderName;
+        doc.content = this.content;
+        doc.translatedContent = translatedContent;
+        doc.sequence = this.sequence;
+        doc.createdAt = this.createdAt;
+        return doc;
+    }
+    
+    public LocalDateTime getCreatedAt() {
+        if (createdAt == null) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(createdAt);
+        } catch (DateTimeParseException e) {
+            return LocalDate.parse(createdAt).atStartOfDay();
+        }
     }
 }

@@ -33,6 +33,8 @@ import triplestar.mixchat.global.ai.BotConstant;
 import triplestar.mixchat.global.cache.ChatSubscriberCacheService;
 import triplestar.mixchat.global.notifiaction.NotificationEvent;
 
+import triplestar.mixchat.domain.member.presence.service.PresenceService;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -49,11 +51,13 @@ public class ChatMessageService {
     private final ChatSequenceGenerator sequenceGenerator;
     private final ChatMessageSearchService chatMessageSearchService;
     private final ChatSubscriberCacheService subscriberCacheService;
+    private final PresenceService presenceService;
 
     @Transactional
     public MessageResp saveMessage(Long roomId, Long senderId, String senderNickname, String content,
                                    ChatMessage.MessageType messageType, ChatRoomType chatRoomType,
                                    boolean isTranslateEnabled) {
+        String resolvedNickname = resolveSenderNickname(senderId, senderNickname);
         // 시스템 메시지가 아닐 경우에만 멤버 검증을 수행
         if (messageType != ChatMessage.MessageType.SYSTEM) {
             chatMemberService.verifyUserIsMemberOfRoom(senderId, roomId, chatRoomType);
@@ -77,28 +81,32 @@ public class ChatMessageService {
 
         // AI 채팅방인 경우 메시지 생성 및 저장 후 별도 로직 수행
         if (chatRoomType == ChatRoomType.AI) {
-            return saveAiRoomMessage(roomId, senderId, senderNickname, content, chatRoomType, savedMessage);
+            return saveAiRoomMessage(roomId, senderId, resolvedNickname, content, chatRoomType, savedMessage);
         }
 
         // === 트랜잭션 내에서 모든 DB 연산 처리 (방향 A 패턴) ===
 
-        // 1. 읽음 상태 업데이트 (발신자 + 구독자)
+        // 1. 읽음 상태 업데이트 (발신자 + 구독자 중 온라인인 사람)
         Set<Long> memberIdsToMarkRead = new HashSet<>();
         memberIdsToMarkRead.add(senderId);
 
         // 현재 구독 중인 사용자 조회 (Redis)
         Set<String> subscribers = subscriberCacheService.getSubscribers(roomId);
-        Set<Long> subscriberIds = new HashSet<>();
+        List<Long> subscriberIds = new ArrayList<>();
         if (subscribers != null && !subscribers.isEmpty()) {
             for (String subscriberIdStr : subscribers) {
                 try {
-                    Long subscriberId = Long.parseLong(subscriberIdStr);
-                    subscriberIds.add(subscriberId);
-                    memberIdsToMarkRead.add(subscriberId);
+                    subscriberIds.add(Long.parseLong(subscriberIdStr));
                 } catch (NumberFormatException e) {
                     log.error("구독자 ID 파싱 실패 - roomId: {}, 잘못된 ID: {}", roomId, subscriberIdStr);
                 }
             }
+        }
+
+        // 실제로 온라인인 사람만 필터링
+        if (!subscriberIds.isEmpty()) {
+            Set<Long> onlineSubscribers = presenceService.filterIsOnline(subscriberIds);
+            memberIdsToMarkRead.addAll(onlineSubscribers);
         }
 
         if (!memberIdsToMarkRead.isEmpty()) {
@@ -142,7 +150,7 @@ public class ChatMessageService {
                 savedMessage.getId(),
                 savedMessage.getChatRoomId(),
                 savedMessage.getSenderId(),
-                senderNickname,
+                resolvedNickname,
                 savedMessage.getContent(),
                 savedMessage.getMessageType(),
                 savedMessage.getChatRoomType(),
@@ -157,7 +165,7 @@ public class ChatMessageService {
         notificationEvents.forEach(eventPublisher::publishEvent);
 
         // 최소 정보 + unreadCount 반환
-        return MessageResp.withUnreadCount(savedMessage, senderNickname, unreadCount);
+        return MessageResp.withUnreadCount(savedMessage, resolvedNickname, unreadCount);
     }
 
     private MessageResp saveAiRoomMessage(Long roomId, Long senderId, String senderNickname, String content,
@@ -175,6 +183,16 @@ public class ChatMessageService {
 
         // 재귀 호출 후에는 봇이 보낸 메시지이므로 저장 및 전송만 수행
         return resp;
+    }
+
+    private String resolveSenderNickname(Long senderId, String senderNickname) {
+        if (senderNickname != null && !senderNickname.isBlank()) {
+            return senderNickname;
+        }
+
+        return memberRepository.findById(senderId)
+                .map(Member::getNickname)
+                .orElseThrow(() -> new IllegalArgumentException("메시지 발신자 정보가 유효하지 않습니다."));
     }
 
     @Transactional
@@ -237,16 +255,28 @@ public class ChatMessageService {
         Map<Long, String> senderNames = memberRepository.findAllById(senderIds).stream()
                 .collect(Collectors.toMap(Member::getId, Member::getNickname));
 
-        List<MessageResp> messageResps = messages.stream()
-                .map(message -> {
-                    String senderName = senderNames.getOrDefault(message.getSenderId(), "Unknown");
+        // Two Pointer 알고리즘 적용 (O(N+M))
+        int[] unreadCounts = new int[messages.size()];
+        int memberIdx = 0;
+        int memberCount = sortedLastReadSequences.size();
 
-                    // 읽지 않은 사람 수 (정렬된 lastReadSequence에서 lower bound로 계산)
-                    int unreadCount = lowerBound(sortedLastReadSequences, message.getSequence());
+        // 메시지는 내림차순(최신->과거)이므로, 역순(과거->최신)으로 순회하며 비교
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            ChatMessage message = messages.get(i);
 
-                    return MessageResp.withUnreadCount(message, senderName, unreadCount);
-                })
-                .collect(Collectors.toList());
+            // 현재 메시지 시퀀스보다 lastReadSequence가 작은 멤버 수 카운트 (포인터 전진)
+            while (memberIdx < memberCount && sortedLastReadSequences.get(memberIdx) < message.getSequence()) {
+                memberIdx++;
+            }
+            unreadCounts[i] = memberIdx;
+        }
+
+        List<MessageResp> messageResps = new ArrayList<>();
+        for (int i = 0; i < messages.size(); i++) {
+            ChatMessage message = messages.get(i);
+            String senderName = senderNames.getOrDefault(message.getSenderId(), "Unknown");
+            messageResps.add(MessageResp.withUnreadCount(message, senderName, unreadCounts[i]));
+        }
 
         // 다음 페이지 정보 계산
         Long nextCursor = null;
@@ -285,42 +315,60 @@ public class ChatMessageService {
         return MessagePageResp.of(messageResps, nextCursor, hasMore);
     }
 
+    public void broadcastReadStatus(Long roomId, ChatRoomType chatRoomType, Long readUpToSequence) {
+        if (chatRoomType == ChatRoomType.AI) return;
+
+        // 변경된 unreadCount 계산
+        List<MessageUnreadCountResp> updates = getUnreadCountUpdates(roomId, chatRoomType, readUpToSequence);
+
+        // 알림 전송
+        chatNotificationService.sendUnreadCountUpdate(roomId, chatRoomType, updates);
+    }
+
     // 누군가 채팅방 구독시 읽지 않은 사람 수 업데이트
     public List<MessageUnreadCountResp> getUnreadCountUpdates(Long roomId, ChatRoomType chatRoomType,
                                                               Long readUpToSequence) {
         // 1. 채팅방의 모든 멤버 조회 (읽음 상태 확인용)
         List<ChatMember> allMembers = chatRoomMemberRepository.findByChatRoomIdAndChatRoomType(roomId, chatRoomType);
 
-        // 최근 50개 업데이트(페이징이 25개이므로 여유있게 50개 조회)
+        // 멤버들의 lastReadSequence 미리 추출 및 오름차순 정렬 (O(N log N))
+        List<Long> sortedLastReadSequences = allMembers.stream()
+                .map(cm -> cm.getLastReadSequence() == null ? 0L : cm.getLastReadSequence())
+                .sorted()
+                .toList();
+
+        // 최근 50개 업데이트(페이징이 25개이므로 여유있게 50개 조회) - 시퀀스 내림차순(최신순)
         List<ChatMessage> recentMessages = chatMessageRepository.findByChatRoomIdAndChatRoomTypeOrderBySequenceDesc(
                 roomId, chatRoomType, PageRequest.of(0, 50)
         );
 
-        return recentMessages.stream()
+        List<ChatMessage> targetMessages = recentMessages.stream()
                 .filter(msg -> msg.getSequence() <= readUpToSequence) // readUpToSequence 이하만 필터링
-                .map(message -> {
-                    // 읽지 않은 사람 수
-                    int unreadCount = (int) allMembers.stream()
-                            .filter(member -> member.hasNotRead(message.getSequence()))
-                            .count();
-
-                    return new MessageUnreadCountResp(message.getId(), unreadCount);
-                })
                 .collect(Collectors.toList());
+
+        // 투 포인터 알고리즘 적용 (O(N+M))
+        int[] unreadCounts = new int[targetMessages.size()];
+        int memberIdx = 0;
+        int memberCount = sortedLastReadSequences.size();
+
+        // 메시지는 내림차순이므로, 역순(과거순)으로 순회하여 오름차순인 sortedLastReadSequences와 비교
+        for (int i = targetMessages.size() - 1; i >= 0; i--) {
+            ChatMessage message = targetMessages.get(i);
+
+            // 현재 메시지 시퀀스보다 lastReadSequence가 작은 멤버 수 카운트 (포인터 전진)
+            while (memberIdx < memberCount && sortedLastReadSequences.get(memberIdx) < message.getSequence()) {
+                memberIdx++;
+            }
+            unreadCounts[i] = memberIdx;
+        }
+
+        List<MessageUnreadCountResp> result = new ArrayList<>();
+        for (int i = 0; i < targetMessages.size(); i++) {
+            result.add(new MessageUnreadCountResp(targetMessages.get(i).getId(), unreadCounts[i]));
+        }
+
+        return result;
     }
 
-    /** 정렬된 lastReadSequence 리스트에서 target보다 작은 원소 개수 반환 */
-    private int lowerBound(List<Long> sorted, long target) {
-        int left = 0;
-        int right = sorted.size();
-        while (left < right) {
-            int mid = (left + right) >>> 1;
-            if (sorted.get(mid) < target) {
-                left = mid + 1;
-            } else {
-                right = mid;
-            }
-        }
-        return left;
-    }
+
 }

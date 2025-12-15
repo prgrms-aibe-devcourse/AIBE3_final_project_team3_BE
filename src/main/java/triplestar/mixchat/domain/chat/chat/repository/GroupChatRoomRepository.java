@@ -3,6 +3,8 @@ package triplestar.mixchat.domain.chat.chat.repository;
 import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -29,7 +31,7 @@ public interface GroupChatRoomRepository extends JpaRepository<GroupChatRoom, Lo
             WHERE cm.chatRoomId = gcr.id AND cm.member.id = :memberId AND cm.chatRoomType = 'GROUP'
         )
         """)
-    List<GroupChatRoom> findPublicRoomsExcludingMemberId(@Param("memberId") Long memberId);
+    Page<GroupChatRoom> findPublicRoomsExcludingMemberId(@Param("memberId") Long memberId, Pageable pageable);
 
     // Sequence 생성 시 동시성 제어용 비관적 락, 서비스에 @Transactional 필수
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -43,4 +45,3 @@ public interface GroupChatRoomRepository extends JpaRepository<GroupChatRoom, Lo
         """)
     List<GroupChatRoom> findLoadTestRooms();
 }
-

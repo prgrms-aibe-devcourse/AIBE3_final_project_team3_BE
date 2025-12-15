@@ -34,6 +34,7 @@ public record GroupChatRoomSummaryResp(
             GroupChatRoom room,
             Long unreadCount,
             Long lastReadSequence,
+            LocalDateTime lastMessageAt,
             String lastMessageContent
     ) {
         return new GroupChatRoomSummaryResp(
@@ -42,8 +43,18 @@ public record GroupChatRoomSummaryResp(
                 room.getTopic(),
                 unreadCount,
                 lastReadSequence,
-                room.getModifiedAt(),
+                lastMessageAt,
                 lastMessageContent
         );
+    }
+
+    // 기존 호환성을 위한 메서드 (deprecated)
+    public static GroupChatRoomSummaryResp from(
+            GroupChatRoom room,
+            Long unreadCount,
+            Long lastReadSequence,
+            String lastMessageContent
+    ) {
+        return from(room, unreadCount, lastReadSequence, room.getModifiedAt(), lastMessageContent);
     }
 }
