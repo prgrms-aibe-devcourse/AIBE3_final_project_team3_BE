@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
-import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackReq;
+import triplestar.mixchat.domain.ai.translation.dto.AiFeedbackReq;
 import triplestar.mixchat.domain.ai.userprompt.entity.UserPrompt;
 import triplestar.mixchat.domain.ai.userprompt.repository.UserPromptRepository;
 import triplestar.mixchat.domain.chat.chat.constant.AiChatRoomType;
@@ -25,6 +25,7 @@ import triplestar.mixchat.global.security.CustomUserDetails;
 import triplestar.mixchat.testutils.BaseChatIntegrationTest;
 import triplestar.mixchat.testutils.TestMemberFactory;
 
+@DisplayName("AI 채팅방 통합 테스트")
 class ApiV1AIChatControllerIntegrationTest extends BaseChatIntegrationTest {
 
     private Member user1;

@@ -15,17 +15,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import triplestar.mixchat.domain.learningNote.learningNote.entity.Feedback;
-import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
-import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteDocumentRepository;
-import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
-import triplestar.mixchat.domain.learningNote.learningNote.service.LearningNoteEmbeddingService;
+import triplestar.mixchat.domain.learningNote.entity.Feedback;
+import triplestar.mixchat.domain.learningNote.entity.LearningNote;
+import triplestar.mixchat.domain.learningNote.repository.LearningNoteDocumentRepository;
+import triplestar.mixchat.domain.learningNote.repository.LearningNoteRepository;
+import triplestar.mixchat.domain.learningNote.service.LearningNoteEmbeddingService;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-import triplestar.mixchat.domain.translation.translation.constant.TranslationTagCode;
+import triplestar.mixchat.domain.learningNote.constant.TranslationTagCode;
 
 @ActiveProfiles("test")
 @SpringBootTest

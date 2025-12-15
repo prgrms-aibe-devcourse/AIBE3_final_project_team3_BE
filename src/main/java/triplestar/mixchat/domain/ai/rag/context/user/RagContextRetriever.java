@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
-import triplestar.mixchat.domain.learningNote.learningNote.service.LearningNoteRagService;
+import triplestar.mixchat.domain.learningNote.entity.LearningNote;
+import triplestar.mixchat.domain.learningNote.service.LearningNoteRagService;
 
 @Component
 @RequiredArgsConstructor

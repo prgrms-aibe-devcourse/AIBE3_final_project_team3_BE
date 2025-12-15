@@ -21,14 +21,14 @@ import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import triplestar.mixchat.domain.learningNote.learningNote.constant.LearningFilter;
-import triplestar.mixchat.domain.learningNote.learningNote.entity.Feedback;
-import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
-import triplestar.mixchat.domain.learningNote.learningNote.repository.FeedbackRepository;
-import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
+import triplestar.mixchat.domain.learningNote.constant.LearningFilter;
+import triplestar.mixchat.domain.learningNote.entity.Feedback;
+import triplestar.mixchat.domain.learningNote.entity.LearningNote;
+import triplestar.mixchat.domain.learningNote.repository.FeedbackRepository;
+import triplestar.mixchat.domain.learningNote.repository.LearningNoteRepository;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-import triplestar.mixchat.domain.translation.translation.constant.TranslationTagCode;
+import triplestar.mixchat.domain.learningNote.constant.TranslationTagCode;
 import triplestar.mixchat.testutils.TestMemberFactory;
 
 @ActiveProfiles("test")

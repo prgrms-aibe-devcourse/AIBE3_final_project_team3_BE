@@ -24,10 +24,10 @@ import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-import triplestar.mixchat.domain.report.report.constant.ReportCategory;
-import triplestar.mixchat.domain.report.report.constant.ReportStatus;
-import triplestar.mixchat.domain.report.report.entity.Report;
-import triplestar.mixchat.domain.report.report.repository.ReportRepository;
+import triplestar.mixchat.domain.report.constant.ReportCategory;
+import triplestar.mixchat.domain.report.constant.ReportStatus;
+import triplestar.mixchat.domain.report.entity.Report;
+import triplestar.mixchat.domain.report.repository.ReportRepository;
 
 @ActiveProfiles("test")
 @SpringBootTest

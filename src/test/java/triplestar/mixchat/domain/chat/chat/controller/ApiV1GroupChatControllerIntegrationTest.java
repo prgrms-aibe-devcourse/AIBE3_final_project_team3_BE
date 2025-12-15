@@ -25,6 +25,7 @@ import triplestar.mixchat.global.s3.S3Uploader;
 import triplestar.mixchat.global.security.CustomUserDetails;
 import triplestar.mixchat.testutils.BaseChatIntegrationTest;
 
+@DisplayName("그룹 채팅방 통합 테스트")
 class ApiV1GroupChatControllerIntegrationTest extends BaseChatIntegrationTest {
 
     @MockitoBean

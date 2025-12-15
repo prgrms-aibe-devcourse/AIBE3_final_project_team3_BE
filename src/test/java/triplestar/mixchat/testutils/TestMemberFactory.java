@@ -7,7 +7,7 @@ import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
-import triplestar.mixchat.domain.report.report.constant.ReportCategory;
+import triplestar.mixchat.domain.report.constant.ReportCategory;
 
 public class TestMemberFactory {
 

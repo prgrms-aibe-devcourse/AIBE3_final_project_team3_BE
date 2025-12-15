@@ -18,7 +18,7 @@ import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import triplestar.mixchat.domain.admin.admin.dto.AdminPostDeleteReq;
+import triplestar.mixchat.domain.admin.dto.AdminPostDeleteReq;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.post.post.entity.Post;

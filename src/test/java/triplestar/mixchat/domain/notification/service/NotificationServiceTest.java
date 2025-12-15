@@ -23,6 +23,7 @@ import triplestar.mixchat.domain.notification.repository.NotificationRepository;
 import triplestar.mixchat.global.notifiaction.NotificationEvent;
 import triplestar.mixchat.testutils.TestMemberFactory;
 
+@DisplayName("알림 서비스 테스트")
 @ActiveProfiles("test")
 @SpringBootTest
 @Transactional

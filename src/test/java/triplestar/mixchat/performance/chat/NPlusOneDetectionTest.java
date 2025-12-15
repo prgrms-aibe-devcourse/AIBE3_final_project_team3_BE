@@ -37,6 +37,7 @@ import triplestar.mixchat.testutils.TestMemberFactory;
  *
  * 채팅 메시지 조회 및 그룹 채팅방 참여 시 발생할 수 있는 N+1 문제를 감지하고 측정
  */
+@DisplayName("N+1 문제 탐지 테스트")
 @SpringBootTest
 @ActiveProfiles("test")
 @Import(PerformanceTestConfig.class)

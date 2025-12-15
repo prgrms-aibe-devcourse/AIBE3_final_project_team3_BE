@@ -26,6 +26,7 @@ import triplestar.mixchat.domain.member.member.repository.MemberRepository;
 import triplestar.mixchat.domain.member.presence.repository.PresenceRepository;
 import triplestar.mixchat.testutils.RedisTestContainer;
 
+@DisplayName("온라인 회원 관리 서비스 테스트")
 @Transactional
 @ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)

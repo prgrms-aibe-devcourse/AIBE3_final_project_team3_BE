@@ -50,6 +50,7 @@ import triplestar.mixchat.performance.chat.util.PerformanceMeasurement;
  * - 쿼리 실행 횟수
  * - 영향받은 row 수
  */
+@DisplayName("Bulk Update 성능 테스트")
 @SpringBootTest
 @ActiveProfiles("test")
 @Import(PerformanceTestConfig.class)

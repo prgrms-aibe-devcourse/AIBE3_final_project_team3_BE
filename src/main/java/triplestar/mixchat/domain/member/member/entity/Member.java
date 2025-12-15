@@ -18,7 +18,7 @@ import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
 import triplestar.mixchat.domain.member.member.constant.Role;
-import triplestar.mixchat.domain.report.report.constant.ReportCategory;
+import triplestar.mixchat.domain.report.constant.ReportCategory;
 import triplestar.mixchat.global.converter.StringListConverter;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 

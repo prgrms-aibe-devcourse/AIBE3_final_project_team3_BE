@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-import triplestar.mixchat.domain.ai.systemprompt.dto.TranslationReq;
+import triplestar.mixchat.domain.ai.translation.dto.TranslationReq;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage.MessageType;
 
 @Slf4j

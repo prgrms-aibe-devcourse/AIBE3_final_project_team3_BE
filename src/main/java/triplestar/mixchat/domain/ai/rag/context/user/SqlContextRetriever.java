@@ -9,9 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
-import triplestar.mixchat.domain.learningNote.learningNote.entity.LearningNote;
-import triplestar.mixchat.domain.learningNote.learningNote.repository.LearningNoteRepository;
-import triplestar.mixchat.domain.learningNote.learningNote.service.LearningNoteRagService;
+import triplestar.mixchat.domain.learningNote.entity.LearningNote;
+import triplestar.mixchat.domain.learningNote.repository.LearningNoteRepository;
+import triplestar.mixchat.domain.learningNote.service.LearningNoteRagService;
 
 @Component
 @Slf4j
