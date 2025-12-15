@@ -3,12 +3,19 @@ package triplestar.mixchat.domain.ai.systemprompt.service;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.ResponseFormat;
+import org.springframework.ai.template.NoOpTemplateRenderer;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackReq;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackResp;
 
@@ -18,172 +25,183 @@ public class AiFeedbackService {
 
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
+    private final OpenAiChatOptions options;
 
-    private static final OpenAiChatOptions FEEDBACK_OPTIONS = OpenAiChatOptions.builder()
-            .responseFormat(ResponseFormat.builder().type(ResponseFormat.Type.JSON_OBJECT).build())
-            .temperature(0.1)
-            .build();
-
-    // OpenAI 사용 (성능 및 JSON 포맷 준수 우수)
-    public AiFeedbackService(@Qualifier("openAi") ChatClient chatClient, ObjectMapper objectMapper) {
+    public AiFeedbackService(
+            @Qualifier("openAi") ChatClient chatClient,
+            ObjectMapper baseMapper
+    ) {
         this.chatClient = chatClient;
-        this.objectMapper = objectMapper;
+        this.objectMapper = baseMapper.copy()
+                .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        // OpenAI Structured Output 스키마 고정
+        ResponseFormat responseFormat = ResponseFormat.builder()
+                .type(ResponseFormat.Type.JSON_SCHEMA)
+                .jsonSchema(ResponseFormat.JsonSchema.builder()
+                        .name("AiFeedbackResp")
+                        .schema(RESPONSE_SCHEMA)
+                        .strict(true)
+                        .build())
+                .build();
+
+        this.options = OpenAiChatOptions.builder()
+                .temperature(0.1)
+                .responseFormat(responseFormat)
+                .build();
     }
 
+    // feedback 항목 스키마
+    private static final String FEEDBACK_ITEM_SCHEMA = """
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tag": {
+          "type": "string",
+          "enum": ["GRAMMAR", "VOCABULARY", "TRANSLATION"]
+        },
+        "problem": { "type": "string", "minLength": 1 },
+        "correction": { "type": "string", "minLength": 1 },
+        "extra": { "type": "string", "minLength": 1 }
+      },
+      "required": ["tag", "problem", "correction", "extra"]
+    }
+    """;
+
+    // 전체 응답 스키마
+    private static final String RESPONSE_SCHEMA = """
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "correctedContent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "feedback": {
+          "type": "array",
+          "items": %s
+        }
+      },
+      "required": ["correctedContent", "feedback"]
+    }
+    """.formatted(FEEDBACK_ITEM_SCHEMA);
+
     private static final String SYSTEM_PROMPT = """
-        You are an expert English language tutor.
-        Analyze the user's original sentence and the translated (or intended) sentence.
+        You are an expert English tutor.
 
-        INPUT:
-        - Original: The sentence written by the user (may contain Korean or errors).
-        - Translated: The meaning the user intended to convey.
+        You will receive:
+        - Original: what the user typed (may include Korean or broken English).
+        - Translated: an automatic English translation (use as a hint only).
 
-        OUTPUT FORMAT (JSON):
-        {
-          "correctedContent": "Corrected English sentence",
-          "feedback": [
-            {
-              "tag": "GRAMMAR" | "VOCABULARY" | "TRANSLATION",
-              "problem": "...",
-              "correction": "...",
-              "extra": "..."   // 설명은 반드시 한국어로 작성
-            }
-          ]
-        }
+        Produce:
+        - correctedContent: one natural English sentence.
+        - feedback: each item must represent exactly one issue.
 
-        RULES:
-        - The 'extra' explanation should be written in Korean.
-        - Respond ONLY with the JSON object.
-        - For each difference, output one feedback item.
-        - tag must be exactly one of: GRAMMAR, VOCABULARY, TRANSLATION (uppercase only).
-        - Each feedback item must cover exactly one issue. Do NOT merge translation and grammar in one item; split them.
-        - Do NOT wrap the response in Markdown fences.
-        
-        Example:
-        
-        Original: "i eat 빵 tommorow, it will have to be delicious!!"
-        Translated: "I will eat bread tomorrow, and it has to be delicious!!"
-        
-        Expected JSON output:
-        {
-          "correctedContent": "I will eat bread tomorrow, and it has to be delicious!",
-          "feedback": [
-            {
-              "tag": "GRAMMAR",
-              "problem": "i eat",
-              "correction": "I will eat",
-              "extra": "'eat'은 현재형이며 미래 의미를 나타내기 위해 'will eat'으로 수정해야 합니다."
-            },
-            {
-              "tag": "TRANSLATION",
-              "problem": "빵",
-              "correction": "bread",
-              "extra": "빵 -> bread"
-            },
-            {
-              "tag": "GRAMMAR",
-              "problem": "have to",
-              "correction": "has to",
-              "extra": "'it'은 3인칭 단수이므로 'has to'로 수정해야 문법적으로 맞습니다."
-            },
-            {
-              "tag": "VOCABULARY",
-              "problem": "tommorow",
-              "correction": "tomorrow",
-              "extra": "철자 오류가 있어 'tomorrow'로 수정해야 합니다."
-            }
-          ]
-        }
+        Classification rules:
+        - TRANSLATION: Korean (or non-English) fragments.
+        - GRAMMAR: tense, agreement, verb form, structure issues.
+        - VOCABULARY: word choice, spelling, unnatural expressions.
 
-        Additional example (ensure splitting translation vs grammar):
-        Original: "everyone, what be you doing 내일"
-        Translated: "What are you up to tonight"
-        Expected JSON output:
-        {
-          "correctedContent": "What are you doing tonight",
-          "feedback": [
-            {
-              "tag": "TRANSLATION",
-              "problem": "내일",
-              "correction": "tonight",
-              "extra": "'내일'은 의도된 의미에 맞게 'tonight'으로 번역해야 합니다."
-            },
-            {
-              "tag": "GRAMMAR",
-              "problem": "what be you doing",
-              "correction": "what are you doing",
-              "extra": "be 동사는 주어에 맞춰 'are'로 바꿔야 자연스러운 문장입니다."
-            }
-          ]
-        }
+        Rules:
+        - extra must be written in Korean.
+        - problem must be a substring of Original.
+        - correction must appear in correctedContent.
         """;
 
     public AiFeedbackResp analyze(AiFeedbackReq req) {
-        String userMessage = String.format("Original: %s%nTranslated: %s", req.originalContent(), req.translatedContent());
-        int maxRetries = 3;
+        String original = normalize(req.originalContent());
+        String translated = normalize(req.translatedContent());
 
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                String response = chatClient.prompt()
-                        .system(SYSTEM_PROMPT)
-                        .user(userMessage)
-                        .options(FEEDBACK_OPTIONS)
-                        .call()
-                        .content();
+        String userMessage = buildUserMessage(original, translated);
 
-                if (response == null || response.isBlank()) {
-                    throw new IllegalStateException("AI 응답이 비어있습니다.");
-                }
+        try {
+            String rawJson = chatClient.prompt()
+                    // 프롬프트 내 중괄호 템플릿 처리 방지
+                    .templateRenderer(new NoOpTemplateRenderer())
+                    .system(SYSTEM_PROMPT)
+                    .user(userMessage)
+                    .options(options)
+                    .call()
+                    .content();
 
-                return parseResponse(response);
+            AiFeedbackResp parsed =
+                    objectMapper.readValue(rawJson, AiFeedbackResp.class);
 
-            } catch (Exception e) {
-                log.error("AI 분석 실패 (시도 {}/{}): {}", attempt, maxRetries, e.getMessage());
-                if (attempt < maxRetries) {
-                    try {
-                        Thread.sleep(200L * attempt);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        throw new IllegalStateException("AI 분석 재시도 중 인터럽트 발생", ie);
-                    }
-                }
-                if (attempt == maxRetries) {
-                    throw new IllegalStateException("AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.", e);
-                }
+            return postValidateAndNormalize(parsed);
+
+        } catch (Exception e) {
+            boolean isRateLimit =
+                    e.getMessage() != null &&
+                            (e.getMessage().contains("429")
+                                    || e.getMessage().contains("rate limit"));
+
+            if (isRateLimit) {
+                log.warn("OpenAI rate limit 발생: {}", e.getMessage());
+                throw new IllegalStateException(
+                        "AI 요청이 많아 분석할 수 없습니다. 잠시 후 다시 시도해주세요.", e
+                );
+            }
+
+            log.error("AI 피드백 분석 실패", e);
+            throw new IllegalStateException("AI 분석 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    private static String buildUserMessage(String original, String translated) {
+        return """
+            Original:
+            <<<%s>>>
+
+            Translated:
+            <<<%s>>>
+            """.formatted(original, translated);
+    }
+
+    private static String normalize(String s) {
+        return StringUtils.hasText(s) ? s.strip() : "";
+    }
+
+    private AiFeedbackResp postValidateAndNormalize(AiFeedbackResp resp) {
+        if (resp == null || !StringUtils.hasText(resp.correctedContent())) {
+            throw new IllegalStateException("AI 응답이 비어 있습니다.");
+        }
+
+        List<AiFeedbackResp.FeedbackItem> items =
+                resp.feedback() == null ? List.of() : resp.feedback();
+
+        List<AiFeedbackResp.FeedbackItem> cleaned = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+
+        for (AiFeedbackResp.FeedbackItem it : items) {
+            if (it == null || it.tag() == null) continue;
+
+            String problem = safe(it.problem());
+            String correction = safe(it.correction());
+            String extra = safe(it.extra());
+
+            if (!StringUtils.hasText(problem)
+                    || !StringUtils.hasText(correction)
+                    || !StringUtils.hasText(extra)) {
+                continue;
+            }
+
+            String key = (it.tag().name() + "|" + problem + "|" + correction)
+                    .toLowerCase(Locale.ROOT);
+
+            if (seen.add(key)) {
+                cleaned.add(new AiFeedbackResp.FeedbackItem(
+                        it.tag(), problem, correction, extra
+                ));
             }
         }
 
-        throw new IllegalStateException("AI 분석에 실패했습니다.");
+        return new AiFeedbackResp(resp.correctedContent().trim(), cleaned);
     }
 
-    private AiFeedbackResp parseResponse(String response) throws Exception {
-        String json = stripMarkdownFence(response);
-        ObjectMapper safeMapper = objectMapper.copy()
-                .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        return safeMapper.readValue(json, AiFeedbackResp.class);
-    }
-
-    private String stripMarkdownFence(String raw) {
-        if (raw == null) {
-            return "";
-        }
-
-        String trimmed = raw.trim();
-
-        if (trimmed.startsWith("```")) {
-            int firstNewLine = trimmed.indexOf('\n');
-            if (firstNewLine > 0) {
-                trimmed = trimmed.substring(firstNewLine + 1);
-            } else {
-                trimmed = trimmed.substring(3);
-            }
-        }
-
-        if (trimmed.endsWith("```")) {
-            trimmed = trimmed.substring(0, trimmed.lastIndexOf("```"));
-        }
-
-        return trimmed.trim();
+    private static String safe(String s) {
+        return s == null ? "" : s.trim();
     }
 }
