@@ -7,7 +7,10 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
+<<<<<<<< HEAD:src/main/java/triplestar/mixchat/domain/member/auth/dto/SignUpReq.java
 import triplestar.mixchat.domain.member.member.constant.Country;
+========
+>>>>>>>> d5b65124bc6edc83c20ddfd69a8cb4b0951c0521:src/main/java/triplestar/mixchat/domain/member/auth/dto/MemberJoinReq.java
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 
 @Schema(description = "사용자의 회원가입 요청 정보")
@@ -30,6 +33,7 @@ public record SignUpReq(
 
         @Schema(description = "실명")
         @NotBlank
+<<<<<<<< HEAD:src/main/java/triplestar/mixchat/domain/member/auth/dto/SignUpReq.java
         @Size(max = 50)
         String name,
 
@@ -40,6 +44,16 @@ public record SignUpReq(
         @Schema(description = "사용자 닉네임", example = "MixMaster")
         @NotBlank
         @Size(max = 50)
+========
+        String name,
+
+        @Schema(description = "국가 코드 (ISO 3166 Alpha-2)", example = "KR")
+        @NotBlank
+        String country,
+
+        @Schema(description = "사용자 닉네임", example = "MixMaster")
+        @NotBlank
+>>>>>>>> d5b65124bc6edc83c20ddfd69a8cb4b0951c0521:src/main/java/triplestar/mixchat/domain/member/auth/dto/MemberJoinReq.java
         String nickname,
 
         @Schema(description = "영어 실력 레벨")
@@ -48,12 +62,19 @@ public record SignUpReq(
 
         @Schema(description = "관심사 목록 (최소 1개 이상 필수)", example = "[\"요리\", \"여행\"]")
         @NotEmpty
+<<<<<<<< HEAD:src/main/java/triplestar/mixchat/domain/member/auth/dto/SignUpReq.java
         @Size(min = 1, max = 10)
         List<@NotBlank @Size(max = 30) String> interests,
 
         @Schema(description = "자기소개")
         @NotBlank
         @Size(max = 1000)
+========
+        List<String> interests,
+
+        @Schema(description = "자기소개")
+        @NotBlank
+>>>>>>>> d5b65124bc6edc83c20ddfd69a8cb4b0951c0521:src/main/java/triplestar/mixchat/domain/member/auth/dto/MemberJoinReq.java
         String description
 ) {
 }
