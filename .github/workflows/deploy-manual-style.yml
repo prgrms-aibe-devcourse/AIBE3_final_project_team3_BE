@@ -1,0 +1,61 @@
+name: Deploy MixChat to AWS EC2
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  deploy:
+    name: Deploy on EC2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          IMAGE_TAG: v0.0.${{ github.run_number }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: IMAGE_TAG
+          script: |
+            set -e # 에러 발생 시 스크립트 중단
+            
+            echo "Deploying version: $IMAGE_TAG"
+            
+            # 1. 프로젝트 디렉토리로 이동
+            cd /opt/mixchat
+            
+            # 2. 최신 코드 Pull
+            # 현재 브랜치 이름을 동적으로 가져오거나 고정값 사용 (여기서는 prod 브랜치 기준)
+            git pull origin release
+            
+            # 3. 인프라 컨테이너 실행 (Redis, Mongo 등)
+            # 이미 실행 중이라면 재시작되지 않음 (up -d)
+            docker compose -f docker-compose-prod.yml --env-file .env.prod.properties up -d
+            
+            # 4. 기존 애플리케이션 컨테이너 제거
+            # 컨테이너가 없어도 에러가 나지 않도록 || true 추가하거나 docker rm -f 사용
+            if [ "$(docker ps -aq -f name=mixchat)" ]; then
+                echo "Removing existing mixchat container..."
+                docker rm -f mixchat
+            fi
+
+            # 5. 애플리케이션 이미지 빌드
+            # 캐시를 활용하지 않고 매번 새로 빌드하려면 --no-cache 옵션 추가 고려
+            docker build -t mixchat:$IMAGE_TAG .
+            
+            # 6. 애플리케이션 컨테이너 실행
+            # --net=host 모드 사용 (주의: 포트 충돌 가능성 있음)
+            # TZ 환경변수 설정
+            docker run -d \
+              --restart unless-stopped \
+              -e TZ=Asia/Seoul \
+              --net=host \
+              --name mixchat \
+              mixchat:$IMAGE_TAG
+            
+            # 7. 미사용 이미지 정리 (선택 사항)
+            docker image prune -f
+

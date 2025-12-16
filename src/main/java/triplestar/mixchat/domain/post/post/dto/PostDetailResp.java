@@ -30,6 +30,9 @@ public record PostDetailResp(
         @Schema(description = "좋아요 수", example = "25")
         int likeCount,
 
+        @Schema(description = "현재 사용자의 좋아요 여부", example = "true")
+        boolean isLiked,
+
         @Schema(description = "생성일시", example = "2024-12-01T10:30:00")
         LocalDateTime createdAt,
 

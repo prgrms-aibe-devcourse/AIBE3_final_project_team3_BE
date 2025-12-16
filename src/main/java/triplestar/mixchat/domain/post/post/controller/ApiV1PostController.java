@@ -42,6 +42,7 @@ public class ApiV1PostController implements ApiPostController {
     @Override
     @GetMapping
     public CustomResponse<Page<PostSummaryResp>> getPosts(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(defaultValue = "LATEST") String sort,
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "20") Integer size
@@ -56,14 +57,19 @@ public class ApiV1PostController implements ApiPostController {
         // page와 size로 Pageable 생성 (정렬은 Repository에서 처리)
         Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
 
-        Page<PostSummaryResp> result = postService.getPosts(sortType, pageable);
+        Long memberId = userDetails != null ? userDetails.getId() : null;
+        Page<PostSummaryResp> result = postService.getPosts(memberId, sortType, pageable);
         return CustomResponse.ok("게시글 목록 조회 성공", result);
     }
 
     @Override
     @GetMapping("/{postId}")
-    public CustomResponse<PostDetailResp> getPost(@PathVariable Long postId) {
-        PostDetailResp response = postService.getPostAndIncreaseView(postId);
+    public CustomResponse<PostDetailResp> getPost(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long postId
+    ) {
+        Long memberId = userDetails != null ? userDetails.getId() : null;
+        PostDetailResp response = postService.getPostAndIncreaseView(postId, memberId);
         return CustomResponse.ok("게시글 상세 조회 성공", response);
     }
 
@@ -74,12 +80,14 @@ public class ApiV1PostController implements ApiPostController {
             @PathVariable Long postId,
             @RequestPart("title") String title,
             @RequestPart("content") String content,
+            @RequestPart(value = "removeImages", required = false) String removeImagesStr,
             @RequestPart(value = "images", required = false) List<MultipartFile> images
     ) {
         boolean isAdmin = userDetails.getRole() == Role.ROLE_ADMIN;
-        PostUpdateReq req = new PostUpdateReq(title, content);
+        boolean removeImages = Boolean.parseBoolean(removeImagesStr);
+        PostUpdateReq req = new PostUpdateReq(title, content, removeImages);
         postService.updatePost(postId, userDetails.getId(), isAdmin, req, images);
-        PostDetailResp response = postService.getPost(postId);
+        PostDetailResp response = postService.getPost(postId, userDetails.getId());
         return CustomResponse.ok("게시글 수정 성공", response);
     }
 

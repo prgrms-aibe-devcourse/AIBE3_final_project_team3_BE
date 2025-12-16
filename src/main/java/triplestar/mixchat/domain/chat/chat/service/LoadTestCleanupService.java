@@ -22,7 +22,7 @@ import triplestar.mixchat.global.cache.ChatAuthCacheService;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-@Profile({"dev", "local", "test"})  // 개발/로컬/테스트 환경에서만 활성화, 프로덕션에서는 비활성화
+@Profile({"dev", "local", "test", "prod"})  // 개발/로컬/테스트 환경에서만 활성화, 프로덕션에서는 비활성화
 public class LoadTestCleanupService {
 
     private final DirectChatRoomRepository directChatRoomRepository;

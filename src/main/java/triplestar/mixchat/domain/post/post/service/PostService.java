@@ -50,10 +50,10 @@ public class PostService {
 
         uploadAndApplyImages(post, images);
         Post saved = postRepository.save(post);
-        return toDetailResp(saved);
+        return toDetailResp(saved, memberId);
     }
 
-    public Page<PostSummaryResp> getPosts(PostSortType sortType, Pageable pageable) {
+    public Page<PostSummaryResp> getPosts(Long memberId, PostSortType sortType, Pageable pageable) {
         Page<Post> posts;
 
         if (PostSortType.POPULAR.equals(sortType)) {
@@ -102,21 +102,35 @@ public class PostService {
                                 PostLikeRepository.PostLikeCount::getLikeCount
                         ));
 
-        return posts.map(post -> toSummaryResp(post, likeCountMap.getOrDefault(post.getId(), 0L).intValue()));
+        // 사용자가 좋아요를 누른 게시글 ID 조회
+        java.util.Set<Long> likedPostIds = (memberId != null && !postIds.isEmpty())
+                ? java.util.Set.copyOf(postLikeRepository.findLikedPostIdsByMemberIdAndPostIds(memberId, postIds))
+                : java.util.Collections.emptySet();
+
+        return posts.map(post -> toSummaryResp(
+                post,
+                likeCountMap.getOrDefault(post.getId(), 0L).intValue(),
+                likedPostIds.contains(post.getId())
+        ));
     }
 
     @Transactional(readOnly = true)
-    public PostDetailResp getPost(Long postId) {
+    public PostDetailResp getPost(Long postId, Long memberId) {
         Post post = findPost(postId);
-        return toDetailResp(post);
+        return toDetailResp(post, memberId);
     }
 
     @Transactional
-    public PostDetailResp getPostAndIncreaseView(Long postId) {
+    public PostDetailResp getPostAndIncreaseView(Long postId, Long memberId) {
+        // 1. 조회수 증가 (clearAutomatically = true로 인해 영속성 컨텍스트 초기화됨)
+        postRepository.increaseViewCount(postId);
+
+        // 2. 게시글 조회 (새로운 영속성 컨텍스트에서 조회되므로 최신 데이터 반영)
         Post post = findPost(postId);
-        post.increaseViewCount();
-        return toDetailResp(post);
+
+        return toDetailResp(post, memberId);
     }
+
 
 
     @Transactional
@@ -127,14 +141,17 @@ public class PostService {
         // 제목과 내용 수정
         post.updateContent(req.title(), req.content());
 
-        // 이미지가 제공된 경우에만 이미지 교체
-        if (images != null && !images.isEmpty()) {
-            // 기존 이미지 삭제 (S3에서)
+        // 이미지 삭제 요청이 있거나, 새 이미지가 제공된 경우 기존 이미지 삭제
+        if (req.removeImages() || (images != null && !images.isEmpty())) {
             deletePostImages(post);
-            // 새 이미지 업로드
+            // 이미지 목록 초기화 (DB에서 삭제)
+            post.replaceImages(Collections.emptyList());
+        }
+
+        // 새 이미지 업로드 (이미지가 제공된 경우에만)
+        if (images != null && !images.isEmpty()) {
             uploadAndApplyImages(post, images);
         }
-        // 이미지가 제공되지 않으면 기존 이미지 유지
     }
 
     @Transactional
@@ -151,7 +168,8 @@ public class PostService {
     @Transactional
     public LikeStatusResp likePost(Long memberId, Long postId) {
         Member member = findMember(memberId);
-        Post post = findPost(postId);
+        // Post 엔티티를 직접 조회하지 않고 프록시 참조 사용 (조회수 증가 방지)
+        Post post = postRepository.getReferenceById(postId);
 
         if (postLikeRepository.existsByMemberAndPost(member, post)) {
             throw new IllegalStateException("이미 좋아요를 눌렀습니다.");
@@ -159,14 +177,15 @@ public class PostService {
 
         postLikeRepository.save(new PostLike(member, post));
         // DB에서 실제 좋아요 개수를 조회하여 정합성 보장
-        int actualLikeCount = postLikeRepository.countByPost(post);
+        int actualLikeCount = postLikeRepository.countByPostId(postId);
         return new LikeStatusResp(true, actualLikeCount);
     }
 
     @Transactional
     public LikeStatusResp unlikePost(Long memberId, Long postId) {
         Member member = findMember(memberId);
-        Post post = findPost(postId);
+        // Post 엔티티를 직접 조회하지 않고 프록시 참조 사용 (조회수 증가 방지)
+        Post post = postRepository.getReferenceById(postId);
 
         postLikeRepository.findByMemberAndPost(member, post)
                 .ifPresentOrElse(like -> {
@@ -176,7 +195,7 @@ public class PostService {
                 });
 
         // DB에서 실제 좋아요 개수를 조회하여 정합성 보장
-        int actualLikeCount = postLikeRepository.countByPost(post);
+        int actualLikeCount = postLikeRepository.countByPostId(postId);
         return new LikeStatusResp(false, actualLikeCount);
     }
 
@@ -263,7 +282,7 @@ public class PostService {
         }
     }
 
-    private PostSummaryResp toSummaryResp(Post post, Integer likeCount) {
+    private PostSummaryResp toSummaryResp(Post post, Integer likeCount, boolean isLiked) {
         int actualLikeCount = (likeCount != null)
                 ? likeCount
                 : postLikeRepository.countByPostId(post.getId());
@@ -276,13 +295,19 @@ public class PostService {
                 post.getImageUrls(),
                 post.getViewCount(),
                 actualLikeCount,
+                isLiked,
                 post.getCreatedAt(),
                 post.getModifiedAt()
         );
     }
 
-    private PostDetailResp toDetailResp(Post post) {
+    private PostDetailResp toDetailResp(Post post, Long memberId) {
         int actualLikeCount = postLikeRepository.countByPostId(post.getId());
+        boolean isLiked = false;
+        if (memberId != null) {
+            Member member = findMember(memberId);
+            isLiked = postLikeRepository.existsByMemberAndPost(member, post);
+        }
         return new PostDetailResp(
                 post.getId(),
                 post.getAuthor().getId(),
@@ -292,6 +317,7 @@ public class PostService {
                 post.getImageUrls(),
                 post.getViewCount(),
                 actualLikeCount,
+                isLiked,
                 post.getCreatedAt(),
                 post.getModifiedAt()
         );

@@ -81,7 +81,7 @@ class PostServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<PostSummaryResp> result = postService.getPosts(PostSortType.LATEST, pageable);
+        Page<PostSummaryResp> result = postService.getPosts(null, PostSortType.LATEST, pageable);
 
         // then
         assertThat(result).isNotNull();
@@ -102,7 +102,7 @@ class PostServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         // when
-        Page<PostSummaryResp> result = postService.getPosts(PostSortType.POPULAR, pageable);
+        Page<PostSummaryResp> result = postService.getPosts(null, PostSortType.POPULAR, pageable);
 
         // then
         assertThat(result).isNotNull();
@@ -117,7 +117,7 @@ class PostServiceTest {
         PostDetailResp created = postService.createPost(member1.getId(), req, null);
 
         // when
-        PostDetailResp resp = postService.getPost(created.id());
+        PostDetailResp resp = postService.getPost(created.id(), null);
 
         // then
         assertThat(resp).isNotNull();
@@ -133,8 +133,8 @@ class PostServiceTest {
         PostDetailResp created = postService.createPost(member1.getId(), req, null);
 
         // when
-        PostDetailResp resp1 = postService.getPostAndIncreaseView(created.id());
-        PostDetailResp resp2 = postService.getPostAndIncreaseView(created.id());
+        PostDetailResp resp1 = postService.getPostAndIncreaseView(created.id(), null);
+        PostDetailResp resp2 = postService.getPostAndIncreaseView(created.id(), null);
 
         // then
         assertThat(resp1.viewCount()).isEqualTo(1);
@@ -145,7 +145,7 @@ class PostServiceTest {
     @DisplayName("게시글 상세 조회 - 존재하지 않는 게시글")
     void getPost_notFound_fail() {
         // when & then
-        assertThatThrownBy(() -> postService.getPost(99999L))
+        assertThatThrownBy(() -> postService.getPost(99999L, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("게시글을 찾을 수 없습니다");
     }
@@ -162,7 +162,7 @@ class PostServiceTest {
         PostCreateReq createReq = new PostCreateReq("제목", "내용");
         PostDetailResp created = postService.createPost(member1.getId(), createReq, null);
 
-        PostUpdateReq updateReq = new PostUpdateReq("수정 제목", "수정 내용");
+        PostUpdateReq updateReq = new PostUpdateReq("수정 제목", "수정 내용", false);
 
         // when & then
         assertThatThrownBy(() ->
@@ -178,11 +178,11 @@ class PostServiceTest {
         PostCreateReq createReq = new PostCreateReq("제목", "내용");
         PostDetailResp created = postService.createPost(member1.getId(), createReq, null);
 
-        PostUpdateReq updateReq = new PostUpdateReq("관리자 수정 제목", "관리자 수정 내용");
+        PostUpdateReq updateReq = new PostUpdateReq("관리자 수정 제목", "관리자 수정 내용", false);
 
         // when
         postService.updatePost(created.id(), admin.getId(), true, updateReq, null);
-        PostDetailResp updated = postService.getPost(created.id());
+        PostDetailResp updated = postService.getPost(created.id(), null);
 
         // then
         assertThat(updated.title()).isEqualTo("관리자 수정 제목");
@@ -200,7 +200,7 @@ class PostServiceTest {
         postService.deletePost(created.id(), member1.getId(), false);
 
         // then
-        assertThatThrownBy(() -> postService.getPost(created.id()))
+        assertThatThrownBy(() -> postService.getPost(created.id(), null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -228,7 +228,7 @@ class PostServiceTest {
         postService.deletePost(created.id(), admin.getId(), true);
 
         // then
-        assertThatThrownBy(() -> postService.getPost(created.id()))
+        assertThatThrownBy(() -> postService.getPost(created.id(), null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -309,4 +309,3 @@ class PostServiceTest {
         }
     }
 }
-

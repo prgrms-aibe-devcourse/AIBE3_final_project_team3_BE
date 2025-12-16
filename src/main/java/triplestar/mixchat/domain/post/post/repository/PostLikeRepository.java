@@ -43,6 +43,16 @@ public interface PostLikeRepository extends JpaRepository<PostLike, PostLikeId> 
     List<PostLikeCount> countByPostIds(@Param("postIds") List<Long> postIds);
 
     /**
+     * 특정 사용자가 여러 게시글에 좋아요를 눌렀는지 확인합니다. (Batch 조회로 성능 최적화)
+     */
+    @Query("""
+            SELECT pl.post.id
+            FROM PostLike pl
+            WHERE pl.member.id = :memberId AND pl.post.id IN :postIds
+            """)
+    List<Long> findLikedPostIdsByMemberIdAndPostIds(@Param("memberId") Long memberId, @Param("postIds") List<Long> postIds);
+
+    /**
      * 게시글 좋아요 수 조회 결과 DTO
      */
     interface PostLikeCount {
