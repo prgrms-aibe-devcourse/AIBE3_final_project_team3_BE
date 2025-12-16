@@ -5,12 +5,25 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
-import triplestar.mixchat.domain.chat.chat.dto.*;
+import triplestar.mixchat.domain.ai.translation.dto.AiFeedbackReq;
+import triplestar.mixchat.domain.ai.translation.dto.AiFeedbackResp;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
+import triplestar.mixchat.domain.chat.chat.dto.AIChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.ChatRoomPageDataResp;
+import triplestar.mixchat.domain.chat.chat.dto.CreateAIChatReq;
+import triplestar.mixchat.domain.chat.chat.dto.CreateDirectChatReq;
+import triplestar.mixchat.domain.chat.chat.dto.CreateGroupChatReq;
+import triplestar.mixchat.domain.chat.chat.dto.DirectChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomResp;
+import triplestar.mixchat.domain.chat.chat.dto.GroupChatRoomSummaryResp;
+import triplestar.mixchat.domain.chat.chat.dto.MessageReq;
+import triplestar.mixchat.domain.chat.chat.dto.MessageResp;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
@@ -18,58 +31,92 @@ import triplestar.mixchat.global.springdoc.CommonBadResponse;
 import triplestar.mixchat.global.springdoc.SignInInRequireResponse;
 import triplestar.mixchat.global.springdoc.SuccessResponse;
 
-import java.util.List;
-
 @Tag(name = "Chat API", description = "채팅 관련 API")
 @CommonBadResponse
 @SuccessResponse
 @SecurityRequirement(name = "Authorization")
 public interface ApiChatController {
 
+    @Operation(summary = "AI 피드백 분석 요청", description = "원문과 번역문(또는 사용자 의도)을 비교하여 AI에게 교정 및 피드백을 요청합니다.")
+    @SignInInRequireResponse
+    CustomResponse<AiFeedbackResp> analyzeFeedback(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody AiFeedbackReq req
+    );
+
     @Operation(summary = "1:1 채팅방 생성/조회", description = "특정 사용자와의 1:1 채팅방이 없으면 새로 생성하고, 있으면 기존 채팅방 정보를 반환합니다.")
     @SignInInRequireResponse
-    CustomResponse<ChatRoomResp> createDirectRoom(
+    CustomResponse<DirectChatRoomResp> createDirectRoom( // Return type changed
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody CreateDirectChatReq request
     );
 
     @Operation(summary = "그룹 채팅방 생성", description = "지정한 사용자들과 함께 새로운 그룹 채팅방을 생성합니다.")
     @SignInInRequireResponse
-    CustomResponse<ChatRoomResp> createGroupRoom(
+    CustomResponse<GroupChatRoomResp> createGroupRoom( // Return type changed
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody CreateGroupChatReq request
     );
 
-    @Operation(summary = "공개 그룹 채팅방 생성", description = "모든 사용자가 참여할 수 있는 공개 그룹 채팅방을 생성합니다.")
+    @Operation(summary = "AI 채팅방 생성", description = "새로운 AI 채팅방을 생성합니다.")
     @SignInInRequireResponse
-    CustomResponse<ChatRoomResp> createPublicGroupRoom(
+    CustomResponse<AIChatRoomResp> createAiRoom(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
-            @Valid @RequestBody CreatePublicChatReq request
+            @Valid @RequestBody CreateAIChatReq request
     );
 
-    @Operation(summary = "자신의 모든 채팅방 목록 조회", description = "현재 로그인한 사용자가 참여하고 있는 모든 채팅방의 목록을 반환합니다.")
+//    @Operation(summary = "공개 그룹 채팅방 생성", description = "모든 사용자가 참여할 수 있는 공개 그룹 채팅방을 생성합니다.")
+//    @SignInInRequireResponse
+//    CustomResponse<GroupChatRoomResp> createPublicGroupRoom( // Return type changed
+//            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
+//            @Valid @RequestBody CreatePublicChatReq request
+//    );
+
+    @Operation(summary = "자신의 1:1 채팅방 목록 조회", description = "현재 로그인한 사용자가 참여하고 있는 모든 1:1 채팅방의 목록을 반환합니다.")
     @SignInInRequireResponse
-    CustomResponse<List<ChatRoomResp>> getRooms(
+    CustomResponse<List<DirectChatRoomResp>> getDirectChatRooms(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 
-    @Operation(summary = "채팅 메시지 전송", description = "지정된 채팅방에 텍스트 메시지를 전송합니다.")
+    @Operation(summary = "자신의 그룹 채팅방 목록 조회", description = "현재 로그인한 사용자가 참여하고 있는 모든 그룹 채팅방의 목록을 반환합니다.")
     @SignInInRequireResponse
-    CustomResponse<MessageResp> sendMessage(
-            @Parameter(description = "메시지를 보낼 채팅방의 ID") @PathVariable Long roomId,
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
-            @Valid @RequestBody TextMessageReq request
+    CustomResponse<List<GroupChatRoomSummaryResp>> getGroupChatRooms(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 
-    @Operation(summary = "채팅방 메시지 목록 조회", description = "지정된 채팅방의 모든 메시지 내역을 시간순으로 조회합니다.")
-    CustomResponse<List<MessageResp>> getMessages(
-            @Parameter(description = "메시지를 조회할 채팅방의 ID") @PathVariable Long roomId
+    @Operation(summary = "자신의 AI 채팅방 목록 조회", description = "현재 로그인한 사용자가 참여하고 있는 모든 AI 채팅방의 목록을 반환합니다.")
+    @SignInInRequireResponse
+    CustomResponse<List<AIChatRoomResp>> getAiChatRooms(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
+    );
+
+    @Operation(summary = "채팅 메시지 검색", description = "선택한 탭(DIRECT, GROUP, AI) 내 내가 속한 방에서 키워드로 메시지를 검색합니다.")
+    @SignInInRequireResponse
+    CustomResponse<?> searchMessages(
+            @Parameter(description = "검색 대상 채팅방 타입(DIRECT, GROUP, AI)") @RequestParam ChatRoomType chatRoomType,
+            @Parameter(description = "검색 키워드(2자 이상 권장)") @RequestParam String keyword,
+            @Parameter(description = "페이지 번호(0부터 시작)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기(기본 20, 최대 100)") @RequestParam(defaultValue = "20") int size,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
+    );
+
+    @Operation(
+        summary = "채팅방 메시지 목록 조회 (페이징)",
+        description = "지정된 채팅방의 메시지 내역을 페이징하여 조회합니다. cursor와 size 파라미터를 생략하면 최근 25개 메시지를 반환합니다."
+    )
+    CustomResponse<ChatRoomPageDataResp> getMessages(
+            @Parameter(description = "메시지를 조회할 채팅방의 ID") @PathVariable Long roomId,
+            @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatRoomType chatRoomType,
+            @Parameter(description = "이전 페이지의 마지막 메시지 sequence (생략 시 최신 메시지부터 조회)") @RequestParam(required = false) Long cursor,
+            @Parameter(description = "한 페이지에 조회할 메시지 개수 (기본 25, 최대 100)") @RequestParam(required = false) Integer size,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 
     @Operation(summary = "파일 메시지 전송 (이미지/파일)", description = "지정된 채팅방에 이미지 또는 파일을 전송합니다.")
     @SignInInRequireResponse
     CustomResponse<MessageResp> uploadFile(
             @Parameter(description = "파일을 보낼 채팅방의 ID") @PathVariable Long roomId,
+            @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatRoomType chatRoomType,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
             @Parameter(description = "업로드할 파일") @RequestParam("file") MultipartFile file,
             @Parameter(description = "파일 메시지 타입 (IMAGE 또는 FILE)") @RequestParam("messageType") ChatMessage.MessageType messageType
@@ -79,13 +126,15 @@ public interface ApiChatController {
     @SignInInRequireResponse
     void leaveRoom(
             @Parameter(description = "나갈 채팅방의 ID") @PathVariable Long roomId,
-             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
+            @Parameter(description = "대화방 타입 (DIRECT, GROUP, AI)") @RequestParam ChatRoomType chatRoomType,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 
     @Operation(summary = "채팅방 사용자 차단 (미구현)", description = "특정 사용자를 채팅방에서 차단합니다. (현재 로직 구현 안됨)")
     @SignInInRequireResponse
     void blockUser(
             @Parameter(description = "차단할 채팅방의 ID") @PathVariable Long roomId,
+            @Parameter(description = "대화방 타입 (DIRECT, GROUP)") @RequestParam ChatRoomType chatRoomType,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 
@@ -93,7 +142,22 @@ public interface ApiChatController {
     @SignInInRequireResponse
     void reportUser(
             @Parameter(description = "신고할 채팅방의 ID") @PathVariable Long roomId,
+            @Parameter(description = "대화방 타입 (DIRECT, GROUP)") @RequestParam ChatRoomType chatRoomType,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
+    );
+
+    @Operation(summary = "텍스트 메시지 전송 (부하 테스트용)", description = "REST API를 통해 텍스트 메시지를 전송합니다. WebSocket 대신 HTTP로 메시지를 전송하여 부하 테스트 도구(k6)에서 사용할 수 있습니다. 개발/로컬/테스트 환경에서만 활성화됩니다.")
+    @SignInInRequireResponse
+    CustomResponse<MessageResp> sendMessageForLoadTest(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody MessageReq request,
+            @RequestParam(required = false) Long testSenderId,
+            @RequestParam(required = false) String testNickname
+    );
+
+    @Operation(summary = "부하테스트 데이터 정리", description = "부하테스트로 생성된 모든 데이터를 일괄 삭제합니다. [LOAD_TEST] 태그가 있는 Group/AI 채팅방과 테스트 계정(1~100) 간의 Direct 채팅방을 삭제합니다.")
+    @SignInInRequireResponse
+    CustomResponse<?> cleanupLoadTestData(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser
     );
 }
-

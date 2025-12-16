@@ -1,14 +1,23 @@
 package triplestar.mixchat.domain.member.member.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import triplestar.mixchat.domain.member.member.dto.MemberDetailResp;
 import triplestar.mixchat.domain.member.member.dto.MemberInfoModifyReq;
+import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
+import triplestar.mixchat.domain.member.member.dto.MyProfileResp;
 import triplestar.mixchat.domain.member.member.service.MemberService;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.security.CustomUserDetails;
@@ -38,5 +47,57 @@ public class ApiV1MemberController implements ApiMemberController {
     ) {
         memberService.uploadProfileImage(customUserDetails.getId(), multipartFile);
         return CustomResponse.ok("프로필 이미지 업로드에 성공했습니다.");
+    }
+
+    @Override
+    @GetMapping("/me")
+    public CustomResponse<MyProfileResp> getMyProfile(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        MyProfileResp myProfile = memberService.getMyProfile(customUserDetails.getId());
+        return CustomResponse.ok("내 정보를 성공적으로 조회했습니다.", myProfile);
+    }
+
+    @Override
+    @GetMapping("/{id}")
+    public CustomResponse<MemberDetailResp> getMemberDetail(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @PathVariable Long id
+    ) {
+        Long currentUserId = customUserDetails != null ? customUserDetails.getId() : null;
+
+        MemberDetailResp memberDetails = memberService.getMemberDetails(currentUserId, id);
+        return CustomResponse.ok("회원 상세 정보 조회에 성공했습니다.", memberDetails);
+    }
+
+    @Override
+    @GetMapping
+    public CustomResponse<Page<MemberPresenceSummaryResp>> getMembers(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        Long userId = userDetails != null ? userDetails.getId() : -1L;
+        Page<MemberPresenceSummaryResp> members = memberService.findAllMembers(userId, pageable);
+        return CustomResponse.ok("회원 목록을 성공적으로 조회했습니다.", members);
+    }
+
+    @Override
+    @GetMapping("/online")
+    public CustomResponse<Page<MemberPresenceSummaryResp>> getOnlineMembers(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        Long userId = userDetails != null ? userDetails.getId() : -1L;
+        Page<MemberPresenceSummaryResp> members = memberService.findOnlineMembers(userId, pageable);
+        return CustomResponse.ok("온라인 회원 목록을 성공적으로 조회했습니다.", members);
+    }
+
+    @Override
+    @DeleteMapping("/me")
+    public CustomResponse<Void> deleteMyAccount(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        memberService.deleteSoftly(customUserDetails.getId());
+        return CustomResponse.ok("회원 탈퇴에 성공했습니다.");
     }
 }

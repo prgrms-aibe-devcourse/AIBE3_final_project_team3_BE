@@ -1,20 +1,24 @@
 package triplestar.mixchat.global.exceptionHandler;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import jakarta.persistence.EntityNotFoundException;
+import java.nio.file.AccessDeniedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import triplestar.mixchat.global.customException.ServiceException;
 import triplestar.mixchat.global.response.CustomResponse;
 
@@ -120,7 +124,18 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // TODO : 429 AI API 호출 관련 핸들러 추후 추가 요망
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<CustomResponse<Void>> handle(AccessDeniedException e) {
+        commonExceptionLog(e);
+
+        return new ResponseEntity<>(
+                new CustomResponse<>(
+                        FORBIDDEN.value(),
+                        "접근 권한이 없습니다."
+                ),
+                FORBIDDEN
+        );
+    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<CustomResponse<Void>> handle(Exception e) throws Exception {

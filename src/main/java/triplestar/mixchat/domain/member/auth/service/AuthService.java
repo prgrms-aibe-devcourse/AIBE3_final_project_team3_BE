@@ -1,23 +1,25 @@
 package triplestar.mixchat.domain.member.auth.service;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
-import triplestar.mixchat.domain.member.auth.dto.SignInResp;
-import triplestar.mixchat.domain.member.auth.dto.SignInReq;
-import triplestar.mixchat.domain.member.member.constant.Country;
+import triplestar.mixchat.domain.member.auth.dto.LogInReq;
+import triplestar.mixchat.domain.member.auth.dto.LogInResp;
+import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
+import triplestar.mixchat.domain.member.auth.repository.RefreshTokenRepository;
+import triplestar.mixchat.domain.member.member.constant.ProfileImageProperties;
+import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-import triplestar.mixchat.global.customException.UniqueConstraintException;
+import triplestar.mixchat.domain.member.presence.service.PresenceService;
 import triplestar.mixchat.global.security.jwt.AccessTokenPayload;
 import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
-import triplestar.mixchat.global.security.redis.redisTokenRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -27,31 +29,30 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthJwtProvider authJwtProvider;
-    private final redisTokenRepository redisTokenRepository;
-
-    @Qualifier("defaultProfileBaseURL")
-    private final String defaultProfileBaseURL;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final PresenceService presenceService;
+    private final ProfileImageProperties profileImageProperties;
 
     /**
      * 회원가입
      */
-    public MemberSummaryResp join(MemberJoinReq req) {
+    public MemberSummaryResp join(SignUpReq req) {
         validateJoinReq(req);
         Member member = Member.createMember(
                 req.email(), Password.encrypt(req.password(), passwordEncoder),
                 req.name(), req.nickname(),
-                Country.findByCode(req.country()), req.englishLevel(), req.interests(), req.description()
+                req.country(), req.englishLevel(), req.interests(), req.description()
         );
-        member.updateProfileImageUrl(defaultProfileBaseURL);
+        member.updateProfileImageUrl(profileImageProperties.defaultProfileImageUrl());
 
         Member savedMember = memberRepository.save(member);
-        return new MemberSummaryResp(savedMember);
+        return MemberSummaryResp.from(savedMember);
     }
 
-    private void validateJoinReq(MemberJoinReq req) {
+    private void validateJoinReq(SignUpReq req) {
         String reqEmail = req.email();
         if (memberRepository.existsByEmail(reqEmail)) {
-            throw new UniqueConstraintException("이미 사용중인 이메일입니다: " + reqEmail);
+            throw new IllegalStateException("이미 사용중인 이메일입니다: " + reqEmail);
         }
 
         String reqPassword = req.password();
@@ -64,32 +65,32 @@ public class AuthService {
     /**
      * 로그인
      */
-    public SignInResp signIn(SignInReq req) {
+    public LogInResp login(LogInReq req) {
         Member member = memberRepository.findByEmail(req.email())
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 이메일입니다: " + req.email()));
 
         if (!member.getPassword().matches(req.password(), passwordEncoder)) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
+        memberRepository.updateLastSeenAt(member.getId(), LocalDateTime.now());
 
         String accessToken = authJwtProvider.generateAccessToken(
                 new AccessTokenPayload(member.getId(), member.getRole()));
-
         String refreshToken = authJwtProvider.generateRefreshToken(member.getId());
 
-        redisTokenRepository.save(member.getId(), refreshToken);
+        refreshTokenRepository.save(member.getId(), refreshToken);
 
-        return new SignInResp(accessToken, refreshToken);
+        return new LogInResp(accessToken, refreshToken);
     }
 
     /**
      * 액세스 토큰 재발급
      */
-    public SignInResp reissueAccessToken(String reqRefreshToken) {
+    public LogInResp reissueAccessToken(String reqRefreshToken) {
         Long memberId = authJwtProvider.parseRefreshToken(reqRefreshToken);
 
         // Redis에 저장된 리프레시 토큰과 비교
-        String redisRefreshToken = redisTokenRepository.findByMemberId(memberId);
+        String redisRefreshToken = refreshTokenRepository.findByMemberId(memberId);
         if (redisRefreshToken == null || !redisRefreshToken.equals(reqRefreshToken)) {
             throw new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다.");
         }
@@ -99,12 +100,21 @@ public class AuthService {
 
         // 기존 리프레시 토큰 파기 새로운 리프레시 토큰 발급 및 저장(rotation)
         String newRefreshToken = authJwtProvider.generateRefreshToken(memberId);
-        redisTokenRepository.delete(memberId);
-        redisTokenRepository.save(memberId, newRefreshToken);
+        refreshTokenRepository.delete(memberId);
+        refreshTokenRepository.save(memberId, newRefreshToken);
 
         String accessToken = authJwtProvider.generateAccessToken(
                 new AccessTokenPayload(member.getId(), member.getRole()));
 
-        return new SignInResp(accessToken, newRefreshToken);
+        return new LogInResp(accessToken, newRefreshToken);
+    }
+
+    /**
+     * 로그아웃
+     */
+    public void logout(String refreshToken) {
+        Long memberId = authJwtProvider.parseRefreshToken(refreshToken);
+        refreshTokenRepository.delete(memberId);
+        presenceService.disconnect(memberId);
     }
 }

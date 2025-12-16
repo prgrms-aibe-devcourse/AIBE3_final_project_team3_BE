@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import triplestar.mixchat.domain.chat.chat.entity.ChatMessage;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 
 @Schema(description = "채팅 메시지 전송 요청")
 public record MessageReq(
@@ -16,7 +17,14 @@ public record MessageReq(
         String content,
 
         @NotNull
-        @Schema(description = "메시지 타입", example = "TALK")
-        ChatMessage.MessageType messageType
+        @Schema(description = "메시지 타입", example = "TEXT")
+        ChatMessage.MessageType messageType,
+
+        @NotNull
+        @Schema(description = "대화방 타입", example = "GROUP")
+        ChatRoomType chatRoomType,
+
+        @Schema(description = "자동 번역 여부", example = "true")
+        boolean isTranslateEnabled
 ) {
 }

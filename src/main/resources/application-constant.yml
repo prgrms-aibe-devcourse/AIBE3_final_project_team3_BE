@@ -1,10 +1,33 @@
-jwt:
-  access-token-expiration-seconds: "#{60 * 120}"
-  refresh-token-expiration-seconds: "#{60 * 60 * 24 * 7}"
-redis:
-  prefix:
-    refresh-token: "refresh:"
 cookie:
-  domain: ${DOMAIN_NAME:mixchat.shop}
+  domain: ${DOMAIN_NAME:mixchat.site}
+
 member:
   default-image-name: "default-profile.webp"
+  max-image-size-bytes: "#{3 * 1024 * 1024}" # 3MB
+  allowed-image-types: "image/jpeg,image/png,image/webp"
+
+presence:
+  redis:
+    key: "presence:"
+    ttl-seconds: 90
+  scheduled:
+    cleanup-rate-ms: "#{5 * 60 * 1000}"  # 5 minutes
+
+auth:
+  jwt:
+    access:
+      token-expiration-seconds: "#{60 * 120}"
+    refresh:
+      token-expiration-seconds: "#{60 * 60 * 24 * 7}"  # 7 days
+      redis:
+        prefix: "refresh:"
+
+notification:
+  retention-days: 30
+
+ai:
+  context-retriever:
+    sql:
+      min: 1
+      max: 100
+  rag-openai-model: ${RAG_OPENAI_MODEL:gpt-5.1}

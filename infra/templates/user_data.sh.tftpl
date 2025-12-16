@@ -1,0 +1,76 @@
+#!/bin/bash
+set -euo pipefail
+
+# 4GB swap 설정
+dd if=/dev/zero of=/swapfile bs=128M count=32
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+grep -q '/swapfile' /etc/fstab || echo '/swapfile swap swap defaults 0 0' >> /etc/fstab
+
+# TZ 및 환경 변수 구성
+timedatectl set-timezone Asia/Seoul
+{
+  echo "PASSWORD_1=${password_1}"
+  echo "APP_1_DOMAIN=${app_1_domain}"
+  echo "APP_1_DB_NAME=${app_1_db_name}"
+  echo "APP_1_DB_USERNAME=${app_1_db_username}"
+  echo "APP_1_DB_PASSWORD=${app_1_db_password}"
+  echo "APP_1_DB_HOST=${app_1_db_host}"
+  echo "GITHUB_ACCESS_TOKEN_1_OWNER=${github_access_token_1_owner}"
+  echo "GITHUB_ACCESS_TOKEN_1=${github_access_token_1}"
+} >> /etc/environment
+
+# Docker 및 Compose 플러그인 설치
+pkg_mgr="yum"
+if command -v dnf >/dev/null 2>&1; then
+  pkg_mgr="dnf"
+fi
+$pkg_mgr update -y
+$pkg_mgr install -y docker git
+install -d -m 0755 /usr/libexec/docker/cli-plugins
+curl -SL "https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-linux-x86_64" \
+  -o /usr/libexec/docker/cli-plugins/docker-compose
+chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+systemctl enable docker
+systemctl start docker
+
+# Compose 자원 배치
+install -d -m 0755 /opt/mixchat/docker/config/redis
+install -d -m 0755 /opt/mixchat/docker/config/mongo
+install -d -m 0755 /opt/mixchat/src/main/resources
+
+cat <<'EOF' | base64 -d > /opt/mixchat/docker-compose-prod.yml
+${docker_compose_prod_b64}
+EOF
+
+cat <<'EOF' | base64 -d > /opt/mixchat/.env
+${app_env_prod_b64}
+EOF
+
+cat <<'EOF' | base64 -d > /opt/mixchat/.env.prod.properties
+${app_env_prod_properties_b64}
+EOF
+
+cat <<'EOF' | base64 -d > /opt/mixchat/src/main/resources/application-secret.yml
+${application_secret_yaml_b64}
+EOF
+
+sed -i "s|^MYSQL_HOST=.*|MYSQL_HOST=${app_1_db_host}|" /opt/mixchat/.env.prod.properties
+sed -i "s|^AWS_S3_BUCKET=.*|AWS_S3_BUCKET=${app_1_s3_bucket}|" /opt/mixchat/.env.prod.properties
+
+%{ for file in compose_support_files ~}
+cat <<'EOF' | base64 -d > ${file.path}
+${file.content_b64}
+EOF
+%{ endfor ~}
+
+chmod 600 /opt/mixchat/.env
+chmod 600 /opt/mixchat/.env.prod.properties
+chmod 600 /opt/mixchat/src/main/resources/application-secret.yml
+
+# Docker Hub/GHCR 로그인 및 Compose 기동
+echo "${github_access_token_1}" | docker login ghcr.io -u ${github_access_token_1_owner} --password-stdin || true
+cd /opt/mixchat
+docker compose -f docker-compose-prod.yml --env-file .env.prod.properties pull
+docker compose -f docker-compose-prod.yml --env-file .env.prod.properties up -d

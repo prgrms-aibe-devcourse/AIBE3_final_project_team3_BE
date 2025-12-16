@@ -18,14 +18,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @ApiResponse(
         responseCode = "200",
-        description = "요청 처리 성공",
-        content = @Content(
-                schema = @Schema(implementation = ApiResponse.class),
-                examples = @ExampleObject(
-                        summary = "일반적인 성공 메시지",
-                        value = "{\"msg\": \"요청 성공 메시지(메시지 내용은 다를 수 있음)\"}"
-                )
-        )
+        description = "요청 처리 성공"
 )
 public @interface SuccessResponse {
 }

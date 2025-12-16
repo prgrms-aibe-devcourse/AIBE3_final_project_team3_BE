@@ -11,14 +11,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import triplestar.mixchat.domain.member.auth.dto.LogInReq;
+import triplestar.mixchat.domain.member.auth.dto.LogInResp;
+import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
+import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
-import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.auth.dto.SignInReq;
-import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
-import triplestar.mixchat.domain.member.auth.dto.SignInResp;
+import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-import triplestar.mixchat.global.customException.UniqueConstraintException;
 import triplestar.mixchat.global.security.jwt.AuthJwtProvider;
 
 @ActiveProfiles("test")
@@ -37,18 +37,18 @@ class AuthServiceTest {
     private AuthJwtProvider authJwtProvider;
 
     private MemberSummaryResp joinDummy(String email) {
-        MemberJoinReq memberJoinReq = new MemberJoinReq(
+        SignUpReq signUpReq = new SignUpReq(
                 email,
                 "user1234",
                 "user1234",
                 "홍길동",
-                "UK",
+                Country.UK,
                 "loveCoding",
                 EnglishLevel.NATIVE,
                 List.of("프로그래밍 좋아함"),
                 "다른 것도 좋아함"
         );
-        return authService.join(memberJoinReq);
+        return authService.join(signUpReq);
     }
 
     @Test
@@ -61,7 +61,7 @@ class AuthServiceTest {
 
         assertThat(member.getEmail()).isEqualTo("test@test.com");
         assertThat(member.getName()).isEqualTo("홍길동");
-        assertThat(member.getCountry().getCode()).isEqualTo("UK");
+        assertThat(member.getCountry()).isEqualTo(Country.UK);
         assertThat(member.getNickname()).isEqualTo("loveCoding");
         assertThat(member.getEnglishLevel()).isEqualTo(EnglishLevel.NATIVE);
         assertThat(member.getInterests()).isEqualTo(List.of("프로그래밍 좋아함"));
@@ -81,18 +81,18 @@ class AuthServiceTest {
         Assertions.assertThatThrownBy(() -> {
             joinDummy("test@test1.com");
             joinDummy("test@test1.com");
-        }).isInstanceOf(UniqueConstraintException.class);
+        }).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     @DisplayName("회원가입 - 실패 패스워드 확인 불일치")
     void join_fail_password_confirm() {
-        MemberJoinReq memberJoinReq = new MemberJoinReq(
+        SignUpReq signUpReq = new SignUpReq(
                 "test@test.com",
                 "user1234",
                 "user12345",
                 "홍길동",
-                "UK",
+                Country.UK,
                 "loveCoding",
                 EnglishLevel.NATIVE,
                 List.of("프로그래밍 좋아함"),
@@ -100,37 +100,37 @@ class AuthServiceTest {
         );
 
         Assertions.assertThatThrownBy(() -> {
-            authService.join(memberJoinReq);
+            authService.join(signUpReq);
         }).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     @DisplayName("로그인 - 성공")
-    void signIn_success() {
+    void login_success() {
         joinDummy("test@test1.com");
 
-        SignInResp signInResp = authService.signIn(new SignInReq("test@test1.com", "user1234"));
-        authJwtProvider.parseAccessToken(signInResp.accessToken());
-        authJwtProvider.parseRefreshToken(signInResp.refreshToken());
+        LogInResp logInResp = authService.login(new LogInReq("test@test1.com", "user1234"));
+        authJwtProvider.parseAccessToken(logInResp.accessToken());
+        authJwtProvider.parseRefreshToken(logInResp.refreshToken());
     }
 
     @Test
     @DisplayName("로그인 - 실패 등록되지 않은 이메일")
-    void signIn_email_not_found() {
+    void login_email_not_found() {
         joinDummy("test@test1.com");
 
         Assertions.assertThatThrownBy(() -> {
-            authService.signIn(new SignInReq("undefined@test1.com", "user1234"));
+            authService.login(new LogInReq("undefined@test1.com", "user1234"));
         }).isInstanceOf(EntityNotFoundException.class);
     }
 
     @Test
     @DisplayName("로그인 - 실패 비밀번호")
-    void signIn_password_fail() {
+    void login_password_fail() {
         joinDummy("test@test1.com");
 
         Assertions.assertThatThrownBy(() -> {
-            authService.signIn(new SignInReq("test@test1.com", "user12345"));
+            authService.login(new LogInReq("test@test1.com", "user12345"));
         }).isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -138,8 +138,8 @@ class AuthServiceTest {
     @DisplayName("토큰 재발급 - 성공 로그인 결과로 나온 refresh token 으로 액세스 토큰 재발급")
     void reissue_success() {
         joinDummy("test@test1.com");
-        SignInResp signInResp = authService.signIn(new SignInReq("test@test1.com", "user1234"));
-        String refreshToken = signInResp.refreshToken();
+        LogInResp logInResp = authService.login(new LogInReq("test@test1.com", "user1234"));
+        String refreshToken = logInResp.refreshToken();
 
         authService.reissueAccessToken(refreshToken);
     }

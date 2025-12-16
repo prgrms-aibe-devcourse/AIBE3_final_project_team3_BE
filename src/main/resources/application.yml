@@ -7,17 +7,161 @@ spring:
       - constant
   config:
     import: optional:file:.env.${spring.profiles.active}.properties
-  jpa:
-    hibernate:
-      ddl-auto: update
 
   datasource:
     url: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
     username: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+      connection-timeout: 30000     # 커넥션 획득 대기 시간 (30초)
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      validation-timeout: 5000      # 타임아웃 5초. DB가 응답하지 않으면 테스트 자체가 무한 대기하는 것 방지
+      connection-test-query: SELECT 1
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+
+  flyway:
+    enabled: false
+
+  # RabbitMQ Configuration
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    # Connection pool optimization
+    cache:
+      connection:
+        mode: connection
+        size: 10
+    # STOMP Relay Configuration (for WebSocket multi-server support)
+    stomp:
+      relay-host: ${RABBITMQ_STOMP_HOST:localhost}
+      relay-port: ${RABBITMQ_STOMP_PORT:61613}
+      client-login: ${RABBITMQ_STOMP_CLIENT_LOGIN:guest}
+      client-passcode: ${RABBITMQ_STOMP_CLIENT_PASSCODE:guest}
+      system-login: ${RABBITMQ_STOMP_SYSTEM_LOGIN:guest}
+      system-passcode: ${RABBITMQ_STOMP_SYSTEM_PASSCODE:guest}
+      system-heartbeat-send-interval: 10000
+      system-heartbeat-receive-interval: 10000
+
+  data:
+    mongodb:
+      uri: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/${MONGO_DB}?authSource=admin&minPoolSize=10&maxPoolSize=100&maxIdleTimeMS=60000
+
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      lettuce:
+        pool:
+          max-active: 50
+          max-idle: 20
+          min-idle: 10
+          max-wait: 3000    # 커넥션 대기 시간 (ms)
+
+    web:
+      pageable:
+        max-page-size: 100
+
+  elasticsearch:
+    uris: http://localhost:9200
+
+  application:
+    name: mixchat
+  output:
+    ansi:
+      enabled: always
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+  ai:
+    openai:
+      base-url: https://api.openai.com
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: ${OPENAI_CHAT_MODEL:gpt-5.1}
+      embedding:
+        options:
+          model: text-embedding-3-small
+    ollama:
+      base-url: ${OLLAMA_API_URL:https://ollama.yhcho.com/ollama}
+      api-key: ${OLLAMA_API_KEY}
+      chat:
+        options:
+          model: ${OLLAMA_MODEL:exaone3.5:2.4b}
+
+#    vertex: #실행 자체만으로 계정이 필요해 일단 비활성화
+#      ai:
+#        gemini:
+#          project-id: ${VERTEX_AI_PROJECT_ID}
+#          location: ${VERTEX_AI_LOCATION:us-central1}
+#          chat:
+#            options:
+#              model: ${VERTEX_AI_MODEL:gemini-1.5-flash}
+
 
 swagger:
   redirect:
     # "/"로 들어왔을 때 최종적으로 리다이렉트될 Swagger UI 경로
     path: /swagger-ui/index.html
+
+# Actuator + Prometheus 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+
+  endpoint:
+    health:
+      show-details: always
+
+  metrics:
+    tags:
+      application: ${spring.application.name:mixchat}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
+cors:
+  allowed-origins: "http://localhost:3000,https://mixchat.site,https://www.mixchat.site"
+
+server:
+  port: 8080
+  forward-headers-strategy: framework
+
+springdoc:
+  default-produces-media-type: application/json;charset=UTF-8
+logging:
+  level:
+    org.hibernate.orm.jdbc.bind: TRACE
+    org.hibernate.orm.jdbc.extract: TRACE
+    org.springframework.transaction.interceptor: TRACE
+    com.back: DEBUG
+custom:
+  dev:
+    cookieDomain: localhost
+    frontUrl: "http://${custom.dev.cookieDomain}:3000"
+    backUrl: "http://${custom.dev.cookieDomain}:${server.port}"
+  prod:
+    cookieDomain: mixchat.site
+    frontUrl: "https://www.${custom.prod.cookieDomain}"
+    backUrl: "https://api.${custom.prod.cookieDomain}"
+  staging:
+    cookieDomain: staging.mixchat.site
+    frontUrl: "https://www.${custom.staging.cookieDomain}"
+    backUrl: "https://api.${custom.staging.cookieDomain}"
+  site:
+    cookieDomain: "${custom.dev.cookieDomain}"
+    frontUrl: "${custom.dev.frontUrl}"
+    backUrl: "${custom.dev.backUrl}"
+    name: mixchat

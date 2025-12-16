@@ -1,30 +1,35 @@
 package triplestar.mixchat.domain.chat.chat.entity;
 
-import jakarta.persistence.Id;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-
-import java.time.LocalDateTime;
+import triplestar.mixchat.domain.chat.chat.constant.ChatRoomType;
 
 //mongoDB용 Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Document(collection = "chat_messages")
+@CompoundIndex(name = "idx_room_type_sequence", def = "{'chatRoomId': 1, 'chatRoomType': 1, 'sequence': 1}")
 public class ChatMessage {
     @Id
     private String id; //mongoDB용 ID
 
     private Long chatRoomId; // MySQL ChatRoom 참조 ID
     private Long senderId;   // MySQL Member 참조 ID
+    private Long sequence;   // 채팅방 내 메시지 순서 번호
 
     private String content;
     private MessageType messageType;
+
+    private boolean isTranslateEnabled; // 번역 요청 여부
+    private String translatedContent; // 번역된 메시지 내용
 
     public enum MessageType {
         TEXT, IMAGE, FILE, SYSTEM
@@ -38,13 +43,17 @@ public class ChatMessage {
     @Field("updated_at")
     private LocalDateTime updatedAt;
 
-    @Builder
-    public ChatMessage(Long chatRoomId, Long senderId, String content, MessageType messageType) {
+    private ChatRoomType chatRoomType;
+
+    public ChatMessage(Long chatRoomId, Long senderId, Long sequence, String content, MessageType messageType, ChatRoomType chatRoomType, boolean isTranslateEnabled) {
         if (chatRoomId == null) {
             throw new IllegalArgumentException("chatRoomId는 null일 수 없습니다.");
         }
         if (senderId == null) {
             throw new IllegalArgumentException("senderId는 null일 수 없습니다.");
+        }
+        if (sequence == null) {
+            throw new IllegalArgumentException("sequence는 null일 수 없습니다.");
         }
         if (messageType == null) {
             throw new IllegalArgumentException("messageType은 null일 수 없습니다.");
@@ -52,11 +61,21 @@ public class ChatMessage {
         if (content == null || content.isBlank()) {
             throw new IllegalArgumentException("content는 비어 있을 수 없습니다.");
         }
+        if (chatRoomType == null) {
+            throw new IllegalArgumentException("chatRoomType은 null일 수 없습니다.");
+        }
 
         this.chatRoomId = chatRoomId;
         this.senderId = senderId;
+        this.sequence = sequence;
         this.content = content;
         this.messageType = messageType;
+        this.chatRoomType = chatRoomType;
+        this.isTranslateEnabled = isTranslateEnabled;
+    }
+
+    public void setTranslatedContent(String translatedContent) {
+        this.translatedContent = translatedContent;
     }
 }
 

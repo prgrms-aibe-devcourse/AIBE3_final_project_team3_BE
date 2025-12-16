@@ -8,12 +8,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import triplestar.mixchat.domain.member.auth.dto.MemberJoinReq;
-import triplestar.mixchat.domain.member.auth.dto.MemberSummaryResp;
-import triplestar.mixchat.domain.member.auth.dto.SignInReq;
+import triplestar.mixchat.domain.member.auth.dto.SignUpReq;
+import triplestar.mixchat.domain.member.member.dto.MemberPresenceSummaryResp;
+import triplestar.mixchat.domain.member.auth.dto.LogInReq;
+import triplestar.mixchat.domain.member.member.dto.MemberSummaryResp;
 import triplestar.mixchat.global.response.CustomResponse;
 import triplestar.mixchat.global.springdoc.CommonBadResponse;
-import triplestar.mixchat.global.springdoc.SignInInRequireResponse;
 import triplestar.mixchat.global.springdoc.SuccessResponse;
 
 @Tag(name = "ApiV1AuthController", description = "API 인증/인가 컨트롤러")
@@ -25,7 +25,7 @@ public interface ApiAuthController {
     @Operation(summary = "회원가입", description = "새로운 사용자를 회원으로 가입시킵니다.")
     CustomResponse<MemberSummaryResp> join(
             @RequestBody(description = "가입 정보", required = true)
-            MemberJoinReq memberJoinReq
+            SignUpReq signUpReq
     );
 
     // --- 2. 로그인 (POST /sign-in) ---
@@ -37,9 +37,9 @@ public interface ApiAuthController {
                     )
             }
     )
-    CustomResponse<String> signIn(
+    CustomResponse<String> login(
             @RequestBody(description = "로그인 정보", required = true)
-            SignInReq signInReq,
+            LogInReq logInReq,
             HttpServletResponse httpServletResponse
     );
 
@@ -48,6 +48,12 @@ public interface ApiAuthController {
             summary = "토큰 재발급",
             description = "만료된 액세스 토큰을 리프레시 토큰을 통해 재발급합니다."
     )
-    @SignInInRequireResponse
     CustomResponse<String> reissue(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse);
+
+    // --- 4. 로그아웃 (POST /logout) ---
+    @Operation(
+            summary = "로그아웃",
+            description = "Refresh Token을 무효화하고 클라이언트 쿠키를 만료시킵니다."
+    )
+    CustomResponse<Void> logout(HttpServletRequest request, HttpServletResponse response);
 }

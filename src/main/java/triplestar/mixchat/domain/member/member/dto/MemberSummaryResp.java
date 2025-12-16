@@ -1,0 +1,43 @@
+package triplestar.mixchat.domain.member.member.dto;
+
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
+import triplestar.mixchat.domain.member.member.entity.Member;
+
+@Schema(description = "회원가입 완료 또는 멤버 조회 시 반환되는 요약된 사용자 정보")
+public record MemberSummaryResp(
+        @Schema(description = "사용자 고유 ID", example = "1", requiredMode = REQUIRED)
+        Long id,
+
+        @Schema(description = "사용자 닉네임", example = "MixMaster", requiredMode = REQUIRED)
+        String nickname,
+
+        @Schema(description = "국가 코드 (Alpha-2)", example = "KR", requiredMode = REQUIRED)
+        String country,
+
+        @Schema(description = "영어 실력 레벨", example = "INTERMEDIATE", requiredMode = REQUIRED)
+        String englishLevel,
+
+        @Schema(description = "관심사 목록", example = "TRAVEL, FOOD", requiredMode = REQUIRED)
+        List<String> interests,
+
+        @Schema(description = "자기소개", example = "안녕하세요.", requiredMode = REQUIRED)
+        String description,
+
+        @Schema(description = "프로필 이미지 URL", example = "https://example.com/profile.jpg", requiredMode = REQUIRED)
+        String profileImageUrl
+) {
+    public static MemberSummaryResp from(Member savedMember) {
+        return new MemberSummaryResp(
+                savedMember.getId(),
+                savedMember.getNickname(),
+                savedMember.getCountry().name(),
+                savedMember.getEnglishLevel().name(),
+                savedMember.getInterests(),
+                savedMember.getDescription(),
+                savedMember.getProfileImageUrl()
+        );
+    }
+}

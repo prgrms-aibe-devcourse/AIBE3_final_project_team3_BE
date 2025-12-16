@@ -1,0 +1,39 @@
+# Prometheus 설정 파일
+global:
+  scrape_interval: 15s # 메트릭 수집 간격
+  evaluation_interval: 15s # 규칙 평가 간격
+  external_labels:
+    cluster: 'mixchat-dev'
+    environment: 'development'
+
+# Alertmanager 설정 (선택사항)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# 수집 대상 설정
+scrape_configs:
+  # Prometheus 자체 모니터링
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Spring Boot 애플리케이션 모니터링
+  - job_name: 'mixchat-backend'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 5s  # 부하 테스트 시 더 자주 수집
+    static_configs:
+      - targets: ['localhost:8080']  # Windows/Mac Docker Desktop
+        labels:
+          application: 'mixchat'
+          service: 'backend'
+          instance: 'backend-1'
+
+  # K6 부하 테스트 메트릭 (K6에서 Prometheus Remote Write 사용 시)
+  # - job_name: 'k6'
+  #   static_configs:
+  #     - targets: ['host.docker.internal:5656']
+  #       labels:
+  #         application: 'k6-load-test'

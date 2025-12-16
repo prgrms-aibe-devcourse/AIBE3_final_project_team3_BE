@@ -1,0 +1,89 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    env_file:
+      - .env.staging.properties
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: ${TZ:-Asia/Seoul}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/config/mysql/init.sql:/docker-entrypoint-initdb.d/1-init.sql
+      #      - ./docker/config/mysql/schema.sql:/docker-entrypoint-initdb.d/2-schema.sql
+      #      - ./docker/config/mysql/initData.sql:/docker-entrypoint-initdb.d/3-initData.sql
+      - mysql_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    networks:
+      - mixchat-network
+
+  redis:
+    image: redis:8.0
+    container_name: redis
+    restart: always
+    env_file:
+      - .env.staging.properties
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: sh -c "redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}"
+    networks:
+      - mixchat-network
+
+  redis-init:
+    image: redis:8.0
+    depends_on:
+      - redis
+    env_file:
+      - .env.staging.properties
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    entrypoint: >
+      sh -c "sleep 5 && cat /init.redis | redis-cli -h redis -a ${REDIS_PASSWORD} --no-auth-warning"
+    volumes:
+      - ./docker/config/redis/init.redis:/init.redis
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    restart: always
+    env_file:
+      - .env.staging.properties
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./docker/config/mongo/schema.js:/docker-entrypoint-initdb.d/schema.js
+      - ./docker/config/mongo/init.js:/docker-entrypoint-initdb.d/init.js
+    networks:
+      - mixchat-network
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  mongo_data:
+    driver: local
+
+networks:
+  mixchat-network:
+    driver: bridge

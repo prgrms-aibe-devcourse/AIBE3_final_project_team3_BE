@@ -10,16 +10,16 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import triplestar.mixchat.domain.member.member.constant.Country;
 import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.constant.MembershipGrade;
 import triplestar.mixchat.domain.member.member.constant.Role;
-import triplestar.mixchat.domain.report.report.constant.ReportCategory;
-import triplestar.mixchat.global.converter.JsonListConverter;
+import triplestar.mixchat.domain.report.constant.ReportCategory;
+import triplestar.mixchat.global.converter.StringListConverter;
 import triplestar.mixchat.global.jpa.entity.BaseEntity;
 
 @Entity
@@ -47,10 +47,11 @@ public class Member extends BaseEntity {
     private Country country;
 
     @Column(nullable = false)
-    @Convert(converter = JsonListConverter.class)
+    @Convert(converter = StringListConverter.class)
     private List<String> interests;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private EnglishLevel englishLevel;
 
     @Column(nullable = false)
@@ -64,7 +65,8 @@ public class Member extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private MembershipGrade membershipGrade;
 
-    private LocalDateTime lastSignInAt;
+    @Column(nullable = false)
+    private LocalDateTime lastSeenAt;
 
     @Column(nullable = false)
     private boolean isBlocked;
@@ -95,6 +97,7 @@ public class Member extends BaseEntity {
         this.membershipGrade = MembershipGrade.BASIC;
         this.isBlocked = false;
         this.isDeleted = false;
+        this.lastSeenAt = LocalDateTime.now();
     }
 
     private void validate(String email, Password password, String name, String nickname, Country country,
@@ -176,5 +179,24 @@ public class Member extends BaseEntity {
 
     public void changeMembershipGrade(MembershipGrade grade) {
         this.membershipGrade = grade;
+    }
+
+    public void deleteSoftly() {
+        if (this.isDeleted) {
+            throw new IllegalStateException("이미 삭제된 회원입니다.");
+        }
+        this.email = UUID.randomUUID() + "@deleted.user";
+        this.name = "삭제된 회원";
+        this.nickname = "삭제된 회원";
+        this.password = Password.deleteDummy();
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
+        this.description = "삭제된 회원입니다.";
+    }
+
+    public boolean isNotAccessible() {
+        return this.isBlocked()
+                || this.isDeleted()
+                || Role.isNotMember(this.getRole());
     }
 }

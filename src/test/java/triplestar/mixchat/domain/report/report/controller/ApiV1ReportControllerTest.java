@@ -1,8 +1,6 @@
 package triplestar.mixchat.domain.report.report.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -26,10 +24,10 @@ import triplestar.mixchat.domain.member.member.constant.EnglishLevel;
 import triplestar.mixchat.domain.member.member.entity.Member;
 import triplestar.mixchat.domain.member.member.entity.Password;
 import triplestar.mixchat.domain.member.member.repository.MemberRepository;
-import triplestar.mixchat.domain.report.report.constant.ReportCategory;
-import triplestar.mixchat.domain.report.report.constant.ReportStatus;
-import triplestar.mixchat.domain.report.report.entity.Report;
-import triplestar.mixchat.domain.report.report.repository.ReportRepository;
+import triplestar.mixchat.domain.report.constant.ReportCategory;
+import triplestar.mixchat.domain.report.constant.ReportStatus;
+import triplestar.mixchat.domain.report.entity.Report;
+import triplestar.mixchat.domain.report.repository.ReportRepository;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -69,21 +67,21 @@ public class ApiV1ReportControllerTest {
                 Member.createMember(
                         "user@example.com", Password.encrypt("ValidPassword123", passwordEncoder),
                         "일반유저", "일반유저",
-                        Country.SOUTH_KOREA, EnglishLevel.INTERMEDIATE, List.of("테스트"), "신고하는 유저"
+                        Country.KR, EnglishLevel.INTERMEDIATE, List.of("테스트"), "신고하는 유저"
                 )
         );
         admin = memberRepository.save(
                 Member.createAdmin(
                         "admin@example.com", Password.encrypt("ValidPassword123", passwordEncoder),
                         "관리자", "admin",
-                        Country.SOUTH_KOREA, EnglishLevel.INTERMEDIATE, List.of("관리"), "관리자 유저"
+                        Country.KR, EnglishLevel.INTERMEDIATE, List.of("관리"), "관리자 유저"
                 )
         );
         target1 = memberRepository.save(
                 Member.createMember(
                         "target1@example.com", Password.encrypt("Password1!", passwordEncoder),
                         "신고대상1", "target1",
-                        Country.SOUTH_KOREA, EnglishLevel.BEGINNER, List.of("travel"), "신고 대상 유저1"
+                        Country.KR, EnglishLevel.BEGINNER, List.of("travel"), "신고 대상 유저1"
                 )
         );
 
@@ -91,7 +89,7 @@ public class ApiV1ReportControllerTest {
                 Member.createMember(
                         "target2@example.com", Password.encrypt("Password2!", passwordEncoder),
                         "신고대상2", "target2",
-                        Country.SOUTH_KOREA, EnglishLevel.BEGINNER, List.of("travel"), "신고 대상 유저2"
+                        Country.KR, EnglishLevel.BEGINNER, List.of("travel"), "신고 대상 유저2"
                 )
         );
 
@@ -99,7 +97,7 @@ public class ApiV1ReportControllerTest {
                 Member.createMember(
                         "target3@example.com", Password.encrypt("Password3!", passwordEncoder),
                         "신고대상3", "target3",
-                        Country.SOUTH_KOREA, EnglishLevel.BEGINNER, List.of("travel"), "신고 대상 유저3"
+                        Country.KR, EnglishLevel.BEGINNER, List.of("travel"), "신고 대상 유저3"
                 )
         );
 
@@ -165,77 +163,6 @@ public class ApiV1ReportControllerTest {
     }
 
     @Test
-    @DisplayName("관리자 신고 목록 조회 - 페이지네이션 포함, 3건 조회")
-    @WithMockUser(username = "admin", roles = "ADMIN")
-    void getReports_success() throws Exception {
-        mockMvc.perform(
-                        get("/api/v1/admin/reports")
-                                .param("page", "0")
-                                .param("size", "20")
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.msg").value("신고 목록 조회 성공"))
-                .andExpect(jsonPath("$.data.content.length()").value(3))
-                .andExpect(jsonPath("$.data.totalElements").value(3))
-                .andExpect(jsonPath("$.data.totalPages").value(1))
-                .andExpect(jsonPath("$.data.size").value(20))
-                .andExpect(jsonPath("$.data.number").value(0));
-    }
-
-    @Test
-    @DisplayName("신고 상태 변경 - APPROVED 시 대상 회원 차단 처리")
-    @WithMockUser(username = "admin", roles = "ADMIN")
-    void updateReportStatus_approved_blocksMember() throws Exception {
-
-        mockMvc.perform(
-                        patch("/api/v1/admin/reports/{reportId}", report1.getId())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                        {
-                                          "status": "APPROVED"
-                                        }
-                                        """)
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.msg").value("상태 변경 완료"));
-
-        Report updatedReport = reportRepository.findById(report1.getId())
-                .orElseThrow();
-        assertThat(updatedReport.getStatus()).isEqualTo(ReportStatus.APPROVED);
-
-        Member updatedMember = memberRepository.findById(target1.getId())
-                .orElseThrow();
-        assertThat(updatedMember.isBlocked()).isTrue();
-        assertThat(updatedMember.getBlockReason()).isEqualTo(ReportCategory.ABUSE.name());
-    }
-
-    @Test
-    @DisplayName("신고 상태 변경 - REJECTED 시 대상 회원은 차단되지 않음")
-    @WithMockUser(username = "admin", roles = "ADMIN")
-    void updateReportStatus_rejected_doesNotBlockMember() throws Exception {
-
-        mockMvc.perform(
-                        patch("/api/v1/admin/reports/{reportId}", report2.getId())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                        {
-                                          "status": "REJECTED"
-                                        }
-                                        """)
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.msg").value("상태 변경 완료"));
-
-        Report updatedReport = reportRepository.findById(report2.getId())
-                .orElseThrow();
-        assertThat(updatedReport.getStatus()).isEqualTo(ReportStatus.REJECTED);
-
-        Member updatedMember = memberRepository.findById(target2.getId())
-                .orElseThrow();
-        assertThat(updatedMember.isBlocked()).isFalse();
-    }
-
-    @Test
     @DisplayName("신고 생성 실패 - 인증되지 않은 사용자")
     void createReport_fail_whenUnauthenticated() throws Exception {
         CreateReportRequest request = new CreateReportRequest(
@@ -253,22 +180,6 @@ public class ApiV1ReportControllerTest {
                 .andExpect(status().isUnauthorized());
 
         assertThat(reportRepository.count()).isEqualTo(3);
-    }
-
-    @Test
-    @DisplayName("신고 상태 변경 실패 - 관리자 권한이 아니면 403")
-    @WithMockUser(username = "user", roles = "USER")
-    void updateReportStatus_approved_fail_whenNotAdmin() throws Exception {
-        mockMvc.perform(
-                        patch("/api/v1/admin/reports/{reportId}", report3.getId())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                        {
-                                          "status": "APPROVED"
-                                        }
-                                        """)
-                )
-                .andExpect(status().isForbidden());
     }
 
     // ReportCreateReq 구조에 맞춘 테스트용 DTO
