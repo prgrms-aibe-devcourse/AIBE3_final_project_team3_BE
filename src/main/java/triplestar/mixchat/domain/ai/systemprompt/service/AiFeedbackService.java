@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackReq;
 import triplestar.mixchat.domain.ai.systemprompt.dto.AiFeedbackResp;
+import triplestar.mixchat.domain.chat.exception.TooManyRequestsException;
 
 @Slf4j
 @Service
@@ -140,7 +141,7 @@ public class AiFeedbackService {
 
             if (isRateLimit) {
                 log.warn("OpenAI rate limit 발생: {}", e.getMessage());
-                throw new IllegalStateException(
+                throw new TooManyRequestsException(
                         "AI 요청이 많아 분석할 수 없습니다. 잠시 후 다시 시도해주세요.", e
                 );
             }
